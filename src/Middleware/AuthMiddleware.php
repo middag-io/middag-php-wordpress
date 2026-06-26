@@ -16,6 +16,7 @@ use Exception;
 use Firebase\JWT\ExpiredException;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use Middag\WordPress\Support\UserSupport;
 use RuntimeException;
 use WP_Error;
 use WP_REST_Request;
@@ -64,7 +65,7 @@ final class AuthMiddleware
     public static function getCurrentUserId(?WP_REST_Request $request = null): int|WP_Error|null
     {
         // Check WordPress session first
-        $userId = get_current_user_id();
+        $userId = UserSupport::currentUserId();
         if ($userId > 0) {
             return $userId;
         }

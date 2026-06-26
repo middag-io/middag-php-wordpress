@@ -18,7 +18,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
-use ReflectionProperty;
 use Throwable;
 
 /**
@@ -109,7 +108,6 @@ final class InertiaAdapterRenderEscapeTest extends TestCase
 
     private function resetSharedProps(): void
     {
-        $property = new ReflectionProperty(InertiaAdapter::class, 'sharedProps');
-        $property->setValue(null, []);
+        InertiaAdapter::reset();
     }
 }

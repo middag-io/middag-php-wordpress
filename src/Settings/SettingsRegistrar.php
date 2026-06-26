@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Settings;
 
+use Middag\WordPress\Support\OptionSupport;
 use Middag\WordPress\Support\SanitizeSupport;
 use Middag\WordPress\Support\SettingsSupport;
 use Middag\WordPress\Support\UserSupport;
@@ -130,10 +131,6 @@ final class SettingsRegistrar
      */
     private function storedValue(SettingDefinition $definition): mixed
     {
-        if (!function_exists('get_option')) {
-            return $definition->default;
-        }
-
-        return get_option($definition->optionName, $definition->default);
+        return OptionSupport::get($definition->optionName, $definition->default);
     }
 }

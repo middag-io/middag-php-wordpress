@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Middag\WordPress\Config;
 
 use Middag\Framework\Kernel\Contract\ConfigResolverInterface;
+use Middag\WordPress\Support\OptionSupport;
 
 /**
  * WordPress adapter for config resolution.
@@ -63,7 +64,7 @@ final readonly class WpConfigResolver implements ConfigResolverInterface
         }
 
         // 2. wp_options
-        $optVal = get_option($this->optionPrefix . strtolower($fullKey));
+        $optVal = OptionSupport::get($this->optionPrefix . strtolower($fullKey));
         if (is_string($optVal) && $optVal !== '') {
             return $optVal;
         }

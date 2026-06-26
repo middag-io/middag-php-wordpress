@@ -27,6 +27,17 @@ final class InertiaAdapter
         self::$sharedProps[$key] = $value;
     }
 
+    /**
+     * Clear all shared props. Test-isolation seam so suites can reset the static
+     * accumulator without reflecting into the private property.
+     *
+     * @internal
+     */
+    public static function reset(): void
+    {
+        self::$sharedProps = [];
+    }
+
     public static function render(string $component, array $props = []): void
     {
         $page = [
