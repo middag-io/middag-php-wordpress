@@ -15,7 +15,7 @@ namespace Middag\WordPress\Http;
 use WP_REST_Response;
 
 /**
- * Standardized REST response envelope — REF-701-01.
+ * Standardized REST response envelope.
  *
  * All responses always include: success, data, meta, message, errors.
  *
@@ -105,19 +105,19 @@ final class RestResponse
     }
 
     /** 401 — Missing, invalid, or expired token. */
-    public static function unauthorized(string $message = 'Não autorizado.', string $detail = ''): WP_REST_Response
+    public static function unauthorized(string $message = 'Unauthorized.', string $detail = ''): WP_REST_Response
     {
         return self::error(self::ERR_AUTHENTICATION, $message, 401, $detail !== '' ? ['detail' => $detail] : null);
     }
 
     /** 403 — Authenticated but no permission. */
-    public static function forbidden(string $message = 'Acesso negado.', string $detail = ''): WP_REST_Response
+    public static function forbidden(string $message = 'Access denied.', string $detail = ''): WP_REST_Response
     {
         return self::error(self::ERR_AUTHORIZATION, $message, 403, $detail !== '' ? ['detail' => $detail] : null);
     }
 
     /** 404 — Resource not found. */
-    public static function notFound(string $message = 'Recurso não encontrado.'): WP_REST_Response
+    public static function notFound(string $message = 'Resource not found.'): WP_REST_Response
     {
         return self::error(self::ERR_NOT_FOUND, $message, 404);
     }
@@ -129,19 +129,19 @@ final class RestResponse
     }
 
     /** 422 — Input validation failed. */
-    public static function validationError(array $fields, string $message = 'Dados inválidos.'): WP_REST_Response
+    public static function validationError(array $fields, string $message = 'Validation failed.'): WP_REST_Response
     {
         return self::error(self::ERR_VALIDATION, $message, 422, ['fields' => $fields]);
     }
 
     /** 429 — Rate limit exceeded. Sets Retry-After header. */
-    public static function rateLimit(string $message = 'Limite de requisições excedido.', int $retryAfter = 60): WP_REST_Response
+    public static function rateLimit(string $message = 'Rate limit exceeded.', int $retryAfter = 60): WP_REST_Response
     {
         $response = self::error(
             self::ERR_RATE_LIMIT,
             $message,
             429,
-            ['detail' => sprintf('Tente novamente em %d segundos.', $retryAfter)]
+            ['detail' => sprintf('Try again in %d seconds.', $retryAfter)]
         );
         $response->header('Retry-After', (string) $retryAfter);
 
@@ -149,7 +149,7 @@ final class RestResponse
     }
 
     /** 500 — Unexpected internal error. */
-    public static function internalError(string $message = 'Erro interno do servidor.'): WP_REST_Response
+    public static function internalError(string $message = 'Internal server error.'): WP_REST_Response
     {
         return self::error(self::ERR_INTERNAL, $message, 500);
     }

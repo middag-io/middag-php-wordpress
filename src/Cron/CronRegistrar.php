@@ -22,13 +22,13 @@ final class CronRegistrar
      * [key => [interval_seconds, display_label]].
      */
     private const INTERVALS = [
-        'middag_every_minute' => [60, 'A cada minuto'],
-        'middag_five_minutes' => [300, 'A cada 5 minutos'],
-        'middag_fifteen_minutes' => [900, 'A cada 15 minutos'],
-        'middag_thirty_minutes' => [1800, 'A cada 30 minutos'],
-        'middag_hourly' => [3600, 'A cada hora'],
-        'middag_twicedaily' => [43200, 'Duas vezes ao dia'],
-        'middag_daily_morning' => [86400, 'Diário às 06:00'],
+        'middag_every_minute' => [60, 'Every minute'],
+        'middag_five_minutes' => [300, 'Every 5 minutes'],
+        'middag_fifteen_minutes' => [900, 'Every 15 minutes'],
+        'middag_thirty_minutes' => [1800, 'Every 30 minutes'],
+        'middag_hourly' => [3600, 'Every hour'],
+        'middag_twicedaily' => [43200, 'Twice daily'],
+        'middag_daily_morning' => [86400, 'Daily at 06:00'],
     ];
 
     /**
