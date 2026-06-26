@@ -45,20 +45,6 @@ This pulls `middag-io/framework` automatically, which in turn pulls
 [`middag-io/ui`](https://github.com/middag-io/middag-php-ui) — the framework's
 frontend toolkit that backs this adapter's Inertia frontend glue.
 
-> The `middag-io/*` packages are published under the `middag-io` GitHub
-> organization. If they are not available on your default Composer registry yet,
-> add the source repositories to your project's `composer.json`:
->
-> ```json
-> {
->     "repositories": [
->         { "type": "vcs", "url": "https://github.com/middag-io/middag-php-wordpress" },
->         { "type": "vcs", "url": "https://github.com/middag-io/middag-php-framework" },
->         { "type": "vcs", "url": "https://github.com/middag-io/middag-php-ui" }
->     ]
-> }
-> ```
-
 ## Host integration
 
 A WordPress plugin owns the composition root that wires the adapter in. Two
