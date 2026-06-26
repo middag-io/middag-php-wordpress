@@ -51,7 +51,7 @@ abstract class BaseController implements RestControllerInterface
         }
 
         if (!AuthMiddleware::isAdmin($request)) {
-            return new WP_Error('forbidden', 'Acesso restrito a administradores.', ['status' => 403]);
+            return new WP_Error('forbidden', 'Access restricted to administrators.', ['status' => 403]);
         }
 
         return true;
@@ -154,7 +154,7 @@ abstract class BaseController implements RestControllerInterface
         $missing = [];
         foreach ($fields as $field) {
             if (!isset($data[$field]) || (is_string($data[$field]) && trim($data[$field]) === '')) {
-                $missing[$field] = sprintf('O campo %s é obrigatório.', $field);
+                $missing[$field] = sprintf('The %s field is required.', $field);
             }
         }
 

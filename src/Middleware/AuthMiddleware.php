@@ -16,6 +16,7 @@ use Exception;
 use Firebase\JWT\ExpiredException;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
+use Middag\WordPress\Support\UserSupport;
 use RuntimeException;
 use WP_Error;
 use WP_REST_Request;
@@ -64,7 +65,7 @@ final class AuthMiddleware
     public static function getCurrentUserId(?WP_REST_Request $request = null): int|WP_Error|null
     {
         // Check WordPress session first
-        $userId = get_current_user_id();
+        $userId = UserSupport::currentUserId();
         if ($userId > 0) {
             return $userId;
         }
@@ -90,7 +91,7 @@ final class AuthMiddleware
         $authHeader = $request->get_header('Authorization');
 
         if (!$authHeader || !preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
-            return new WP_Error('token_missing', 'Token não fornecido.', ['status' => 401]);
+            return new WP_Error('token_missing', 'Token not provided.', ['status' => 401]);
         }
 
         return self::validateAccessToken($matches[1]);
@@ -111,7 +112,7 @@ final class AuthMiddleware
             return true;
         }
 
-        return new WP_Error('unauthorized', 'Usuário não autenticado.', ['status' => 401]);
+        return new WP_Error('unauthorized', 'User not authenticated.', ['status' => 401]);
     }
 
     /**
@@ -126,45 +127,45 @@ final class AuthMiddleware
 
     /**
      * Validate an access token and return the associated user.
-     * JWT payload uses top-level claims per REF-701-02 (blocker #7).
+     * JWT payload uses top-level claims.
      */
     public static function validateAccessToken(string $token): WP_Error|WP_User
     {
         try {
             $publicKey = self::resolveEnv('PUBLIC_KEY');
             if (!$publicKey) {
-                return new WP_Error('config_error', 'Chave pública não encontrada.', ['status' => 500]);
+                return new WP_Error('config_error', 'Public key not found.', ['status' => 500]);
             }
 
             $decoded = JWT::decode($token, new Key($publicKey, self::ALGORITHM));
 
             // Validate issuer
             if (($decoded->iss ?? '') !== self::$issuer) {
-                return new WP_Error('token_invalid', 'Issuer inválido.', ['status' => 401]);
+                return new WP_Error('token_invalid', 'Invalid issuer.', ['status' => 401]);
             }
 
-            // Top-level sub claim (blocker #7 — no more nested data.user_id)
+            // Top-level sub claim.
             $userId = $decoded->sub ?? null;
             if (!$userId) {
-                return new WP_Error('token_invalid', 'Token inválido.', ['status' => 401]);
+                return new WP_Error('token_invalid', 'Invalid token.', ['status' => 401]);
             }
 
             $user = get_user_by('ID', (int) $userId);
             if (!$user) {
-                return new WP_Error('user_not_found', 'Usuário não encontrado.', ['status' => 404]);
+                return new WP_Error('user_not_found', 'User not found.', ['status' => 404]);
             }
 
             // Check token was issued after last logout
             $lastLogout = (int) get_user_meta($user->ID, self::LAST_LOGOUT_META, true);
             if (($decoded->iat ?? 0) < $lastLogout) {
-                return new WP_Error('token_revoked', 'Token revogado.', ['status' => 401]);
+                return new WP_Error('token_revoked', 'Token revoked.', ['status' => 401]);
             }
 
             return $user;
         } catch (ExpiredException) {
-            return new WP_Error('token_expired', 'Token expirado.', ['status' => 401]);
+            return new WP_Error('token_expired', 'Token expired.', ['status' => 401]);
         } catch (Exception) {
-            return new WP_Error('token_invalid', 'Token inválido.', ['status' => 401]);
+            return new WP_Error('token_invalid', 'Invalid token.', ['status' => 401]);
         }
     }
 
@@ -278,7 +279,7 @@ final class AuthMiddleware
     }
 
     /**
-     * Generate an access token with top-level claims per REF-701-02.
+     * Generate an access token with top-level claims.
      *
      * @param array<string> $roles
      * @param array<string> $scopes
@@ -291,7 +292,7 @@ final class AuthMiddleware
     ): string {
         $privateKey = self::resolveEnv('PRIVATE_KEY');
         if (!$privateKey) {
-            throw new RuntimeException('Chave privada não encontrada.');
+            throw new RuntimeException('Private key not found.');
         }
 
         $now = time();
@@ -314,7 +315,7 @@ final class AuthMiddleware
     {
         $privateKey = self::resolveEnv('PRIVATE_KEY');
         if (!$privateKey) {
-            throw new RuntimeException('Chave privada não encontrada.');
+            throw new RuntimeException('Private key not found.');
         }
 
         $now = time();

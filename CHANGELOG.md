@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/middag-io/middag-php-wordpress/compare/v0.2.1...v0.3.0) (2026-06-26)
+
+
+### Miscellaneous Chores
+
+* initial public release ([18b17de](https://github.com/middag-io/middag-php-wordpress/commit/18b17dec40ddd30b4fc2d37a0123324eecff7d3c))
+
 ## [0.2.1](https://github.com/middag-io/middag-php-wordpress/compare/v0.2.0...v0.2.1) (2026-06-06)
 
 

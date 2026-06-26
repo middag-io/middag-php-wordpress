@@ -13,21 +13,27 @@ declare(strict_types=1);
 namespace Middag\WordPress\Config;
 
 use Middag\Framework\Kernel\Contract\ConfigResolverInterface;
+use Middag\WordPress\Support\OptionSupport;
 
 /**
  * WordPress adapter for config resolution.
  *
- * Resolution hierarchy: env var (MDGA_*) → wp_options (mdga_*) → default.
- * Env vars can be set via wp-config.php putenv(), .env file (phpdotenv),
- * Docker ENV, or server configuration (Apache/Nginx SetEnv).
- *
- * @see REF-102-06
+ * Resolution hierarchy: env var → wp_options → default. The key prefixes are
+ * configurable (defaults: `MIDDAG_` for env vars, `middag_` for options); a
+ * consumer plugin may pass its own. Env vars can be set via wp-config.php
+ * putenv(), a .env file (phpdotenv), Docker ENV, or server configuration
+ * (Apache/Nginx SetEnv).
  */
 final readonly class WpConfigResolver implements ConfigResolverInterface
 {
+    public function __construct(
+        private string $envPrefix = 'MIDDAG_',
+        private string $optionPrefix = 'middag_',
+    ) {}
+
     public function get(string $key, ?string $entitySlug = null, string $default = ''): string
     {
-        // Per-entity (4-part): try MDGA_PROVIDER_KEY_SLUG first
+        // Per-entity (4-part): try <envPrefix>PROVIDER_KEY_SLUG first
         if ($entitySlug !== null) {
             $result = $this->resolve($key . '_' . $entitySlug);
             if ($result !== '') {
@@ -35,7 +41,7 @@ final readonly class WpConfigResolver implements ConfigResolverInterface
             }
         }
 
-        // Global (3-part): MDGA_PROVIDER_KEY — also serves as fallback for single-entity setups
+        // Global (3-part): <envPrefix>PROVIDER_KEY — also the fallback for single-entity setups
         $result = $this->resolve($key);
         if ($result !== '') {
             return $result;
@@ -51,14 +57,14 @@ final readonly class WpConfigResolver implements ConfigResolverInterface
 
     private function resolve(string $fullKey): string
     {
-        // 1. Env var (MDGA_*) — highest priority
-        $envVal = getenv('MDGA_' . strtoupper($fullKey));
+        // 1. Env var — highest priority
+        $envVal = getenv($this->envPrefix . strtoupper($fullKey));
         if ($envVal !== false && $envVal !== '') {
             return $envVal;
         }
 
-        // 2. wp_options (mdga_*)
-        $optVal = get_option('mdga_' . strtolower($fullKey));
+        // 2. wp_options
+        $optVal = OptionSupport::get($this->optionPrefix . strtolower($fullKey));
         if (is_string($optVal) && $optVal !== '') {
             return $optVal;
         }
