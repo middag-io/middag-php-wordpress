@@ -1,0 +1,95 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * middag-io/wordpress — MIDDAG WordPress adapter.
+ *
+ * @author      Michael Meneses <michael@middag.io>
+ * @copyright   2026 MIDDAG (https://middag.io)
+ * @license     Apache-2.0
+ */
+
+namespace Middag\WordPress\Tests;
+
+use Middag\WordPress\Config\WpConfigResolver;
+use Middag\WordPress\Cron\CronHandler;
+use Middag\WordPress\Cron\CronRegistrar;
+use Middag\WordPress\Database\WpdbConnectionAdapter;
+use Middag\WordPress\Database\WpdbSqlDialect;
+use Middag\WordPress\Email\EmailSender;
+use Middag\WordPress\Email\EmailTemplate;
+use Middag\WordPress\Frontend\InertiaAdapter;
+use Middag\WordPress\Hook\HookInterface;
+use Middag\WordPress\Hook\HookRegistrar;
+use Middag\WordPress\Http\RestControllerInterface;
+use Middag\WordPress\Http\RestResponse;
+use Middag\WordPress\Infrastructure\Bus\WpUserContext;
+use Middag\WordPress\Kernel\WordPressBootstrap;
+use Middag\WordPress\Kernel\WpMaintenanceGate;
+use Middag\WordPress\Lifecycle\PluginLifecycle;
+use Middag\WordPress\Middleware\AuthMiddleware;
+use Middag\WordPress\Persistence\Post\PostMetaRepository;
+use Middag\WordPress\Persistence\Post\PostRepository;
+use Middag\WordPress\Persistence\QueryBuilder;
+use Middag\WordPress\Privacy\Contract\PersonalDataProviderInterface;
+use Middag\WordPress\Privacy\PrivacyRegistrar;
+use Middag\WordPress\Settings\SettingDefinition;
+use Middag\WordPress\Settings\SettingsRegistrar;
+use Middag\WordPress\Translation\WpTranslator;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * Smoke test: verifies all WP adapter classes can be loaded without WordPress runtime.
+ * Classes that reference WP functions in their body (not constructor) should still load.
+ *
+ * @internal
+ *
+ * @coversNothing
+ */
+final class ClassLoadabilityTest extends TestCase
+{
+    #[Test]
+    #[DataProvider('classProvider')]
+    public function classIsLoadable(string $className): void
+    {
+        $this->assertTrue(
+            class_exists($className) || interface_exists($className),
+            sprintf('Class %s should be loadable via autoloader', $className)
+        );
+    }
+
+    /** @return array<string, array{string}> */
+    public static function classProvider(): array
+    {
+        return [
+            'QueryBuilder' => [QueryBuilder::class],
+            'PostMetaRepository' => [PostMetaRepository::class],
+            'PostRepository' => [PostRepository::class],
+            'RestControllerInterface' => [RestControllerInterface::class],
+            'RestResponse' => [RestResponse::class],
+            'HookInterface' => [HookInterface::class],
+            'HookRegistrar' => [HookRegistrar::class],
+            'InertiaAdapter' => [InertiaAdapter::class],
+            'WpConfigResolver' => [WpConfigResolver::class],
+            'CronHandler' => [CronHandler::class],
+            'CronRegistrar' => [CronRegistrar::class],
+            'PluginLifecycle' => [PluginLifecycle::class],
+            'EmailSender' => [EmailSender::class],
+            'EmailTemplate' => [EmailTemplate::class],
+            'AuthMiddleware' => [AuthMiddleware::class],
+            'WordPressBootstrap' => [WordPressBootstrap::class],
+            'WpUserContext' => [WpUserContext::class],
+            'WpdbConnectionAdapter' => [WpdbConnectionAdapter::class],
+            'WpdbSqlDialect' => [WpdbSqlDialect::class],
+            'WpMaintenanceGate' => [WpMaintenanceGate::class],
+            'WpTranslator' => [WpTranslator::class],
+            'SettingDefinition' => [SettingDefinition::class],
+            'SettingsRegistrar' => [SettingsRegistrar::class],
+            'PersonalDataProviderInterface' => [PersonalDataProviderInterface::class],
+            'PrivacyRegistrar' => [PrivacyRegistrar::class],
+        ];
+    }
+}

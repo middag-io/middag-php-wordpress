@@ -1,0 +1,22 @@
+#!/bin/sh
+# commit-msg — enforce Conventional Commits format
+
+MSG=$(head -1 "$1")
+
+# Pattern: type(scope): description  OR  type: description
+PATTERN="^(feat|fix|chore|docs|style|refactor|perf|test|build|ci|revert)(\([a-z0-9_-]+\))?: .{3,}"
+
+if ! echo "$MSG" | grep -qE "$PATTERN"; then
+    echo "[commit-msg] BLOCKED: Message must follow Conventional Commits."
+    echo ""
+    echo "  Format: type(scope): description"
+    echo "  Types:  feat, fix, chore, docs, style, refactor, perf, test, build, ci, revert"
+    echo ""
+    echo "  Examples:"
+    echo "    feat(kernel): add service auto-discovery"
+    echo "    fix: resolve container circular dependency"
+    echo "    chore: update dependencies"
+    echo ""
+    echo "  Got: $MSG"
+    exit 1
+fi

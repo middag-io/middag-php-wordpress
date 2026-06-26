@@ -1,0 +1,58 @@
+{
+  "name": "middag-io/wordpress",
+  "description": "MIDDAG WordPress adapter — persistence, REST, hooks, cron, Inertia frontend, and email for WordPress plugins",
+  "type": "library",
+  "license": "Apache-2.0",
+  "require": {
+    "php": "^8.2",
+    "ext-json": "*",
+    "firebase/php-jwt": "^6.10 || ^7.0",
+    "middag-io/framework": "^0.11.2",
+    "psr/container": "^2.0",
+    "psr/log": "^3.0",
+    "symfony/dependency-injection": "^7.0"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^3.0",
+    "php-stubs/wordpress-stubs": "^7.0",
+    "phpstan/phpstan": "^2.0",
+    "phpunit/phpunit": "^11.0",
+    "rector/rector": "^2.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Middag\\WordPress\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Middag\\WordPress\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true,
+  "scripts": {
+    "post-install-cmd": "git config core.hooksPath .githooks 2>/dev/null || true",
+    "post-update-cmd": "git config core.hooksPath .githooks 2>/dev/null || true",
+    "check": [
+      "@check:boundaries",
+      "@check:stan",
+      "@check:style",
+      "@check:rector"
+    ],
+    "check:boundaries": "grep -rln --include='*.php' 'Middag\\\\Core\\\\' src && { echo 'Article-I VIOLATION: OSS adapter src/ imports a non-OSS MIDDAG namespace/package, which is forbidden'; exit 1; } || echo 'boundaries OK: no non-OSS MIDDAG namespace imports in src/'",
+    "check:stan": "phpstan analyse --configuration=.phpstan.neon --memory-limit=1G",
+    "check:style": "php-cs-fixer fix --dry-run --verbose --config=.php-cs-fixer.dist.php",
+    "check:rector": "rector process --dry-run --config=.php-rector.php",
+    "fix": [
+      "@fix:style",
+      "@fix:rector"
+    ],
+    "fix:style": "php-cs-fixer fix --verbose --show-progress=none --config=.php-cs-fixer.dist.php",
+    "fix:rector": "rector process --config=.php-rector.php --no-progress-bar",
+    "test": "phpunit"
+  }
+}
