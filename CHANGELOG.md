@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/middag-io/middag-php-wordpress/compare/v0.3.0...v0.3.1) (2026-06-26)
+
+
+### Bug Fixes
+
+* **i18n:** replace PT-BR strings with English and neutral config prefixes ([3debcba](https://github.com/middag-io/middag-php-wordpress/commit/3debcba7d07f46d01212e135012b0c05dc185a10))
+
 ## [0.3.0](https://github.com/middag-io/middag-php-wordpress/compare/v0.2.1...v0.3.0) (2026-06-26)
 
 
