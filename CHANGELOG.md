@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.0](https://github.com/middag-io/middag-php-wordpress/compare/v0.3.1...v1.0.0) (2026-06-27)
+
+
+### Bug Fixes
+
+* **deps:** require middag-io/framework ^1.0 ([b334d4c](https://github.com/middag-io/middag-php-wordpress/commit/b334d4cde431b237d81dec316305c9c3fdd34526))
+
+
+### Miscellaneous Chores
+
+* release 1.0.0 ([bfb8a98](https://github.com/middag-io/middag-php-wordpress/commit/bfb8a989f45609978a65d95481434ad8fe78fa1a))
+
 ## [0.3.1](https://github.com/middag-io/middag-php-wordpress/compare/v0.3.0...v0.3.1) (2026-06-26)
 
 
