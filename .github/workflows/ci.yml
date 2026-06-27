@@ -10,9 +10,8 @@ permissions:
 
 # CI uses no private infrastructure and no credentials. This adapter builds on
 # the OSS middag-io/framework package (which transitively brings in middag-io/ui),
-# resolved from public Composer sources. Until the middag-io/* packages are
-# published to a public Composer registry, resolve them from their public GitHub
-# source repositories (see CONTRIBUTING.md).
+# resolved from Packagist (the default public Composer registry); no manual
+# repositories entry is required.
 
 jobs:
   quality:
