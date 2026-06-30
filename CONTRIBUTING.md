@@ -29,10 +29,8 @@ infrastructure is required.
 - `composer.lock` is **gitignored**. A local lock that references path or dev
   versions of the framework is expected development state — **not** a defect in
   the released package.
-- CI and external consumers resolve the `middag-io/*` packages from public
-  Composer sources only — no private mirror and no credentials. Until those
-  packages are published to a public Composer registry, resolve them from their
-  public GitHub source repositories (see [Known follow-ups](#known-follow-ups)).
+- CI and external consumers resolve the `middag-io/*` packages from Packagist —
+  no private mirror and no credentials.
 
 ## Quality gates
 
@@ -66,9 +64,3 @@ must remain consumable on its own.
 
 This project has a [Code of Conduct](CODE_OF_CONDUCT.md). By participating you
 agree to uphold it; the reporting contact is listed there.
-
-## Known follow-ups
-
-- Publish the `middag-io/*` packages to a public Composer registry so that CI and
-  external consumers can resolve them from a registry without adding the public
-  GitHub source repositories manually.
