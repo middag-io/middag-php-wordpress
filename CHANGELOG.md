@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.0.0...v1.0.1) (2026-06-30)
+
+
+### Documentation
+
+* align CONTRIBUTING + CI dependency guidance with Packagist publication ([66dc7aa](https://github.com/middag-io/middag-php-wordpress/commit/66dc7aae36c326c9388c64c28cf9ba585f18544d))
+
 ## [1.0.0](https://github.com/middag-io/middag-php-wordpress/compare/v0.3.1...v1.0.0) (2026-06-27)
 
 
