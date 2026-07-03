@@ -3,8 +3,8 @@
 ## Supported versions
 
 This library follows [semantic versioning](https://semver.org/). Security fixes
-land on the latest released minor version. While the package is pre-`1.0.0`, only
-the most recent tagged release is supported.
+land on the latest released minor version; only the most recent tagged release
+of the `1.x` line is supported.
 
 ## Reporting a vulnerability
 

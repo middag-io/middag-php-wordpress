@@ -61,6 +61,18 @@ the adapter must remain consumable on its own.
 - Releases are automated by [release-please](https://github.com/googleapis/release-please)
   from commits merged to `main`.
 
+### Versioning
+
+Releases are cut **exclusively** by release-please — never by a manual tag.
+The package is on the **`1.x`** line and follows the family policy defined in
+the framework's [`API-STABILITY.md`](https://github.com/middag-io/middag-php-framework/blob/main/API-STABILITY.md):
+during `1.x` a breaking change may ship in a minor — always explicitly marked
+(`!` / `BREAKING CHANGE:`) and cut deliberately by a maintainer with a
+`Release-As:` footer, never in a patch. A major release is never cut
+automatically: it happens only by explicit maintainer decision, when the break
+genuinely impacts Composer consumers — a release PR proposing a major bump is
+not merged without that sign-off.
+
 ## Code of conduct
 
 This project has a [Code of Conduct](CODE_OF_CONDUCT.md). By participating you
