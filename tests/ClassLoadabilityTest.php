@@ -26,7 +26,7 @@ use Middag\WordPress\Http\Contract\RestControllerInterface;
 use Middag\WordPress\Http\Inertia\InertiaAdapter;
 use Middag\WordPress\Http\Middleware\AuthMiddleware;
 use Middag\WordPress\Http\Response\RestResponse;
-use Middag\WordPress\Kernel\WordPressBootstrap;
+use Middag\WordPress\Kernel\WpBootstrap;
 use Middag\WordPress\Kernel\WpMaintenanceGate;
 use Middag\WordPress\Lifecycle\PluginLifecycle;
 use Middag\WordPress\Mail\EmailSender;
@@ -80,7 +80,7 @@ final class ClassLoadabilityTest extends TestCase
             'EmailSender' => [EmailSender::class],
             'EmailTemplate' => [EmailTemplate::class],
             'AuthMiddleware' => [AuthMiddleware::class],
-            'WordPressBootstrap' => [WordPressBootstrap::class],
+            'WpBootstrap' => [WpBootstrap::class],
             'WpUserContext' => [WpUserContext::class],
             'WpdbConnectionAdapter' => [WpdbConnectionAdapter::class],
             'WpdbSqlDialect' => [WpdbSqlDialect::class],

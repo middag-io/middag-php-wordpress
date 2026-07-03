@@ -13,7 +13,7 @@ declare(strict_types=1);
 namespace Middag\WordPress\Tests\Kernel\Loader;
 
 use FilesystemIterator;
-use Middag\WordPress\Kernel\Loader\WordPressHookfileLoader;
+use Middag\WordPress\Kernel\Loader\WpHookfileLoader;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;
@@ -22,8 +22,8 @@ use RecursiveIteratorIterator;
 /**
  * @internal
  */
-#[CoversClass(WordPressHookfileLoader::class)]
-final class WordPressHookfileLoaderTest extends TestCase
+#[CoversClass(WpHookfileLoader::class)]
+final class WpHookfileLoaderTest extends TestCase
 {
     private string $tmpRoot;
 
@@ -87,7 +87,7 @@ final class WordPressHookfileLoaderTest extends TestCase
         $content_hook = $this->writeHook($this->contentDir . '/middag_hooks.php');
         $this->writeHook($this->contentDir . '/themes/' . $this->themeSlug . '/middag_hooks.php');
 
-        $loader = new WordPressHookfileLoader(
+        $loader = new WpHookfileLoader(
             contentDir: $this->contentDir,
             activeTheme: '',
         );
@@ -101,7 +101,7 @@ final class WordPressHookfileLoaderTest extends TestCase
         $GLOBALS['__middag_test_wp_filters']['custom_brand_hookfiles'] = static fn (): array => [$contributed];
         $GLOBALS['__middag_test_wp_filters']['middag_hookfiles'] = static fn (): array => ['/should/be/ignored.php'];
 
-        $loader = new WordPressHookfileLoader(
+        $loader = new WpHookfileLoader(
             filterName: 'custom_brand_hookfiles',
             contentDir: $this->contentDir,
             activeTheme: $this->themeSlug,
@@ -116,9 +116,9 @@ final class WordPressHookfileLoaderTest extends TestCase
         self::assertSame([], $this->loader()->discover());
     }
 
-    private function loader(): WordPressHookfileLoader
+    private function loader(): WpHookfileLoader
     {
-        return new WordPressHookfileLoader(
+        return new WpHookfileLoader(
             contentDir: $this->contentDir,
             activeTheme: $this->themeSlug,
         );

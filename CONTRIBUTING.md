@@ -37,8 +37,8 @@ infrastructure is required.
 Every change must pass:
 
 ```bash
-composer check   # import boundaries + PHPStan + PHP-CS-Fixer (dry-run) + Rector (dry-run)
-composer test    # PHPUnit
+composer check   # PHP-CS-Fixer (dry-run) + Rector (dry-run) + PHPStan
+composer test    # PHPUnit (includes the boundary guard test)
 ```
 
 Auto-fix style and Rector findings with:
@@ -47,9 +47,10 @@ Auto-fix style and Rector findings with:
 composer fix
 ```
 
-`composer check:boundaries` enforces that the adapter never imports any non-OSS
-MIDDAG namespace or package. Keep `src/` free of those imports — the adapter
-must remain consumable on its own.
+The `AdapterPluginIsolationTest` guard test (run as part of `composer test`)
+enforces that the adapter never imports any non-OSS MIDDAG namespace or package,
+and never hard-codes product gold tables. Keep `src/` free of those imports —
+the adapter must remain consumable on its own.
 
 ## Commit and PR conventions
 
@@ -59,6 +60,24 @@ must remain consumable on its own.
 - Keep pull requests focused. Update tests and docs alongside code.
 - Releases are automated by [release-please](https://github.com/googleapis/release-please)
   from commits merged to `main`.
+
+### Versioning
+
+Releases are cut **exclusively** by release-please — never by a manual tag.
+The package is on the **`1.x`** line and follows the family policy defined in
+the framework's [`API-STABILITY.md`](https://github.com/middag-io/middag-php-framework/blob/main/API-STABILITY.md):
+during `1.x` a breaking change may ship in a minor — always explicitly marked
+(`!` / `BREAKING CHANGE:`) and cut deliberately by a maintainer with a
+`Release-As:` footer, never in a patch. A major release is never cut
+automatically: it happens only by explicit maintainer decision, when the break
+genuinely impacts Composer consumers — a release PR proposing a major bump is
+not merged without that sign-off.
+
+> Historical note: `1.1.1` shipped the audit-consolidation breaking changes
+> (the `WpBootstrap`/`WpHookfileLoader` renames and the removal of the dead
+> `Lifecycle\Container`) as a patch by explicit maintainer decision, closing
+> the OSS audit before external consumers existed. The policy above applies
+> from that release onward.
 
 ## Code of conduct
 

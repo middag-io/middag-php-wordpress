@@ -35,7 +35,7 @@ use Psr\Log\NullLogger;
  *
  * @api
  */
-final class WordPressHookfileLoader extends HookfileLoader
+final class WpHookfileLoader extends HookfileLoader
 {
     private const HOOKFILE_BASENAME = 'middag_hooks.php';
 
