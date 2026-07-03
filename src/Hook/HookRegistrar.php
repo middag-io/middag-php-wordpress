@@ -12,18 +12,36 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Hook;
 
+use InvalidArgumentException;
 use Middag\WordPress\Hook\Contract\HookInterface;
 use Psr\Container\ContainerInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
+/**
+ * Discovers `*Hooks` classes under an explicit directory and registers every
+ * {@see HookInterface} implementation found (container-resolved when the
+ * consumer provides one). The FQCN of each hook is derived from the path
+ * relative to `$hookDir`, prefixed with `$hookNamespace`.
+ */
 final readonly class HookRegistrar
 {
+    private string $hookDir;
+
     public function __construct(
         private ?ContainerInterface $container = null,
         private string $hookNamespace = 'Middag\\',
-        private ?string $hookDir = null,
-    ) {}
+        ?string $hookDir = null,
+    ) {
+        if ($hookDir === null || !is_dir($hookDir)) {
+            throw new InvalidArgumentException(sprintf(
+                'HookRegistrar requires an explicit, existing hook directory; got %s.',
+                $hookDir === null ? 'null' : sprintf('"%s"', $hookDir),
+            ));
+        }
+
+        $this->hookDir = $hookDir;
+    }
 
     public function register(): void
     {
@@ -44,15 +62,10 @@ final readonly class HookRegistrar
 
     private function discoverHooks(): array
     {
-        $hookDir = $this->hookDir ?? dirname(__DIR__, 2) . '/WordPress';
         $classes = [];
 
-        if (!is_dir($hookDir)) {
-            return $classes;
-        }
-
         $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($hookDir, RecursiveDirectoryIterator::SKIP_DOTS),
+            new RecursiveDirectoryIterator($this->hookDir, RecursiveDirectoryIterator::SKIP_DOTS),
             RecursiveIteratorIterator::LEAVES_ONLY
         );
 
@@ -68,8 +81,8 @@ final readonly class HookRegistrar
             }
 
             $relativePath = str_replace(
-                [$hookDir . '/', dirname(__DIR__, 2) . '/', '/', '.php'],
-                ['', '', '\\', ''],
+                [$this->hookDir . '/', '/', '.php'],
+                ['', '\\', ''],
                 $file->getPathname()
             );
 
