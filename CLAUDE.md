@@ -24,7 +24,7 @@ Capacidades governadas MIDDAG (Item/EAV, QueryEngine, schema `middag_*`, Audit/A
 | `src/Hook/` | HookRegistrar + `Contract/HookInterface` |
 | `src/Http/` | `Client/{HttpClient,HttpResponse}` (wp_remote_* + mTLS via http_api_curl), `Contract/RestControllerInterface`, `Controller/BaseController`, `Response/RestResponse`, `Routing/{Router,RouteRegistrar}`, `Inertia/{InertiaAdapter,PageContractNormalizer}`, `Middleware/AuthMiddleware` (JWT host auth), `Security/CsrfGuard` |
 | `src/Kernel/` | WordPressBootstrap (BootstrapInterface), WpMaintenanceGate, Loader/WordPressHookfileLoader |
-| `src/Lifecycle/` | PluginLifecycle, Container |
+| `src/Lifecycle/` | PluginLifecycle |
 | `src/Logging/` | ErrorLogLogger (PSR-3 → error_log) |
 | `src/Mail/` | WpMailer (framework MailerInterface → wp_mail), EmailSender, EmailTemplate |
 | `src/Persistence/` | QueryBuilder (WP_Query/wp_posts) |
