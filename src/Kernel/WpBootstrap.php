@@ -24,7 +24,7 @@ use Middag\WordPress\Bus\WpUserContext;
 use Middag\WordPress\Config\WpConfigResolver;
 use Middag\WordPress\Database\WpdbConnectionAdapter;
 use Middag\WordPress\Database\WpdbSqlDialect;
-use Middag\WordPress\Kernel\Loader\WordPressHookfileLoader;
+use Middag\WordPress\Kernel\Loader\WpHookfileLoader;
 use Middag\WordPress\Translation\WpTranslator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -42,7 +42,7 @@ use wpdb;
  * loader. Governed concerns (signal/outbox, async job dispatch, Item EAV) are
  * NOT wired here — they live in a non-OSS MIDDAG layer, never in the OSS adapter.
  */
-final class WordPressBootstrap implements BootstrapInterface
+final class WpBootstrap implements BootstrapInterface
 {
     public function configure(ContainerBuilder $builder): void
     {
@@ -68,7 +68,7 @@ final class WordPressBootstrap implements BootstrapInterface
 
         // Native hookfile loader (discovers + loads middag_hooks.php across
         // content/theme/plugins).
-        $builder->register(HookfileLoaderInterface::class, WordPressHookfileLoader::class)
+        $builder->register(HookfileLoaderInterface::class, WpHookfileLoader::class)
             ->setPublic(true);
     }
 

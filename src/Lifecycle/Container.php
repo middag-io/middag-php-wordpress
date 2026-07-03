@@ -47,7 +47,7 @@ final class Container
     /**
      * Compile the container against the provided bootstrap implementation.
      *
-     * Callers must provide a concrete bootstrap (e.g. `WordPressBootstrap`).
+     * Callers must provide a concrete bootstrap (e.g. `WpBootstrap`).
      * Idempotent: subsequent calls become no-ops once compiled.
      */
     public static function compile(BootstrapInterface $bootstrap): void
