@@ -978,3 +978,138 @@ if (!function_exists('wp_upload_dir')) {
         ];
     }
 }
+
+// ─── Gettext stubs (mirror-test batch B) ─────────────────────────────────────
+
+// Stubbed __() — looks up $__wp_test_translations[domain][text]; falls back to
+// the original text (real WP behaviour for untranslated strings).
+if (!function_exists('__')) {
+    function __(string $text, string $domain = 'default'): string
+    {
+        return $GLOBALS['__wp_test_translations'][$domain][$text] ?? $text;
+    }
+}
+
+// Stubbed _n() — plural selection: a translation entry keyed "single|plural"
+// may provide [singular, plural]; otherwise falls back to __() per form.
+if (!function_exists('_n')) {
+    function _n(string $single, string $plural, int $number, string $domain = 'default'): string
+    {
+        $entry = $GLOBALS['__wp_test_translations'][$domain][$single . '|' . $plural] ?? null;
+
+        if (is_array($entry)) {
+            return $number === 1 ? $entry[0] : $entry[1];
+        }
+
+        return $number === 1 ? __($single, $domain) : __($plural, $domain);
+    }
+}
+
+// ─── Users API stubs (mirror-test batch B) ───────────────────────────────────
+
+// Stubbed get_user_by() — resolves from $__wp_test_users_by[field][value]
+// (field lowercased so 'id'/'ID' both work, as in real WP).
+if (!function_exists('get_user_by')) {
+    function get_user_by(string $field, int|string $value): false|WP_User
+    {
+        $user = $GLOBALS['__wp_test_users_by'][strtolower($field)][(string) $value] ?? null;
+
+        return $user instanceof WP_User ? $user : false;
+    }
+}
+
+// Stubbed WP_User_Query — records query vars in $__wp_test_user_queries;
+// results/total configurable via $__wp_test_user_query_results / _total.
+if (!class_exists('WP_User_Query')) {
+    class WP_User_Query
+    {
+        public function __construct(public array $query_vars = [])
+        {
+            $GLOBALS['__wp_test_user_queries'][] = $query_vars;
+        }
+
+        public function get_results(): array
+        {
+            return $GLOBALS['__wp_test_user_query_results'] ?? [];
+        }
+
+        public function get_total(): int
+        {
+            return (int) ($GLOBALS['__wp_test_user_query_total'] ?? count($this->get_results()));
+        }
+    }
+}
+
+// Stubbed wp_insert_user() — records in $__wp_test_inserted_users; result
+// configurable via $__wp_test_insert_user_result (defaults to a fresh ID).
+if (!function_exists('wp_insert_user')) {
+    function wp_insert_user(array $userdata): int|WP_Error
+    {
+        $GLOBALS['__wp_test_inserted_users'][] = $userdata;
+
+        return $GLOBALS['__wp_test_insert_user_result'] ?? count($GLOBALS['__wp_test_inserted_users']);
+    }
+}
+
+// Stubbed wp_update_user() — records in $__wp_test_updated_users; result
+// configurable via $__wp_test_update_user_result (defaults to the given ID).
+if (!function_exists('wp_update_user')) {
+    function wp_update_user(array $userdata): int|WP_Error
+    {
+        $GLOBALS['__wp_test_updated_users'][] = $userdata;
+
+        return $GLOBALS['__wp_test_update_user_result'] ?? (int) ($userdata['ID'] ?? 0);
+    }
+}
+
+// ─── User-meta stubs (mirror-test batch B) ───────────────────────────────────
+// Backed by the same $__wp_test_metadata['user'] map as the generic Metadata
+// API stubs above, so both seams observe one state.
+
+if (!function_exists('get_user_meta')) {
+    function get_user_meta(int $user_id, string $key = '', bool $single = false): mixed
+    {
+        if ($key === '') {
+            $all = $GLOBALS['__wp_test_metadata']['user'][$user_id] ?? [];
+
+            return array_map(static fn ($value): array => [$value], $all);
+        }
+
+        return get_metadata('user', $user_id, $key, $single);
+    }
+}
+if (!function_exists('update_user_meta')) {
+    function update_user_meta(int $user_id, string $meta_key, mixed $meta_value): bool
+    {
+        return update_metadata('user', $user_id, $meta_key, $meta_value);
+    }
+}
+if (!function_exists('delete_user_meta')) {
+    function delete_user_meta(int $user_id, string $meta_key): bool
+    {
+        return delete_metadata('user', $user_id, $meta_key);
+    }
+}
+if (!function_exists('metadata_exists')) {
+    function metadata_exists(string $meta_type, int $object_id, string $meta_key): bool
+    {
+        return isset($GLOBALS['__wp_test_metadata'][$meta_type][$object_id][$meta_key]);
+    }
+}
+if (!function_exists('maybe_unserialize')) {
+    function maybe_unserialize(mixed $data): mixed
+    {
+        if (is_string($data)) {
+            $trimmed = trim($data);
+            if ($trimmed === 'b:0;') {
+                return false;
+            }
+            $unserialized = @unserialize($trimmed);
+            if ($unserialized !== false) {
+                return $unserialized;
+            }
+        }
+
+        return $data;
+    }
+}
