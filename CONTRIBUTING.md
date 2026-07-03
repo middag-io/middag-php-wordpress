@@ -73,6 +73,12 @@ automatically: it happens only by explicit maintainer decision, when the break
 genuinely impacts Composer consumers — a release PR proposing a major bump is
 not merged without that sign-off.
 
+> Historical note: `1.1.1` shipped the audit-consolidation breaking changes
+> (the `WpBootstrap`/`WpHookfileLoader` renames and the removal of the dead
+> `Lifecycle\Container`) as a patch by explicit maintainer decision, closing
+> the OSS audit before external consumers existed. The policy above applies
+> from that release onward.
+
 ## Code of conduct
 
 This project has a [Code of Conduct](CODE_OF_CONDUCT.md). By participating you
