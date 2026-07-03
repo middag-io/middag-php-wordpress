@@ -26,7 +26,8 @@ composition root that wires it in.
   part of this adapter.
 - No dependency on any non-OSS MIDDAG package — the adapter builds only on the
   OSS framework and the host platform. Importing any non-OSS MIDDAG namespace or
-  package is forbidden and enforced by `composer check:boundaries`.
+  package is forbidden and enforced by the `AdapterPluginIsolationTest` guard
+  test (part of `composer test`).
 - No bundled WordPress plugin. You wire the adapter into your own plugin.
 
 ## Requirements
@@ -72,8 +73,8 @@ composer install
 Run the quality gates and the test suite:
 
 ```bash
-composer check   # boundaries + PHPStan + PHP-CS-Fixer + Rector (dry-run)
-composer test    # PHPUnit
+composer check   # PHP-CS-Fixer + Rector (dry-run) + PHPStan
+composer test    # PHPUnit (includes the boundary guard test)
 ```
 
 Git hooks are configured automatically via `post-install-cmd`. The `commit-msg`

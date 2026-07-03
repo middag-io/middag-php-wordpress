@@ -37,8 +37,8 @@ infrastructure is required.
 Every change must pass:
 
 ```bash
-composer check   # import boundaries + PHPStan + PHP-CS-Fixer (dry-run) + Rector (dry-run)
-composer test    # PHPUnit
+composer check   # PHP-CS-Fixer (dry-run) + Rector (dry-run) + PHPStan
+composer test    # PHPUnit (includes the boundary guard test)
 ```
 
 Auto-fix style and Rector findings with:
@@ -47,9 +47,10 @@ Auto-fix style and Rector findings with:
 composer fix
 ```
 
-`composer check:boundaries` enforces that the adapter never imports any non-OSS
-MIDDAG namespace or package. Keep `src/` free of those imports — the adapter
-must remain consumable on its own.
+The `AdapterPluginIsolationTest` guard test (run as part of `composer test`)
+enforces that the adapter never imports any non-OSS MIDDAG namespace or package,
+and never hard-codes product gold tables. Keep `src/` free of those imports —
+the adapter must remain consumable on its own.
 
 ## Commit and PR conventions
 
