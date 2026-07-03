@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.1.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.1.0...v1.1.1) (2026-07-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* **lifecycle:** the @api class Middag\WordPress\Lifecycle\Container was removed; consumers must boot through the framework ContainerFactory / BootstrapInterface instead.
+* **kernel:** Middag\WordPress\Kernel\WordPressBootstrap is now Middag\WordPress\Kernel\WpBootstrap and Middag\WordPress\Kernel\Loader\WordPressHookfileLoader is now Middag\WordPress\Kernel\Loader\WpHookfileLoader.
+
+### Bug Fixes
+
+* **hook:** require an explicit hook directory and derive fqcn from it alone ([93076d5](https://github.com/middag-io/middag-php-wordpress/commit/93076d5755f82a41284949c2ec2eb1723f211774))
+* **http:** detach mtls curl action after each request and fail loudly when unapplied ([a89db85](https://github.com/middag-io/middag-php-wordpress/commit/a89db85de1b5992244ba53a5216760a45dad7774))
+
+
+### Refactoring
+
+* **kernel:** unify host prefix on wp bootstrap classes ([c3c2031](https://github.com/middag-io/middag-php-wordpress/commit/c3c203178bb3645c4971175eedceb732a05b6863))
+* **lifecycle:** remove dead static container facade ([609785f](https://github.com/middag-io/middag-php-wordpress/commit/609785f972bfb439ae9eda1505e1c97b4cd42fd2))
+
+
+### Documentation
+
+* align adapter docs with lote b (bridge, boundary guard, scripts) ([b8d00aa](https://github.com/middag-io/middag-php-wordpress/commit/b8d00aabbdcabd28a30df3e64cc63dd4acc30ed3))
+* **contributing:** record the audit-consolidation patch exception ([285479c](https://github.com/middag-io/middag-php-wordpress/commit/285479ce806d95461099fb9ca52de98332c26bcc))
+* **versioning:** adopt the family 1.x policy and drop inert pre-major flags ([cfaa359](https://github.com/middag-io/middag-php-wordpress/commit/cfaa3596902469adbd614fb4e7396bcb796ecf42))
+
+
+### Miscellaneous
+
+* **composer:** align scripts with the canonical baseline ([c652ca3](https://github.com/middag-io/middag-php-wordpress/commit/c652ca393157614579607fddb7d9f0d63c1e812e))
+* **dev:** add php 8.2 parse-level lint script ([5e8318d](https://github.com/middag-io/middag-php-wordpress/commit/5e8318daf642270d54a97ec1decc06ffcbc13752))
+* release 1.1.1 ([6ac8b4e](https://github.com/middag-io/middag-php-wordpress/commit/6ac8b4e29bcaf01e9e335717f077b005a77f05ea))
+
 ## [1.1.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.0.1...v1.1.0) (2026-07-03)
 
 
