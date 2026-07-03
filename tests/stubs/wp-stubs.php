@@ -404,6 +404,24 @@ if (!function_exists('add_action')) {
     }
 }
 
+// Stubbed remove_action() — drops the matching callback/priority pair from
+// global $__wp_test_actions; returns whether a callback was removed (mirrors
+// real WP semantics).
+if (!function_exists('remove_action')) {
+    function remove_action(string $hook, callable $callback, int $priority = 10): bool
+    {
+        foreach ($GLOBALS['__wp_test_actions'][$hook] ?? [] as $index => $registered) {
+            if ($registered['callback'] === $callback && $registered['priority'] === $priority) {
+                unset($GLOBALS['__wp_test_actions'][$hook][$index]);
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
 // Stubbed add_filter() — records calls in global $__wp_test_filters.
 if (!function_exists('add_filter')) {
     function add_filter(string $hook, callable $callback, int $priority = 10, int $accepted_args = 1): bool
@@ -866,6 +884,15 @@ if (!function_exists('wp_remote_request')) {
     function wp_remote_request(string $url, array $args = []): mixed
     {
         $GLOBALS['__wp_test_http_requests'][] = ['url' => $url, 'args' => $args];
+
+        // Simulate WP_Http's cURL transport firing `http_api_curl`: when a
+        // handle is configured via $__wp_test_http_curl_handle, dispatch it to
+        // every callback registered on the action (mTLS one-shot hook path).
+        if (isset($GLOBALS['__wp_test_http_curl_handle'])) {
+            foreach ($GLOBALS['__wp_test_actions']['http_api_curl'] ?? [] as $registered) {
+                ($registered['callback'])($GLOBALS['__wp_test_http_curl_handle']);
+            }
+        }
 
         return $GLOBALS['__wp_test_http_response'] ?? [
             'response' => ['code' => 200, 'message' => 'OK'],

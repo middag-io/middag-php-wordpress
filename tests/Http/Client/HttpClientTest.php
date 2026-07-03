@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Tests\Http\Client;
 
+use CurlHandle;
 use Middag\Framework\Exception\MiddagInfrastructureException;
 use Middag\WordPress\Http\Client\HttpClient;
 use Middag\WordPress\Http\Client\HttpResponse;
@@ -31,7 +32,7 @@ final class HttpClientTest extends TestCase
     {
         $GLOBALS['__wp_test_http_requests'] = [];
         $GLOBALS['__wp_test_actions'] = [];
-        unset($GLOBALS['__wp_test_http_response']);
+        unset($GLOBALS['__wp_test_http_response'], $GLOBALS['__wp_test_http_curl_handle']);
     }
 
     protected function tearDown(): void
@@ -40,6 +41,7 @@ final class HttpClientTest extends TestCase
             $GLOBALS['__wp_test_http_requests'],
             $GLOBALS['__wp_test_http_response'],
             $GLOBALS['__wp_test_actions'],
+            $GLOBALS['__wp_test_http_curl_handle'],
         );
     }
 
@@ -77,20 +79,68 @@ final class HttpClientTest extends TestCase
     }
 
     #[Test]
-    public function certificateArgsNeverReachWpHttpAndArmTheCurlAction(): void
+    public function certificateIsAppliedThroughTheCurlActionAndTheActionIsRemoved(): void
     {
-        (new HttpClient())->get('https://bank.example.test', [
+        $handle = curl_init();
+        self::assertInstanceOf(CurlHandle::class, $handle);
+        $GLOBALS['__wp_test_http_curl_handle'] = $handle;
+
+        $response = (new HttpClient())->get('https://bank.example.test', [
             'certPath' => '/secrets/client.pem',
             'certPassword' => 'secret',
             'keyPath' => '/secrets/client.key',
         ]);
 
+        self::assertSame(200, $response->status, 'cURL transport applied the cert: no exception');
+
         $request = $GLOBALS['__wp_test_http_requests'][0];
-        self::assertArrayNotHasKey('certPath', $request['args']);
+        self::assertArrayNotHasKey('certPath', $request['args'], 'mTLS args never reach WP_Http');
         self::assertArrayNotHasKey('certPassword', $request['args']);
         self::assertArrayNotHasKey('keyPath', $request['args']);
 
-        self::assertArrayHasKey('http_api_curl', $GLOBALS['__wp_test_actions'], 'mTLS goes through the http_api_curl action');
+        self::assertSame(
+            [],
+            $GLOBALS['__wp_test_actions']['http_api_curl'] ?? [],
+            'the one-shot closure is detached right after the request (no accumulation)',
+        );
+    }
+
+    #[Test]
+    public function certificateOverNonCurlTransportThrowsInsteadOfSilentlyDegrading(): void
+    {
+        // No $__wp_test_http_curl_handle: the http_api_curl action never fires,
+        // as with a non-cURL WP_Http transport (streams).
+        try {
+            (new HttpClient())->get('https://bank.example.test/pay', ['certPath' => '/secrets/client.pem']);
+            self::fail('expected MiddagInfrastructureException when the transport never applies the cert');
+        } catch (MiddagInfrastructureException $middagInfrastructureException) {
+            self::assertStringContainsString('GET', $middagInfrastructureException->getMessage());
+            self::assertStringContainsString('https://bank.example.test/pay', $middagInfrastructureException->getMessage());
+            self::assertStringContainsString('certificate', $middagInfrastructureException->getMessage());
+        }
+
+        self::assertSame(
+            [],
+            $GLOBALS['__wp_test_actions']['http_api_curl'] ?? [],
+            'the closure is detached even when the request fails the mTLS guard',
+        );
+    }
+
+    #[Test]
+    public function requestWithoutCertificateArmsNothing(): void
+    {
+        $handle = curl_init();
+        self::assertInstanceOf(CurlHandle::class, $handle);
+        $GLOBALS['__wp_test_http_curl_handle'] = $handle;
+
+        $response = (new HttpClient())->get('https://api.example.test');
+
+        self::assertSame(200, $response->status);
+        self::assertArrayNotHasKey(
+            'http_api_curl',
+            $GLOBALS['__wp_test_actions'],
+            'no certificate args: no http_api_curl action is ever registered',
+        );
     }
 
     #[Test]

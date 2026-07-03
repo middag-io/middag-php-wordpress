@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Http\Client;
 
+use Closure;
 use CurlHandle;
 use Middag\Framework\Exception\MiddagInfrastructureException;
 use Middag\WordPress\Support\HookSupport;
@@ -20,7 +21,10 @@ use Middag\WordPress\Support\HookSupport;
  * Outbound HTTP client over the WordPress HTTP API (`wp_remote_request()`),
  * with first-class client-certificate (mTLS) support — WP_Http exposes no
  * certificate arguments, so `certPath`/`certPassword`/`keyPath` are applied
- * through a ONE-SHOT `http_api_curl` action scoped to the single request.
+ * through an `http_api_curl` action registered before and detached right
+ * after the single request. When the active transport never hands the action
+ * a cURL handle (non-cURL transport), the request fails loudly instead of
+ * silently going out without the client certificate.
  *
  * Custom args (everything else passes straight to `wp_remote_request()`):
  *  - `certPath` / `certPassword` / `keyPath` — client certificate (mTLS)
@@ -71,11 +75,27 @@ final readonly class HttpClient
         $args = array_replace($this->defaultArgs, $args, ['method' => strtoupper($method)]);
         $certificate = $this->extractCertificate($args);
 
+        $armed = false;
+        $curlAction = null;
+
         if ($certificate !== []) {
-            $this->armCertificate($certificate);
+            $curlAction = $this->armCertificate($certificate, $armed);
         }
 
         $result = wp_remote_request($url, $args);
+
+        if ($curlAction instanceof Closure) {
+            HookSupport::removeAction('http_api_curl', $curlAction);
+
+            if (!$armed) {
+                throw new MiddagInfrastructureException(sprintf(
+                    'HTTP %s %s: the active WP_Http transport did not apply the client certificate '
+                    . '(http_api_curl never received a cURL handle) — refusing to proceed without mTLS.',
+                    $args['method'],
+                    $url,
+                ));
+            }
+        }
 
         if (is_wp_error($result)) {
             throw new MiddagInfrastructureException(sprintf(
@@ -117,20 +137,25 @@ final readonly class HttpClient
     }
 
     /**
-     * Register the one-shot `http_api_curl` action that injects the client
-     * certificate into the cURL handle of the NEXT request only.
+     * Register the `http_api_curl` action that injects the client certificate
+     * into the request's cURL handle, and return the registered closure so the
+     * caller can detach it right after the request (no cross-request
+     * accumulation). `$armed` flips to true only when the certificate was
+     * actually applied to a cURL handle, letting the caller detect transports
+     * that silently skip the action (non-cURL) and refuse to degrade.
      *
      * @param array{certPath?: string, certPassword?: string, keyPath?: string} $certificate
+     *
+     * @param-out bool $armed
      */
-    private function armCertificate(array $certificate): void
+    private function armCertificate(array $certificate, bool &$armed): Closure
     {
-        $armed = true;
+        $armed = false;
 
-        HookSupport::addAction('http_api_curl', static function (mixed $handle) use (&$armed, $certificate): void {
-            if (!$armed || !$handle instanceof CurlHandle) {
+        $action = static function (mixed $handle) use (&$armed, $certificate): void {
+            if (!$handle instanceof CurlHandle) {
                 return;
             }
-            $armed = false;
 
             if (isset($certificate['certPath'])) {
                 curl_setopt($handle, CURLOPT_SSLCERT, $certificate['certPath']);
@@ -141,6 +166,12 @@ final readonly class HttpClient
             if (isset($certificate['keyPath'])) {
                 curl_setopt($handle, CURLOPT_SSLKEY, $certificate['keyPath']);
             }
-        });
+
+            $armed = true;
+        };
+
+        HookSupport::addAction('http_api_curl', $action);
+
+        return $action;
     }
 }

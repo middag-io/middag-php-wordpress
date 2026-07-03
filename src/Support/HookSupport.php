@@ -38,6 +38,21 @@ final class HookSupport
     }
 
     /**
+     * Remove a previously registered action callback.
+     *
+     * Returns false when the hooks API is unavailable or when WordPress did
+     * not find the callback at the given priority.
+     */
+    public static function removeAction(string $hook, callable $callback, int $priority = 10): bool
+    {
+        if (!function_exists('remove_action')) {
+            return false;
+        }
+
+        return remove_action($hook, $callback, $priority);
+    }
+
+    /**
      * Register a filter callback.
      */
     public static function addFilter(string $hook, callable $callback, int $priority = 10, int $acceptedArgs = 1): void
