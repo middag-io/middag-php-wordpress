@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.1.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.0.1...v1.1.0) (2026-07-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* **structure:** class namespaces moved — Infrastructure\Bus, Persistence, User, Email, Frontend and Middleware no longer exist; consumers must update imports.
+
+### Features
+
+* **definition:** add declarative post type, taxonomy, cron schedule and shortcode definitions ([9b1fca9](https://github.com/middag-io/middag-php-wordpress/commit/9b1fca9462e6c900ff3cc5e3de2fdaa98b116917))
+* **filesystem:** add WpUploadsFilesystem wiring the framework Filesystem port over uploads dir ([bbf038f](https://github.com/middag-io/middag-php-wordpress/commit/bbf038fa5c285ba26884d3e6a754b88976b04835))
+* **http:** add HttpClient/HttpResponse over WP_Http with one-shot mTLS via http_api_curl ([fb2b3b9](https://github.com/middag-io/middag-php-wordpress/commit/fb2b3b9ef3fc352230009f6217bb496cebbb3b40))
+* **logging:** add PSR-3 ErrorLogLogger over error_log ([9ec3cdb](https://github.com/middag-io/middag-php-wordpress/commit/9ec3cdb936838bf4e3832cc4b782b5fb27cba1b7))
+* **mail:** add WpMailer wiring the framework Mail port over wp_mail ([15cbf35](https://github.com/middag-io/middag-php-wordpress/commit/15cbf35abe3b04e7b1a8b2e1696c4c8e95037902))
+* **security:** add CapabilityRegistrar for role capability registration ([401d169](https://github.com/middag-io/middag-php-wordpress/commit/401d1698d06c53efb18d7bf561020df31afc26a4))
+* **settings:** add declarative Settings API (Tab/Section/Field, escaped renderer, registrar) ([34a06b2](https://github.com/middag-io/middag-php-wordpress/commit/34a06b25d676122f1f04962d7438216a60c166a4))
+* **support:** add Support seams (admin, cache, meta, post type, shortcode, transient, upload) ([3ec25e7](https://github.com/middag-io/middag-php-wordpress/commit/3ec25e7662bbddb37b7f4b5b0ec9345e3a666d4b))
+
+
+### Refactoring
+
+* **structure:** reorganize namespaces to host adapter layout ([266c954](https://github.com/middag-io/middag-php-wordpress/commit/266c95422ddfb55e5481fb05f1a4a6b38470c7f7))
+
+
+### Miscellaneous
+
+* **deps:** require middag-io/framework ^1.0.2 and firebase/php-jwt ^7.0 ([1186a53](https://github.com/middag-io/middag-php-wordpress/commit/1186a530defb527c05c1a7749997413709cefe15))
+
 ## [1.0.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.0.0...v1.0.1) (2026-06-30)
 
 
