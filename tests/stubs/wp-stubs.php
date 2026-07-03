@@ -774,3 +774,180 @@ if (!function_exists('wp_add_privacy_policy_content')) {
         ];
     }
 }
+
+// Stubbed register_post_type() — records calls in global $__wp_test_post_types.
+if (!function_exists('register_post_type')) {
+    function register_post_type(string $post_type, array $args = []): void
+    {
+        $GLOBALS['__wp_test_post_types'][$post_type] = $args;
+    }
+}
+
+// Stubbed register_taxonomy() — records calls in global $__wp_test_taxonomies.
+if (!function_exists('register_taxonomy')) {
+    function register_taxonomy(string $taxonomy, array|string $object_type, array $args = []): void
+    {
+        $GLOBALS['__wp_test_taxonomies'][$taxonomy] = [
+            'object_type' => $object_type,
+            'args' => $args,
+        ];
+    }
+}
+
+// Stubbed delete_transient() — removes from global $__wp_test_transients.
+if (!function_exists('delete_transient')) {
+    function delete_transient(string $transient): bool
+    {
+        $existed = isset($GLOBALS['__wp_test_transients'][$transient]);
+        unset($GLOBALS['__wp_test_transients'][$transient]);
+
+        return $existed;
+    }
+}
+
+// Stubbed Object Cache API — backed by global $__wp_test_object_cache.
+if (!function_exists('wp_cache_get')) {
+    function wp_cache_get(string $key, string $group = '', bool $force = false, ?bool &$found = null): mixed
+    {
+        $found = isset($GLOBALS['__wp_test_object_cache'][$group][$key]);
+
+        return $GLOBALS['__wp_test_object_cache'][$group][$key] ?? false;
+    }
+}
+if (!function_exists('wp_cache_set')) {
+    function wp_cache_set(string $key, mixed $data, string $group = '', int $expire = 0): bool
+    {
+        $GLOBALS['__wp_test_object_cache'][$group][$key] = $data;
+
+        return true;
+    }
+}
+if (!function_exists('wp_cache_delete')) {
+    function wp_cache_delete(string $key, string $group = ''): bool
+    {
+        $existed = isset($GLOBALS['__wp_test_object_cache'][$group][$key]);
+        unset($GLOBALS['__wp_test_object_cache'][$group][$key]);
+
+        return $existed;
+    }
+}
+if (!function_exists('wp_cache_flush')) {
+    function wp_cache_flush(): bool
+    {
+        $GLOBALS['__wp_test_object_cache'] = [];
+
+        return true;
+    }
+}
+
+// Stubbed Shortcode API — backed by global $__wp_test_shortcodes.
+if (!function_exists('add_shortcode')) {
+    function add_shortcode(string $tag, callable $callback): void
+    {
+        $GLOBALS['__wp_test_shortcodes'][$tag] = $callback;
+    }
+}
+if (!function_exists('remove_shortcode')) {
+    function remove_shortcode(string $tag): void
+    {
+        unset($GLOBALS['__wp_test_shortcodes'][$tag]);
+    }
+}
+if (!function_exists('do_shortcode')) {
+    function do_shortcode(string $content): string
+    {
+        return $content;
+    }
+}
+
+// Stubbed HTTP API — records requests in $__wp_test_http_requests; response
+// configurable via $__wp_test_http_response (array or WP_Error).
+if (!function_exists('wp_remote_request')) {
+    function wp_remote_request(string $url, array $args = []): mixed
+    {
+        $GLOBALS['__wp_test_http_requests'][] = ['url' => $url, 'args' => $args];
+
+        return $GLOBALS['__wp_test_http_response'] ?? [
+            'response' => ['code' => 200, 'message' => 'OK'],
+            'headers' => [],
+            'body' => '',
+        ];
+    }
+}
+if (!function_exists('wp_remote_retrieve_response_code')) {
+    function wp_remote_retrieve_response_code(mixed $response): int|string
+    {
+        return is_array($response) ? ($response['response']['code'] ?? '') : '';
+    }
+}
+if (!function_exists('wp_remote_retrieve_body')) {
+    function wp_remote_retrieve_body(mixed $response): string
+    {
+        return is_array($response) ? (string) ($response['body'] ?? '') : '';
+    }
+}
+if (!function_exists('wp_remote_retrieve_headers')) {
+    function wp_remote_retrieve_headers(mixed $response): array
+    {
+        return is_array($response) ? (array) ($response['headers'] ?? []) : [];
+    }
+}
+
+// Stubbed generic Metadata API — backed by $__wp_test_metadata[type][id][key].
+if (!function_exists('get_metadata')) {
+    function get_metadata(string $meta_type, int $object_id, string $meta_key = '', bool $single = false): mixed
+    {
+        $value = $GLOBALS['__wp_test_metadata'][$meta_type][$object_id][$meta_key] ?? null;
+        if ($value === null) {
+            return $single ? '' : [];
+        }
+
+        return $single ? $value : [$value];
+    }
+}
+if (!function_exists('update_metadata')) {
+    function update_metadata(string $meta_type, int $object_id, string $meta_key, mixed $meta_value): bool
+    {
+        $GLOBALS['__wp_test_metadata'][$meta_type][$object_id][$meta_key] = $meta_value;
+
+        return true;
+    }
+}
+if (!function_exists('delete_metadata')) {
+    function delete_metadata(string $meta_type, int $object_id, string $meta_key, mixed $meta_value = '', bool $delete_all = false): bool
+    {
+        $existed = isset($GLOBALS['__wp_test_metadata'][$meta_type][$object_id][$meta_key]);
+        unset($GLOBALS['__wp_test_metadata'][$meta_type][$object_id][$meta_key]);
+
+        return $existed;
+    }
+}
+
+// Stubbed admin menu registration — records in $__wp_test_admin_menus.
+if (!function_exists('add_menu_page')) {
+    function add_menu_page(string $page_title, string $menu_title, string $capability, string $menu_slug, callable $callback, string $icon_url = '', ?int $position = null): string
+    {
+        $GLOBALS['__wp_test_admin_menus'][$menu_slug] = ['page_title' => $page_title, 'menu_title' => $menu_title, 'capability' => $capability, 'icon_url' => $icon_url, 'position' => $position];
+
+        return 'toplevel_page_' . $menu_slug;
+    }
+}
+if (!function_exists('add_submenu_page')) {
+    function add_submenu_page(string $parent_slug, string $page_title, string $menu_title, string $capability, string $menu_slug, callable $callback): string
+    {
+        $GLOBALS['__wp_test_admin_submenus'][$menu_slug] = ['parent_slug' => $parent_slug, 'page_title' => $page_title, 'menu_title' => $menu_title, 'capability' => $capability];
+
+        return $parent_slug . '_page_' . $menu_slug;
+    }
+}
+
+// Stubbed wp_upload_dir() — configurable via $__wp_test_upload_dir.
+if (!function_exists('wp_upload_dir')) {
+    function wp_upload_dir(): array
+    {
+        return $GLOBALS['__wp_test_upload_dir'] ?? [
+            'basedir' => sys_get_temp_dir() . '/middag-test-uploads',
+            'baseurl' => 'http://example.test/wp-content/uploads',
+        ];
+    }
+}
