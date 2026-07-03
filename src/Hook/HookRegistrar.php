@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Hook;
 
+use Middag\WordPress\Hook\Contract\HookInterface;
 use Psr\Container\ContainerInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;

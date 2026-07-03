@@ -13,20 +13,24 @@ Capacidades governadas MIDDAG (Item/EAV, QueryEngine, schema `middag_*`, Audit/A
 
 | Diretorio | Conteudo |
 |-----------|----------|
+| `src/Bus/` | WpUserContext (UserContextResolverInterface) |
 | `src/Config/` | WpConfigResolver (ConfigResolverInterface) |
 | `src/Cron/` | CronHandler, CronRegistrar (wp-cron básico) |
 | `src/Database/` | WpdbConnectionAdapter (ConnectionAdapterInterface), WpdbSqlDialect |
-| `src/Email/` | EmailSender, EmailTemplate (wp_mail glue) |
-| `src/Frontend/` | Container, InertiaAdapter, Router, PageContractNormalizer |
-| `src/Hook/` | HookInterface, HookRegistrar |
-| `src/Http/` | BaseController (auth-only), RestControllerInterface, RestResponse, RouteRegistrar |
-| `src/Infrastructure/Bus/` | WpUserContext (UserContextResolverInterface) |
+| `src/Definition/` | PostTypeDefinition, TaxonomyDefinition, CronScheduleDefinition, ShortcodeDefinition + DefinitionRegistrar (registro declarativo no host) |
+| `src/Domain/Post/` | PostRepository, PostMetaRepository (wp_posts + wp_postmeta) |
+| `src/Domain/User/` | UserRepository, UserMeta |
+| `src/Filesystem/` | WpUploadsFilesystem (framework FilesystemInterface → uploads dir, via LocalFilesystem) |
+| `src/Hook/` | HookRegistrar + `Contract/HookInterface` |
+| `src/Http/` | `Client/{HttpClient,HttpResponse}` (wp_remote_* + mTLS via http_api_curl), `Contract/RestControllerInterface`, `Controller/BaseController`, `Response/RestResponse`, `Routing/{Router,RouteRegistrar}`, `Inertia/{InertiaAdapter,PageContractNormalizer}`, `Middleware/AuthMiddleware` (JWT host auth), `Security/CsrfGuard` |
 | `src/Kernel/` | WordPressBootstrap (BootstrapInterface), WpMaintenanceGate, Loader/WordPressHookfileLoader |
-| `src/Middleware/` | AuthMiddleware (JWT host auth) |
+| `src/Lifecycle/` | PluginLifecycle, Container |
+| `src/Logging/` | ErrorLogLogger (PSR-3 → error_log) |
+| `src/Mail/` | WpMailer (framework MailerInterface → wp_mail), EmailSender, EmailTemplate |
 | `src/Persistence/` | QueryBuilder (WP_Query/wp_posts) |
-| `src/Persistence/Post/` | PostRepository, PostMetaRepository (wp_posts + wp_postmeta) |
+| `src/Security/` | CapabilityRegistrar (caps declarativas por role) |
+| `src/Settings/` | Framework declarativo: Tab→Section→Field (FieldType c/ sanitizer default), FieldRenderer (escapado), SettingsPageRegistrar sobre SettingDefinition/SettingsRegistrar |
 | `src/Translation/` | WpTranslator (TranslatorInterface) |
-| `src/User/` | UserRepository, UserMeta |
 
 ## Contracts bridge
 
