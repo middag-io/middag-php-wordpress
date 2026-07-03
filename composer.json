@@ -38,19 +38,25 @@
     "post-install-cmd": "git config core.hooksPath .githooks 2>/dev/null || true",
     "post-update-cmd": "git config core.hooksPath .githooks 2>/dev/null || true",
     "check": [
-      "@check:stan",
       "@check:style",
-      "@check:rector"
+      "@check:rector",
+      "@check:stan"
     ],
-    "check:stan": "phpstan analyse --configuration=.phpstan.neon --memory-limit=1G",
     "check:style": "php-cs-fixer fix --dry-run --verbose --config=.php-cs-fixer.dist.php",
     "check:rector": "rector process --dry-run --config=.php-rector.php",
+    "check:stan": "phpstan analyse --configuration=.phpstan.neon --memory-limit=1G",
     "fix": [
       "@fix:style",
       "@fix:rector"
     ],
+    "fix:all": [
+      "@fix:style",
+      "@fix:rector",
+      "@fix:style"
+    ],
     "fix:style": "php-cs-fixer fix --verbose --show-progress=none --config=.php-cs-fixer.dist.php",
     "fix:rector": "rector process --config=.php-rector.php --no-progress-bar",
-    "test": "phpunit"
+    "test": "phpunit",
+    "test:cov": "XDEBUG_MODE=coverage phpunit --coverage-text"
   }
 }
