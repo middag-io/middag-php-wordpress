@@ -12,6 +12,9 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Hook\Contract;
 
+/**
+ * @api
+ */
 interface HookInterface
 {
     public function register(): void;

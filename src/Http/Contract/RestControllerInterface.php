@@ -12,6 +12,9 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Http\Contract;
 
+/**
+ * @api
+ */
 interface RestControllerInterface
 {
     public function registerRoutes(string $namespace): void;

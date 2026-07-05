@@ -19,6 +19,8 @@ use WP_Post;
  * Repository for wp_posts queries using the WP_Query-based QueryBuilder.
  *
  * Use this for custom post type (CPT) persistence (D4: wp_posts support).
+ *
+ * @api
  */
 class PostRepository
 {

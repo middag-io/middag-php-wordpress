@@ -64,7 +64,9 @@ the adapter must remain consumable on its own.
 ### Versioning
 
 Releases are cut **exclusively** by release-please — never by a manual tag.
-The package is on the **`1.x`** line and follows the family policy defined in
+The package is on the **`1.x`** line; its public surface and policy are
+documented in this package's own [`API-STABILITY.md`](API-STABILITY.md), which
+follows the family policy defined in
 the framework's [`API-STABILITY.md`](https://github.com/middag-io/middag-php-framework/blob/main/API-STABILITY.md):
 during `1.x` a breaking change may ship in a minor — always explicitly marked
 (`!` / `BREAKING CHANGE:`) and cut deliberately by a maintainer with a

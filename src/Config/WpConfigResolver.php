@@ -23,6 +23,8 @@ use Middag\WordPress\Support\OptionSupport;
  * consumer plugin may pass its own. Env vars can be set via wp-config.php
  * putenv(), a .env file (phpdotenv), Docker ENV, or server configuration
  * (Apache/Nginx SetEnv).
+ *
+ * @internal
  */
 final readonly class WpConfigResolver implements ConfigResolverInterface
 {

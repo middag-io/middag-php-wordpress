@@ -15,6 +15,9 @@ namespace Middag\WordPress\Persistence;
 use WP_Post;
 use WP_Query;
 
+/**
+ * @api
+ */
 final class QueryBuilder
 {
     private array $args = [

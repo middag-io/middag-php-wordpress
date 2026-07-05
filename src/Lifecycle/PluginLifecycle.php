@@ -27,6 +27,8 @@ use Middag\WordPress\Support\LifecycleSupport;
  * Optional activation/deactivation callbacks let a consumer run extra
  * setup/teardown (e.g. seeding options, dropping tables) on top of the built-in
  * cron cleanup.
+ *
+ * @api
  */
 final class PluginLifecycle
 {

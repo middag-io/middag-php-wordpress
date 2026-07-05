@@ -17,6 +17,9 @@ use Middag\WordPress\Support\LogSupport;
 use Middag\WordPress\Support\MailSupport;
 use Middag\WordPress\Support\PathSupport;
 
+/**
+ * @api
+ */
 final class EmailSender
 {
     private const DEFAULT_CONTENT_TYPE = 'text/html';

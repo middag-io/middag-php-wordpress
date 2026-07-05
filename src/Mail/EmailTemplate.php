@@ -15,6 +15,9 @@ namespace Middag\WordPress\Mail;
 use Middag\WordPress\Support\LogSupport;
 use Throwable;
 
+/**
+ * @api
+ */
 final readonly class EmailTemplate
 {
     public function __construct(

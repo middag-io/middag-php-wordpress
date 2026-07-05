@@ -22,6 +22,9 @@ use WP_Error;
 use WP_REST_Request;
 use WP_User;
 
+/**
+ * @api
+ */
 final class AuthMiddleware
 {
     public const ALGORITHM = 'RS256';

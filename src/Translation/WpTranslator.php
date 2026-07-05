@@ -23,6 +23,8 @@ use Middag\Framework\Translation\Contract\TranslatorInterface;
  * Symfony-style convention: pass `%count%` in `$params` and either a
  * `singular|plural` pipe message or a single message that WordPress translates
  * via `_n()`. Remaining named params are interpolated into the result.
+ *
+ * @internal
  */
 final readonly class WpTranslator implements TranslatorInterface
 {

@@ -35,6 +35,8 @@ use wpdb;
  * Table names received here are *physical* (already prefixed) — the WordPress
  * dialect is a near-passthrough and does not brace table names, so callers that
  * use the record helpers must pass the prefixed name (see {@see WpdbSqlDialect}).
+ *
+ * @internal
  */
 final readonly class WpdbConnectionAdapter implements ConnectionAdapterInterface
 {

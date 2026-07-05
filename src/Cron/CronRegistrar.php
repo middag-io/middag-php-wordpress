@@ -15,6 +15,9 @@ namespace Middag\WordPress\Cron;
 use Middag\WordPress\Support\CronSupport;
 use Middag\WordPress\Support\HookSupport;
 
+/**
+ * @api
+ */
 final class CronRegistrar
 {
     /**

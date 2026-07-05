@@ -21,6 +21,8 @@ use Middag\Framework\Database\Contract\SqlDialectInterface;
  * Unlike Moodle's `{tablename}` bracing, WordPress raw SQL uses fully-qualified
  * physical names, so {@see table()} prepends the configured prefix and returns
  * the name as-is for raw SQL. Everything else follows MySQL idioms.
+ *
+ * @internal
  */
 final readonly class WpdbSqlDialect implements SqlDialectInterface
 {

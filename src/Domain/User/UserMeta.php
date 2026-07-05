@@ -12,6 +12,9 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Domain\User;
 
+/**
+ * @api
+ */
 final class UserMeta
 {
     /**
