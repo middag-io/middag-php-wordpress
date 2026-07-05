@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Settings;
 
+use InvalidArgumentException;
 use Middag\WordPress\Support\EscapeSupport;
 use Middag\WordPress\Support\OptionSupport;
 
@@ -124,6 +125,14 @@ final class FieldRenderer
         $html = '';
 
         foreach ($field->attributes as $name => $value) {
+            if (preg_match('/^[a-zA-Z][\w:-]*$/', (string) $name) !== 1) {
+                throw new InvalidArgumentException(sprintf(
+                    'Invalid HTML attribute name "%s" on field "%s": names must match /^[a-zA-Z][\w:-]*$/.',
+                    (string) $name,
+                    $field->name,
+                ));
+            }
+
             $html .= sprintf(' %s="%s"', EscapeSupport::attr($name), EscapeSupport::attr($value));
         }
 
