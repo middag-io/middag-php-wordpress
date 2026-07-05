@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Middag\WordPress\Tests\Persistence;
 
 use Middag\WordPress\Persistence\QueryBuilder;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -21,9 +22,8 @@ use PHPUnit\Framework\TestCase;
  * produced by toArgs(). No WordPress runtime required.
  *
  * @internal
- *
- * @coversNothing
  */
+#[CoversClass(QueryBuilder::class)]
 final class QueryBuilderTest extends TestCase
 {
     // -------------------------------------------------------------------------

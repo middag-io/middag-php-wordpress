@@ -13,15 +13,15 @@ declare(strict_types=1);
 namespace Middag\WordPress\Tests\Http\Response;
 
 use Middag\WordPress\Http\Response\RestResponse;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use WP_REST_Response;
 
 /**
  * @internal
- *
- * @coversNothing
  */
+#[CoversClass(RestResponse::class)]
 final class RestResponseTest extends TestCase
 {
     // -------------------------------------------------------------------------

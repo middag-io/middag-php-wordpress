@@ -13,15 +13,15 @@ declare(strict_types=1);
 namespace Middag\WordPress\Tests\Hook\Contract;
 
 use Middag\WordPress\Hook\Contract\HookInterface;
+use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
 /**
  * @internal
- *
- * @coversNothing
  */
+#[CoversNothing]
 final class HookInterfaceTest extends TestCase
 {
     #[Test]
