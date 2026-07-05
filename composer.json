@@ -3,6 +3,22 @@
   "description": "MIDDAG WordPress adapter — persistence, REST, hooks, cron, Inertia frontend, and email for WordPress plugins",
   "type": "library",
   "license": "Apache-2.0",
+  "keywords": [
+    "wordpress",
+    "adapter",
+    "host-adapter",
+    "wpdb",
+    "rest",
+    "cron",
+    "inertia",
+    "middag"
+  ],
+  "homepage": "https://github.com/middag-io/middag-php-wordpress",
+  "support": {
+    "issues": "https://github.com/middag-io/middag-php-wordpress/issues",
+    "source": "https://github.com/middag-io/middag-php-wordpress",
+    "security": "https://github.com/middag-io/middag-php-wordpress/security/policy"
+  },
   "require": {
     "php": "^8.2",
     "ext-json": "*",
