@@ -25,6 +25,8 @@ use Middag\Framework\Kernel\Contract\MaintenanceGateInterface;
  *   - the legacy `.maintenance` drop-in file in ABSPATH (written by the core
  *     updater; defines `$upgrading` as a UNIX timestamp and is considered active
  *     for 10 minutes after it was written, matching wp_maintenance()).
+ *
+ * @internal
  */
 final class WpMaintenanceGate implements MaintenanceGateInterface
 {

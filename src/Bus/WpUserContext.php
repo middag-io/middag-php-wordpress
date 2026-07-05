@@ -20,6 +20,8 @@ use Middag\WordPress\Support\UserSupport;
  *
  * Resolves the current user ID via {@see UserSupport::currentUserId()}.
  * Returns null when no user is authenticated (e.g. WP-CLI, cron).
+ *
+ * @internal
  */
 final class WpUserContext implements UserContextResolverInterface
 {

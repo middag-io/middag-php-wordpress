@@ -17,6 +17,9 @@ use Middag\WordPress\Support\LogSupport;
 use Psr\Container\ContainerInterface;
 use Throwable;
 
+/**
+ * @api
+ */
 final class CronHandler
 {
     /**

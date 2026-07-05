@@ -21,6 +21,9 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_User;
 
+/**
+ * @api
+ */
 abstract class BaseController implements RestControllerInterface
 {
     /**

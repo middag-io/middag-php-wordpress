@@ -22,6 +22,8 @@ use WP_REST_Response;
  * 7 canonical error codes:
  *   VALIDATION_ERROR (422), AUTHENTICATION_ERROR (401), AUTHORIZATION_ERROR (403),
  *   NOT_FOUND (404), CONFLICT (409), RATE_LIMIT (429), INTERNAL_ERROR (500)
+ *
+ * @api
  */
 final class RestResponse
 {

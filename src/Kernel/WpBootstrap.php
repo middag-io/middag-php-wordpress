@@ -41,6 +41,8 @@ use wpdb;
  * translation, maintenance gate, connection/dialect, and the native hookfile
  * loader. Governed concerns (signal/outbox, async job dispatch, Item EAV) are
  * NOT wired here — they live in a non-OSS MIDDAG layer, never in the OSS adapter.
+ *
+ * @internal
  */
 final class WpBootstrap implements BootstrapInterface
 {

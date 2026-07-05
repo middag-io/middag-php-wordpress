@@ -23,6 +23,8 @@ use RecursiveIteratorIterator;
  * {@see HookInterface} implementation found (container-resolved when the
  * consumer provides one). The FQCN of each hook is derived from the path
  * relative to `$hookDir`, prefixed with `$hookNamespace`.
+ *
+ * @api
  */
 final readonly class HookRegistrar
 {

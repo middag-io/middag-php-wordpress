@@ -16,6 +16,8 @@ namespace Middag\WordPress\Domain\Post;
  * CRUD operations for wp_postmeta.
  *
  * Use this for custom post type (CPT) metadata.
+ *
+ * @api
  */
 final class PostMetaRepository
 {

@@ -15,6 +15,9 @@ namespace Middag\WordPress\Http\Routing;
 use Middag\WordPress\Http\Contract\RestControllerInterface;
 use Psr\Container\ContainerInterface;
 
+/**
+ * @api
+ */
 final class RouteRegistrar
 {
     /**

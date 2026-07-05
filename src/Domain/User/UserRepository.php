@@ -17,6 +17,9 @@ use WP_Error;
 use WP_User;
 use WP_User_Query;
 
+/**
+ * @api
+ */
 final class UserRepository
 {
     /**
