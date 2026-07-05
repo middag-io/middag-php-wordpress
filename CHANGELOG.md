@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.1.2](https://github.com/middag-io/middag-php-wordpress/compare/v1.1.1...v1.1.2) (2026-07-05)
+
+
+### Documentation
+
+* **api:** add API-STABILITY.md and link it from CONTRIBUTING ([48eeb56](https://github.com/middag-io/middag-php-wordpress/commit/48eeb5662b5713fa70ea0fe722ec3264f1da4300))
+* **api:** tag remaining src types @api/[@internal](https://github.com/internal) ([e91f0c8](https://github.com/middag-io/middag-php-wordpress/commit/e91f0c8ec552b4f0c59aa096901586ea790dd337))
+
+
+### Miscellaneous
+
+* **composer:** add keywords, homepage and support metadata ([7017dbe](https://github.com/middag-io/middag-php-wordpress/commit/7017dbeb4302aed8c22c18815b49b26206282df5))
+* **hooks:** accept the breaking-change marker in commit-msg ([ab301da](https://github.com/middag-io/middag-php-wordpress/commit/ab301da1b7da7af6e1aa4751e889ba6889ed3822))
+* release 1.1.2 ([f1b359d](https://github.com/middag-io/middag-php-wordpress/commit/f1b359dfad0a2c46fed6c23c44d3730eee32ceb6))
+
 ## [1.1.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.1.0...v1.1.1) (2026-07-03)
 
 
