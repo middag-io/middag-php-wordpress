@@ -1090,6 +1090,46 @@ if (!function_exists('delete_user_meta')) {
         return delete_metadata('user', $user_id, $meta_key);
     }
 }
+
+// ─── Post-meta stubs ─────────────────────────────────────────────────────────
+// Backed by the same $__wp_test_metadata['post'] map as the generic Metadata
+// API stubs above, so both seams observe one state.
+
+if (!function_exists('get_post_meta')) {
+    function get_post_meta(int $post_id, string $key = '', bool $single = false): mixed
+    {
+        if ($key === '') {
+            $all = $GLOBALS['__wp_test_metadata']['post'][$post_id] ?? [];
+
+            return array_map(static fn ($value): array => [$value], $all);
+        }
+
+        return get_metadata('post', $post_id, $key, $single);
+    }
+}
+if (!function_exists('update_post_meta')) {
+    function update_post_meta(int $post_id, string $meta_key, mixed $meta_value): bool
+    {
+        return update_metadata('post', $post_id, $meta_key, $meta_value);
+    }
+}
+if (!function_exists('delete_post_meta')) {
+    function delete_post_meta(int $post_id, string $meta_key): bool
+    {
+        return delete_metadata('post', $post_id, $meta_key);
+    }
+}
+if (!function_exists('update_postmeta_cache')) {
+    /**
+     * @param int[] $post_ids
+     */
+    function update_postmeta_cache(array $post_ids): array
+    {
+        $GLOBALS['__wp_test_primed_postmeta'][] = $post_ids;
+
+        return [];
+    }
+}
 if (!function_exists('metadata_exists')) {
     function metadata_exists(string $meta_type, int $object_id, string $meta_key): bool
     {
