@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.1.3](https://github.com/middag-io/middag-php-wordpress/compare/v1.1.2...v1.1.3) (2026-07-06)
+
+
+### Bug Fixes
+
+* **settings:** reject invalid HTML attribute names in FieldRenderer ([2f32755](https://github.com/middag-io/middag-php-wordpress/commit/2f32755984c6a07addfd2a575a076b487995f7e5))
+* **settings:** sanitize RawHtml field values by default ([3d675b7](https://github.com/middag-io/middag-php-wordpress/commit/3d675b78ec56cadd7074caa118bb60570e48540f))
+
+
+### Refactoring
+
+* **persistence:** narrow QueryBuilder::find guard to instanceof WP_Post ([b257b23](https://github.com/middag-io/middag-php-wordpress/commit/b257b2341b432eefdb09adbc8b98a8744c2d9117))
+
+
+### Documentation
+
+* close QG-WP-03/04/05/07 and relocate coverage tail to BACKLOG ([71f6982](https://github.com/middag-io/middag-php-wordpress/commit/71f698221cb760556b3de5ffbc475dab428e2750))
+
 ## [1.1.2](https://github.com/middag-io/middag-php-wordpress/compare/v1.1.1...v1.1.2) (2026-07-05)
 
 
