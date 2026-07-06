@@ -23,9 +23,11 @@ brings in `middag-io/ui`). All dependencies are OSS or host-provided; no private
 infrastructure is required.
 
 - **Local development** can resolve `middag-io/framework` from a sibling path
-  repository (`../middag-php-framework`, symlinked) declared in `composer.json`.
-  Clone the framework next to this repo if you want to edit both together. This
-  is a development-only convenience and has no effect on published releases.
+  repository (`../middag-php-framework`, symlinked) declared in the
+  **root/consumer** `composer.json` (per ADR-013) — this package's own
+  `composer.json` carries no `repositories` entry. Clone the framework next to
+  this repo if you want to edit both together. This is a development-only
+  convenience and has no effect on published releases.
 - `composer.lock` is **gitignored**. A local lock that references path or dev
   versions of the framework is expected development state — **not** a defect in
   the released package.
