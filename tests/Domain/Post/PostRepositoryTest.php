@@ -14,6 +14,7 @@ namespace Middag\WordPress\Tests\Domain\Post;
 
 use Middag\WordPress\Domain\Post\PostRepository;
 use Middag\WordPress\Persistence\QueryBuilder;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -27,9 +28,8 @@ use ReflectionMethod;
  * which requires WP_Query runtime and is already tested in QueryBuilderTest).
  *
  * @internal
- *
- * @coversNothing
  */
+#[CoversClass(PostRepository::class)]
 final class PostRepositoryTest extends TestCase
 {
     // -------------------------------------------------------------------------

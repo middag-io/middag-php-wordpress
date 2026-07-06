@@ -14,6 +14,7 @@ namespace Middag\WordPress\Tests\Mail;
 
 use Middag\WordPress\Mail\EmailTemplate;
 use Middag\WordPress\Support\LogSupport;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
@@ -21,9 +22,8 @@ use Stringable;
 
 /**
  * @internal
- *
- * @coversNothing
  */
+#[CoversClass(EmailTemplate::class)]
 final class EmailTemplateTest extends TestCase
 {
     private string $tmpDir;

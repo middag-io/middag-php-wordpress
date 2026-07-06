@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Tests\Settings;
 
+use InvalidArgumentException;
 use Middag\WordPress\Settings\Field;
 use Middag\WordPress\Settings\FieldRenderer;
 use Middag\WordPress\Settings\FieldType;
@@ -117,5 +118,32 @@ final class FieldRendererTest extends TestCase
         $html = $this->renderer->render(new Field('acme_raw', 'Raw', FieldType::RawHtml, html: '<hr class="x">'));
 
         self::assertStringContainsString('<hr class="x">', $html);
+    }
+
+    #[Test]
+    public function invalidAttributeNameIsRejected(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->renderer->render(new Field(
+            'acme_evil',
+            'Evil',
+            FieldType::Number,
+            attributes: ['x onload=alert(1)' => '1'],
+        ));
+    }
+
+    #[Test]
+    public function dataAndAriaAttributeNamesAreAllowed(): void
+    {
+        $html = $this->renderer->render(new Field(
+            'acme_ok',
+            'Ok',
+            FieldType::Number,
+            attributes: ['data-max' => '9', 'aria-label' => 'items'],
+        ));
+
+        self::assertStringContainsString(' data-max="9"', $html);
+        self::assertStringContainsString(' aria-label="items"', $html);
     }
 }

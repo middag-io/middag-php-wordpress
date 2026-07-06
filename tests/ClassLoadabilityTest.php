@@ -37,6 +37,7 @@ use Middag\WordPress\Privacy\PrivacyRegistrar;
 use Middag\WordPress\Settings\SettingDefinition;
 use Middag\WordPress\Settings\SettingsRegistrar;
 use Middag\WordPress\Translation\WpTranslator;
+use PHPUnit\Framework\Attributes\CoversNothing;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -46,9 +47,8 @@ use PHPUnit\Framework\TestCase;
  * Classes that reference WP functions in their body (not constructor) should still load.
  *
  * @internal
- *
- * @coversNothing
  */
+#[CoversNothing]
 final class ClassLoadabilityTest extends TestCase
 {
     #[Test]

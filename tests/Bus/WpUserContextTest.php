@@ -14,6 +14,7 @@ namespace Middag\WordPress\Tests\Bus;
 
 use Middag\Framework\Bus\Contract\UserContextResolverInterface;
 use Middag\WordPress\Bus\WpUserContext;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -24,9 +25,8 @@ use ReflectionClass;
  * Uses the get_current_user_id() stub which reads from $GLOBALS['__wp_test_user_id'].
  *
  * @internal
- *
- * @coversNothing
  */
+#[CoversClass(WpUserContext::class)]
 final class WpUserContextTest extends TestCase
 {
     private WpUserContext $context;

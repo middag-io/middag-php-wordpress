@@ -24,9 +24,13 @@ use Middag\WordPress\Support\MailSupport;
  * value object onto `wp_mail()`.
  *
  * From/Reply-To/Cc/Bcc travel as RFC headers; `htmlBody` switches the
- * Content-Type to text/html (WordPress default is plain text). Attachments are
- * passed as file paths — `cid:` embedded parts are NOT supported by `wp_mail()`
- * and raise an exception instead of silently degrading.
+ * Content-Type to text/html (WordPress default is plain text). When `htmlBody`
+ * is set it becomes the single message body: `wp_mail()` emits no
+ * multipart/alternative envelope, so the plain-text `body` is NOT carried as a
+ * text/plain alternative (there is no `AltBody`). The plain `body` is used only
+ * as the fallback body when `htmlBody` is absent. Attachments are passed as
+ * file paths — `cid:` embedded parts are NOT supported by `wp_mail()` and raise
+ * an exception instead of silently degrading.
  *
  * @api
  */

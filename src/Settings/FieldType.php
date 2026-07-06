@@ -39,6 +39,12 @@ enum FieldType: string
 
     case Email = 'email';
 
+    /**
+     * Rich HTML field. Its default save-time sanitizer runs the value through
+     * {@see SanitizeSupport::ksesPost()} (allowed post markup, scripts stripped).
+     * A plugin that must persist unfiltered markup declares its own sanitizer on
+     * the {@see Field}; that opt-in is the deliberate escape hatch.
+     */
     case RawHtml = 'raw_html';
 
     /**
@@ -56,7 +62,7 @@ enum FieldType: string
                 ? array_map(static fn (mixed $item): string => SanitizeSupport::text(\is_string($item) ? $item : ''), $value)
                 : [],
             self::Select => static fn (mixed $value): string => SanitizeSupport::text(\is_string($value) ? $value : ''),
-            self::RawHtml => static fn (mixed $value): mixed => $value,
+            self::RawHtml => static fn (mixed $value): string => SanitizeSupport::ksesPost(\is_string($value) ? $value : ''),
         };
     }
 }

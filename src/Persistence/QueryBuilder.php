@@ -231,7 +231,7 @@ final class QueryBuilder
     public function find(int $id): ?WP_Post
     {
         $post = get_post($id);
-        if (!$post || $post->post_type !== $this->args['post_type']) {
+        if (!$post instanceof WP_Post || $post->post_type !== $this->args['post_type']) {
             return null;
         }
 

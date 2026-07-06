@@ -83,11 +83,14 @@ hook enforces [Conventional Commits](https://www.conventionalcommits.org/).
 ### Working against a sibling framework checkout
 
 During development the adapter can resolve `middag-io/framework` from a sibling
-path repository (`../middag-php-framework`, symlinked) declared in
-`composer.json`. This is a **development-only** convenience for editing the
-framework and the adapter side by side. Published releases resolve the
-dependency through the normal Composer registry — the path repository has no
-effect on consumers.
+path repository (`../middag-php-framework`, symlinked). Per ADR-013 this path
+repository is declared in the **root/consumer** `composer.json` of the monorepo
+workspace — **not** in this package's `composer.json`, which carries no
+`repositories` entry. Composer only reads the root package's `repositories`, so
+a dependency's own path repos would be inert for consumers anyway. This is a
+**development-only** convenience for editing the framework and the adapter side
+by side. Published releases resolve the dependency through the normal Composer
+registry — the path repository has no effect on consumers.
 
 ### `composer.lock` is gitignored
 
