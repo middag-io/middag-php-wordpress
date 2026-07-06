@@ -54,6 +54,8 @@ if (!class_exists('WP_REST_Request')) {
 
         private string $method = 'GET';
 
+        private ?array $jsonParams = null;
+
         public function get_method(): string
         {
             return $this->method;
@@ -86,6 +88,30 @@ if (!class_exists('WP_REST_Request')) {
             $normalized = strtolower(str_replace('_', '-', $key));
             $this->headers[$normalized] = $value;
         }
+
+        public function get_json_params(): ?array
+        {
+            return $this->jsonParams;
+        }
+
+        public function set_json_params(?array $params): void
+        {
+            $this->jsonParams = $params;
+        }
+    }
+}
+
+// Stubbed register_rest_route() — records registrations in $__wp_test_rest_routes.
+if (!function_exists('register_rest_route')) {
+    function register_rest_route(string $namespace, string $route, array $args = []): bool
+    {
+        $GLOBALS['__wp_test_rest_routes'][] = [
+            'namespace' => $namespace,
+            'route' => $route,
+            'args' => $args,
+        ];
+
+        return true;
     }
 }
 
@@ -132,7 +158,32 @@ if (!class_exists('WP_Query')) {
 
         public int $max_num_pages = 0;
 
-        public function __construct() {}
+        public int $post_count = 0;
+
+        /**
+         * @param array<string, mixed> $query_vars
+         */
+        public function __construct(public array $query_vars = [])
+        {
+            // Tests inject a canned result set via $__wp_test_wp_query_result.
+            $canned = $GLOBALS['__wp_test_wp_query_result'] ?? null;
+            if (is_array($canned)) {
+                $this->posts = $canned['posts'] ?? [];
+                $this->found_posts = (int) ($canned['found_posts'] ?? count($this->posts));
+                $this->max_num_pages = (int) ($canned['max_num_pages'] ?? 0);
+                $this->post_count = (int) ($canned['post_count'] ?? count($this->posts));
+            }
+        }
+    }
+}
+
+if (!function_exists('get_post')) {
+    // Stubbed get_post() — resolves a WP_Post from global $__wp_test_posts by ID.
+    function get_post(mixed $post = null): ?WP_Post
+    {
+        $resolved = $GLOBALS['__wp_test_posts'][(int) $post] ?? null;
+
+        return $resolved instanceof WP_Post ? $resolved : null;
     }
 }
 
