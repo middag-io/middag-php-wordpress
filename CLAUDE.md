@@ -6,6 +6,12 @@ OSS WordPress adapter (Apache-2.0) for the MIDDAG framework. It carries only bas
 
 Governed MIDDAG capabilities (Item/EAV, QueryEngine, `middag_*` schema, Audit/ActivityFeed/ItemRevision/Job, outbox, tenant/organization, rate limit, scopes, Payment/Webhook/WooCommerce/CRM) are **not part of this OSS adapter** — they belong to non-OSS MIDDAG layers.
 
+Future governed WordPress code may live in `middag-io/core` under `src/WordPress/`.
+That does not change this adapter's boundary: the OSS adapter stays generic and
+never imports `Middag\Core\`. If core/framework binds the neutral `async`
+transport on WordPress, name it as a WP-Cron binding owned by the consumer/core
+composition root, not as proprietary infrastructure inside this adapter.
+
 ### Non-target host surfaces (by design)
 
 Some WordPress host surfaces are **intentionally not targeted** by this adapter: **widgets** (`register_widget` / `WP_Widget`) and **`admin-ajax.php`** action handlers. Modern MIDDAG frontends run through the Inertia/REST glue (`Http/Inertia`, `Http/Routing`), so classic widget areas and the legacy `admin-ajax` transport carry no consumer and no code here. This is a scope decision, not a gap — do not add widget/`admin-ajax` seams without a real consumer. See the coverage roadmap in `BACKLOG.md` for other by-design-absent surfaces (R1).
