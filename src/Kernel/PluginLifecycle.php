@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license     Apache-2.0
  */
 
-namespace Middag\WordPress\Lifecycle;
+namespace Middag\WordPress\Kernel;
 
 use Middag\WordPress\Cron\CronRegistrar;
 use Middag\WordPress\Support\LifecycleSupport;

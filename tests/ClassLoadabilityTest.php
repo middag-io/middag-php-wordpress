@@ -18,17 +18,28 @@ use Middag\WordPress\Cron\CronHandler;
 use Middag\WordPress\Cron\CronRegistrar;
 use Middag\WordPress\Database\WpdbConnectionAdapter;
 use Middag\WordPress\Database\WpdbSqlDialect;
+use Middag\WordPress\Domain\Comment\CommentDto;
+use Middag\WordPress\Domain\Media\MediaAttachmentDto;
 use Middag\WordPress\Domain\Post\PostMetaRepository;
 use Middag\WordPress\Domain\Post\PostRepository;
+use Middag\WordPress\Domain\Taxonomy\TaxonomyDto;
+use Middag\WordPress\Domain\Taxonomy\TermDto;
+use Middag\WordPress\Domain\WooCommerce\OrderReference;
+use Middag\WordPress\Domain\WooCommerce\ProductReference;
+use Middag\WordPress\Domain\WooCommerce\WooCommerceAvailability;
+use Middag\WordPress\Exception\HookRegistrationException;
+use Middag\WordPress\Exception\SettingsRenderException;
+use Middag\WordPress\Exception\WordPressAdapterException;
+use Middag\WordPress\Exception\WordPressDatabaseException;
 use Middag\WordPress\Hook\Contract\HookInterface;
 use Middag\WordPress\Hook\HookRegistrar;
 use Middag\WordPress\Http\Contract\RestControllerInterface;
 use Middag\WordPress\Http\Inertia\InertiaAdapter;
 use Middag\WordPress\Http\Middleware\AuthMiddleware;
 use Middag\WordPress\Http\Response\RestResponse;
+use Middag\WordPress\Kernel\PluginLifecycle;
 use Middag\WordPress\Kernel\WpBootstrap;
 use Middag\WordPress\Kernel\WpMaintenanceGate;
-use Middag\WordPress\Lifecycle\PluginLifecycle;
 use Middag\WordPress\Mail\EmailSender;
 use Middag\WordPress\Mail\EmailTemplate;
 use Middag\WordPress\Persistence\QueryBuilder;
@@ -84,6 +95,17 @@ final class ClassLoadabilityTest extends TestCase
             'WpUserContext' => [WpUserContext::class],
             'WpdbConnectionAdapter' => [WpdbConnectionAdapter::class],
             'WpdbSqlDialect' => [WpdbSqlDialect::class],
+            'CommentDto' => [CommentDto::class],
+            'MediaAttachmentDto' => [MediaAttachmentDto::class],
+            'TaxonomyDto' => [TaxonomyDto::class],
+            'TermDto' => [TermDto::class],
+            'ProductReference' => [ProductReference::class],
+            'OrderReference' => [OrderReference::class],
+            'WooCommerceAvailability' => [WooCommerceAvailability::class],
+            'WordPressAdapterException' => [WordPressAdapterException::class],
+            'HookRegistrationException' => [HookRegistrationException::class],
+            'SettingsRenderException' => [SettingsRenderException::class],
+            'WordPressDatabaseException' => [WordPressDatabaseException::class],
             'WpMaintenanceGate' => [WpMaintenanceGate::class],
             'WpTranslator' => [WpTranslator::class],
             'SettingDefinition' => [SettingDefinition::class],

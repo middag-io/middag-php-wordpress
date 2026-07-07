@@ -10,10 +10,10 @@ declare(strict_types=1);
  * @license     Apache-2.0
  */
 
-namespace Middag\WordPress\Tests\Lifecycle;
+namespace Middag\WordPress\Tests\Kernel;
 
 use Middag\WordPress\Cron\CronRegistrar;
-use Middag\WordPress\Lifecycle\PluginLifecycle;
+use Middag\WordPress\Kernel\PluginLifecycle;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

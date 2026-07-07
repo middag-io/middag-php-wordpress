@@ -22,13 +22,17 @@ Some WordPress host surfaces are **intentionally not targeted** by this adapter:
 | `src/Cron/` | CronHandler, CronRegistrar (basic wp-cron) |
 | `src/Database/` | WpdbConnectionAdapter (ConnectionAdapterInterface), WpdbSqlDialect |
 | `src/Definition/` | PostTypeDefinition, TaxonomyDefinition, CronScheduleDefinition, ShortcodeDefinition + DefinitionRegistrar (declarative registration on the host) |
+| `src/Domain/Comment/` | CommentDto (host-neutral shape for WP comments) |
+| `src/Domain/Media/` | MediaAttachmentDto (attachments/uploads metadata) |
 | `src/Domain/Post/` | PostRepository, PostMetaRepository (wp_posts + wp_postmeta) |
+| `src/Domain/Taxonomy/` | TaxonomyDto, TermDto (native taxonomy/term shape) |
 | `src/Domain/User/` | UserRepository, UserMeta |
+| `src/Domain/WooCommerce/` | Optional WooCommerce value objects, guarded by runtime availability checks; no hard dependency |
+| `src/Exception/` | Adapter-specific exception hierarchy for hooks, settings rendering, database failures |
 | `src/Filesystem/` | WpUploadsFilesystem (framework FilesystemInterface → uploads dir, via LocalFilesystem) |
 | `src/Hook/` | HookRegistrar + `Contract/HookInterface` (requires an explicit, existing hook directory) |
 | `src/Http/` | `Client/{HttpClient,HttpResponse}` (wp_remote_* with optional mTLS — see below), `Contract/RestControllerInterface`, `Controller/BaseController`, `Response/RestResponse`, `Routing/{Router,RouteRegistrar}`, `Inertia/{InertiaAdapter,PageContractNormalizer}`, `Middleware/AuthMiddleware` (JWT host auth), `Security/CsrfGuard` |
-| `src/Kernel/` | WpBootstrap (BootstrapInterface), WpComponentContext (HostComponentContextInterface), WpMaintenanceGate, Loader/WpHookfileLoader |
-| `src/Lifecycle/` | PluginLifecycle (activation/deactivation registrar; unregisters wp-cron events on deactivation) |
+| `src/Kernel/` | WpBootstrap (BootstrapInterface), WpComponentContext (HostComponentContextInterface), WpMaintenanceGate, PluginLifecycle, Loader/WpHookfileLoader |
 | `src/Logging/` | ErrorLogLogger (PSR-3 → error_log) |
 | `src/Mail/` | WpMailer (framework MailerInterface → wp_mail), EmailSender, EmailTemplate |
 | `src/Persistence/` | QueryBuilder (WP_Query/wp_posts) |

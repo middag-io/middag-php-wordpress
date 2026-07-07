@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Hook;
 
-use InvalidArgumentException;
+use Middag\WordPress\Exception\HookRegistrationException;
 use Middag\WordPress\Hook\Contract\HookInterface;
 use Psr\Container\ContainerInterface;
 use RecursiveDirectoryIterator;
@@ -36,7 +36,7 @@ final readonly class HookRegistrar
         ?string $hookDir = null,
     ) {
         if ($hookDir === null || !is_dir($hookDir)) {
-            throw new InvalidArgumentException(sprintf(
+            throw new HookRegistrationException(sprintf(
                 'HookRegistrar requires an explicit, existing hook directory; got %s.',
                 $hookDir === null ? 'null' : sprintf('"%s"', $hookDir),
             ));

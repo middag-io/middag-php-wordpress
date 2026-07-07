@@ -26,7 +26,9 @@ carries exactly one of the two tags.
 The public surface is the set of `@api`-annotated types: the consumer-facing API
 of the adapter — the REST controller base and its `Http\Contract\` interfaces,
 the `Domain\Post` / `Domain\User` repositories and meta helpers, the
-`Persistence` query builder, the `Settings` and `Definition` builders, the
+`Domain\Taxonomy`, `Domain\Media`, `Domain\Comment`, and optional
+`Domain\WooCommerce` value objects, the adapter-specific `Exception\*` types,
+the `Persistence` query builder, the `Settings` and `Definition` builders, the
 `Support` façade helpers, the mail helpers, the cron registrar/handler, the hook
 registrar and `Hook\Contract\HookInterface`, and the plugin-lifecycle registrar.
 The concrete implementations of the framework's host-bridge contracts (the

@@ -15,7 +15,7 @@ namespace Middag\WordPress\Database;
 use Middag\Framework\Database\Contract\ConnectionAdapterInterface;
 use Middag\Framework\Database\Contract\SqlDialectInterface;
 use Middag\Framework\Database\Enum\Capability;
-use RuntimeException;
+use Middag\WordPress\Exception\WordPressDatabaseException;
 use Throwable;
 use wpdb;
 
@@ -80,7 +80,7 @@ final readonly class WpdbConnectionAdapter implements ConnectionAdapterInterface
         $result = $this->wpdb->query($this->prepare($sql, $params));
 
         if ($result === false) {
-            throw new RuntimeException(sprintf('wpdb query failed: %s', $this->wpdb->last_error));
+            throw new WordPressDatabaseException(sprintf('wpdb query failed: %s', $this->wpdb->last_error));
         }
 
         return (int) $result;
@@ -123,7 +123,7 @@ final readonly class WpdbConnectionAdapter implements ConnectionAdapterInterface
         $result = $this->wpdb->insert($table, $record);
 
         if ($result === false) {
-            throw new RuntimeException(sprintf('wpdb insert into [%s] failed: %s', $table, $this->wpdb->last_error));
+            throw new WordPressDatabaseException(sprintf('wpdb insert into [%s] failed: %s', $table, $this->wpdb->last_error));
         }
 
         return $this->wpdb->insert_id;
@@ -132,7 +132,7 @@ final readonly class WpdbConnectionAdapter implements ConnectionAdapterInterface
     public function update(string $table, array $record): void
     {
         if (!isset($record['id'])) {
-            throw new RuntimeException(sprintf('update() into [%s] requires an "id" element.', $table));
+            throw new WordPressDatabaseException(sprintf('update() into [%s] requires an "id" element.', $table));
         }
 
         $id = $record['id'];
@@ -141,7 +141,7 @@ final readonly class WpdbConnectionAdapter implements ConnectionAdapterInterface
         $result = $this->wpdb->update($table, $record, ['id' => $id]);
 
         if ($result === false) {
-            throw new RuntimeException(sprintf('wpdb update of [%s] failed: %s', $table, $this->wpdb->last_error));
+            throw new WordPressDatabaseException(sprintf('wpdb update of [%s] failed: %s', $table, $this->wpdb->last_error));
         }
     }
 
@@ -150,7 +150,7 @@ final readonly class WpdbConnectionAdapter implements ConnectionAdapterInterface
         $result = $this->wpdb->delete($table, $conditions);
 
         if ($result === false) {
-            throw new RuntimeException(sprintf('wpdb delete from [%s] failed: %s', $table, $this->wpdb->last_error));
+            throw new WordPressDatabaseException(sprintf('wpdb delete from [%s] failed: %s', $table, $this->wpdb->last_error));
         }
     }
 
