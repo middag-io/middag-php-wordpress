@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.4](https://github.com/middag-io/middag-php-wordpress/compare/v1.1.3...v1.1.4) (2026-07-07)
+
+
+### Miscellaneous
+
+* **deps:** bump middag-io/framework to ^1.2.0 ([ceff642](https://github.com/middag-io/middag-php-wordpress/commit/ceff64288fbd2d97da0de4999f62a25503923b2d))
+* release 1.1.4 ([192a324](https://github.com/middag-io/middag-php-wordpress/commit/192a324ea453755cd226ab92b12033ce18033ef0))
+* release 1.1.4 ([befa55c](https://github.com/middag-io/middag-php-wordpress/commit/befa55c362dac9c5ec91854edcbe66476669eb51))
+
 ## [1.1.3](https://github.com/middag-io/middag-php-wordpress/compare/v1.1.2...v1.1.3) (2026-07-06)
 
 
