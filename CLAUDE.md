@@ -37,7 +37,7 @@ Some WordPress host surfaces are **intentionally not targeted** by this adapter:
 | `src/Exception/` | Adapter-specific exception hierarchy for hooks, settings rendering, database failures |
 | `src/Filesystem/` | WpUploadsFilesystem (framework FilesystemInterface → uploads dir, via LocalFilesystem) |
 | `src/Hook/` | HookRegistrar + `Contract/HookInterface` (requires an explicit, existing hook directory) |
-| `src/Http/` | `Client/{HttpClient,HttpResponse}` (wp_remote_* with optional mTLS — see below), `Contract/RestControllerInterface`, `Controller/BaseController`, `Response/RestResponse`, `Routing/{Router,RouteRegistrar}`, `Inertia/{InertiaAdapter,PageContractNormalizer}`, `Middleware/AuthMiddleware` (JWT host auth), `Security/CsrfGuard` |
+| `src/Http/` | `Client/{HttpClient,HttpResponse}` (wp_remote_* with optional mTLS — see below), `Contract/RestControllerInterface`, `Controller/BaseController`, `Response/RestResponse`, `Routing/{Router,RouteRegistrar}`, `Inertia/InertiaAdapter`, `Middleware/AuthMiddleware` (JWT host auth), `Security/CsrfGuard` |
 | `src/Kernel/` | WpBootstrap (BootstrapInterface), WpComponentContext (HostComponentContextInterface), WpMaintenanceGate, PluginLifecycle, Loader/WpHookfileLoader |
 | `src/Logging/` | PhpErrorLogLogger (PSR-3 → error_log) |
 | `src/Mail/` | WpMailer (framework MailerInterface → wp_mail), EmailSender, EmailTemplate |

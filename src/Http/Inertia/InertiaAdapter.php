@@ -116,11 +116,10 @@ final class InertiaAdapter
             $resolved[$key] = $value instanceof Closure ? $value() : $value;
         }
 
-        // Auto-normalize PageContract to @middag-io/react v0.15+ schema
-        if (isset($resolved['contract']) && is_array($resolved['contract'])) {
-            $resolved['contract'] = PageContractNormalizer::normalize($resolved['contract']);
-        }
-
+        // Props (including any `contract`) pass through verbatim. The adapter
+        // accepts ONLY the canonical @middag-io/react PageContract and performs
+        // no schema migration: a legacy contract is forwarded unchanged so the
+        // frontend rejects it, rather than being silently rewritten here.
         return $resolved;
     }
 
