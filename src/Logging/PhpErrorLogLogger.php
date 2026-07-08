@@ -17,10 +17,17 @@ use Psr\Log\AbstractLogger;
 use Stringable;
 
 /**
- * PSR-3 logger that writes to the PHP error log — the lowest common
- * denominator available on every WordPress host (surfaces in `debug.log` when
- * `WP_DEBUG_LOG` is on). Bind it to {@see LogSupport}
+ * Zero-dependency PSR-3 fallback that writes to the PHP error log — the
+ * lowest common denominator available on every WordPress host (surfaces in
+ * `debug.log` when `WP_DEBUG_LOG` is on). Bind it to {@see LogSupport}
  * or the container when no richer logger (Monolog, WC_Logger) is wired.
+ *
+ * This is NOT the canonical logging path. The canonical, WooCommerce-like
+ * channel path is the framework `LoggerFactory::forChannel(module, channel)`
+ * (Monolog + rotating file handler), primed once at boot via
+ * {@see LogSupport::primeFromContainer()}. Host adapters extend that same
+ * base by choosing their `(module, channel)` destinations; this class only
+ * covers hosts where no factory is wired.
  *
  * Context values are interpolated into `{placeholders}` per PSR-3; leftover
  * context is appended as JSON so no data is silently dropped.

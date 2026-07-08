@@ -192,6 +192,41 @@ final class LogSupportTest extends TestCase
         self::assertSame($spy, LogSupport::getLogger());
     }
 
+    #[Test]
+    public function primeFromContainerFlowsACustomChannelToTheFileHandler(): void
+    {
+        self::assertNull(LogSupport::getLogger());
+
+        $base = sys_get_temp_dir() . '/middag-logsupport-channel-' . uniqid();
+        $factory = $this->loggerFactory(basePath: $base, enabled: true);
+
+        $primed = LogSupport::primeFromContainer(
+            $this->container([LoggerFactory::class => $factory]),
+            module: 'clientx',
+            channel: 'payments',
+        );
+
+        self::assertTrue($primed);
+
+        LogSupport::error('channel-routing-proof');
+
+        // The (module, channel) tuple drives the on-disk path of the framework
+        // RotatingStreamHandler: {base}/{module}/{channel}/*.log.
+        $files = glob($base . '/clientx/payments/*.log') ?: [];
+        self::assertNotSame([], $files, 'custom channel did not reach the file handler');
+
+        $written = implode('', array_map(static fn (string $file): string => (string) file_get_contents($file), $files));
+        self::assertStringContainsString('channel-routing-proof', $written);
+
+        foreach ($files as $file) {
+            @unlink($file);
+        }
+
+        @rmdir($base . '/clientx/payments');
+        @rmdir($base . '/clientx');
+        @rmdir($base);
+    }
+
     /**
      * @param array<string, object> $services
      */
@@ -216,11 +251,12 @@ final class LogSupportTest extends TestCase
     }
 
     /**
-     * A real, disabled LoggerFactory (forChannel() yields a NullLogger) wired
-     * with trivial actor/origin resolvers — enough to prove the resolution path
-     * without writing log files.
+     * A real LoggerFactory wired with trivial actor/origin resolvers. Disabled
+     * by default (forChannel() yields a NullLogger — enough to prove the
+     * resolution path without writing log files); enable it to exercise the
+     * real file handler.
      */
-    private function loggerFactory(): LoggerFactory
+    private function loggerFactory(?string $basePath = null, bool $enabled = false): LoggerFactory
     {
         $resolver = new class implements ActorResolverInterface, OriginResolverInterface {
             public function resolve(): string
@@ -229,7 +265,7 @@ final class LogSupportTest extends TestCase
             }
         };
 
-        return new LoggerFactory(sys_get_temp_dir(), $resolver, $resolver, false);
+        return new LoggerFactory($basePath ?? sys_get_temp_dir(), $resolver, $resolver, $enabled);
     }
 
     /**
