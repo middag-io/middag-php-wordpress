@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.2.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.1.4...v1.2.0) (2026-07-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* normalize WordPress adapter structure
+
+### Refactoring
+
+* normalize WordPress adapter structure ([04b9ce0](https://github.com/middag-io/middag-php-wordpress/commit/04b9ce071614d2b428c83196e7dbd5af0ac4e89e))
+
+
+### Documentation
+
+* note future core/src/WordPress + WP-Cron async binding boundary [LB-0-13/NOVO-WP-A] ([1a7988c](https://github.com/middag-io/middag-php-wordpress/commit/1a7988cb8715134f27b376977297bae6291a6ad2))
+
+
+### Miscellaneous
+
+* release wordpress 1.2.0 ([0bed1db](https://github.com/middag-io/middag-php-wordpress/commit/0bed1db797e4c739efd354004c2bfb2d517709b5))
+
 ## [1.1.4](https://github.com/middag-io/middag-php-wordpress/compare/v1.1.3...v1.1.4) (2026-07-07)
 
 
