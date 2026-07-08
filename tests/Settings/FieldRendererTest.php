@@ -13,9 +13,9 @@ declare(strict_types=1);
 namespace Middag\WordPress\Tests\Settings;
 
 use InvalidArgumentException;
+use Middag\WordPress\Settings\Enum\FieldType;
 use Middag\WordPress\Settings\Field;
 use Middag\WordPress\Settings\FieldRenderer;
-use Middag\WordPress\Settings\FieldType;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

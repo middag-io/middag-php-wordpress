@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Middag\WordPress\Settings;
 
 use Middag\WordPress\Exception\SettingsRenderException;
+use Middag\WordPress\Settings\Enum\FieldType;
 use Middag\WordPress\Support\EscapeSupport;
 use Middag\WordPress\Support\OptionSupport;
 

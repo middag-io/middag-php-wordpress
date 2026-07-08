@@ -10,8 +10,9 @@ declare(strict_types=1);
  * @license     Apache-2.0
  */
 
-namespace Middag\WordPress\Settings;
+namespace Middag\WordPress\Settings\Enum;
 
+use Middag\WordPress\Settings\Field;
 use Middag\WordPress\Support\SanitizeSupport;
 
 /**

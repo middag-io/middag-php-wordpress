@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Tests\Settings;
 
+use Middag\WordPress\Settings\Enum\FieldType;
 use Middag\WordPress\Settings\Field;
-use Middag\WordPress\Settings\FieldType;
 use Middag\WordPress\Settings\Section;
 use Middag\WordPress\Settings\SettingsPageRegistrar;
 use Middag\WordPress\Settings\SettingsRegistrar;

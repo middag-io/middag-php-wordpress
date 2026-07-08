@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Settings;
 
+use Middag\WordPress\Settings\Enum\FieldType;
+
 /**
  * Declarative description of one admin settings field: the persisted option
  * name, the control to render and how to sanitize it on save.
