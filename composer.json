@@ -23,7 +23,7 @@
     "php": "^8.2",
     "ext-json": "*",
     "firebase/php-jwt": "^7.0",
-    "middag-io/framework": "^1.2.1",
+    "middag-io/framework": "^1.5",
     "psr/container": "^2.0",
     "psr/log": "^3.0",
     "symfony/dependency-injection": "^7.0"
