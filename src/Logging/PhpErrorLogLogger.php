@@ -27,7 +27,7 @@ use Stringable;
  *
  * @api
  */
-final class ErrorLogLogger extends AbstractLogger
+final class PhpErrorLogLogger extends AbstractLogger
 {
     public function __construct(
         private readonly string $channel = 'middag',
