@@ -1,5 +1,40 @@
 # Changelog
 
+## [1.3.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.2.0...v1.3.0) (2026-07-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* requires middag-io/framework with PascalCase enum cases.
+* **inertia:** Http\Inertia\PageContractNormalizer is removed and InertiaAdapter no longer normalizes the `contract` prop. Callers must pass the canonical PageContract shape directly.
+* **logging:** the @api class Middag\WordPress\Logging\ErrorLogLogger is renamed to Middag\WordPress\Logging\PhpErrorLogLogger with no BC alias. Consumers instantiating the old class must update the reference.
+
+### Features
+
+* adopt PascalCase enum cases from middag-io/framework + guard test ([f02321e](https://github.com/middag-io/middag-php-wordpress/commit/f02321ed59ed94803121bc95e7a27fa7d4ca824b))
+
+
+### Refactoring
+
+* **inertia:** drop PageContractNormalizer, accept only canonical contract ([c7cc37c](https://github.com/middag-io/middag-php-wordpress/commit/c7cc37c8009d4c42719aca6cfee8fa201c482881))
+* **logging:** rename ErrorLogLogger to PhpErrorLogLogger ([1ae6803](https://github.com/middag-io/middag-php-wordpress/commit/1ae6803d4b41430430f405808d9bc0e5636e23f4))
+* **settings:** move FieldType into Settings\Enum namespace ([6d7e225](https://github.com/middag-io/middag-php-wordpress/commit/6d7e2250d2650f6821ceec33c91de6a1c932d3cd))
+
+
+### Documentation
+
+* **logging:** position channel factory as canonical path, add channel test ([49e630b](https://github.com/middag-io/middag-php-wordpress/commit/49e630b508f1a1636f9652842f7b133142311e41))
+* retire blocked-work backlog ([d33332d](https://github.com/middag-io/middag-php-wordpress/commit/d33332d656acb82231446d56c7504e76df09547d))
+
+
+### Miscellaneous
+
+* **deps:** drop v prefix from framework constraint ([c5f23e4](https://github.com/middag-io/middag-php-wordpress/commit/c5f23e4cc87fc1f5cebef35ea6910f94f36dff97))
+* **deps:** raise framework floor to ^1.5 ([ab93759](https://github.com/middag-io/middag-php-wordpress/commit/ab937598d6581e529e7df801d2ebefb89e4541fb))
+* **deps:** raise framework floor to ^1.6 ([481ef1e](https://github.com/middag-io/middag-php-wordpress/commit/481ef1e7928821ace6c199904fb767719eddd740))
+* release 1.3.0 ([4e0e021](https://github.com/middag-io/middag-php-wordpress/commit/4e0e0216003444beb95e23ad8c3b22f6b347f1de))
+* release wordpress 1.3.0 ([419f1e8](https://github.com/middag-io/middag-php-wordpress/commit/419f1e81cb5542bf5d42aef9ef0157ce3852cff2))
+
 ## [1.2.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.1.4...v1.2.0) (2026-07-08)
 
 
