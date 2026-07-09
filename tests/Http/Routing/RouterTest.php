@@ -46,4 +46,64 @@ final class RouterTest extends TestCase
         self::assertNull($router->resolve('GET', '/widgets/42'));
         self::assertNull($router->resolve('POST', '/widgets/42'));
     }
+
+    #[Test]
+    public function aRegisteredVerbWithNoMatchingPatternResolvesToNull(): void
+    {
+        $router = new Router();
+        $router->get('/widgets/{id}', ['WidgetController', 'show']);
+
+        self::assertNull($router->resolve('GET', '/totally/different/path'));
+    }
+
+    #[Test]
+    public function getRegistersARouteResolvableByTheGetVerb(): void
+    {
+        $router = new Router();
+        $router->get('/widgets/{id}', ['WidgetController', 'show']);
+
+        $match = $router->resolve('GET', '/widgets/42');
+
+        self::assertNotNull($match);
+        self::assertSame('show', $match['method']);
+        self::assertSame('42', $match['params']['id']);
+    }
+
+    #[Test]
+    public function postRegistersARouteResolvableByThePostVerb(): void
+    {
+        $router = new Router();
+        $router->post('/widgets', ['WidgetController', 'store']);
+
+        $match = $router->resolve('POST', '/widgets');
+
+        self::assertNotNull($match);
+        self::assertSame('store', $match['method']);
+    }
+
+    #[Test]
+    public function putRegistersARouteResolvableByThePutVerb(): void
+    {
+        $router = new Router();
+        $router->put('/widgets/{id}', ['WidgetController', 'replace']);
+
+        $match = $router->resolve('PUT', '/widgets/42');
+
+        self::assertNotNull($match);
+        self::assertSame('replace', $match['method']);
+        self::assertSame('42', $match['params']['id']);
+    }
+
+    #[Test]
+    public function deleteRegistersARouteResolvableByTheDeleteVerb(): void
+    {
+        $router = new Router();
+        $router->delete('/widgets/{id}', ['WidgetController', 'destroy']);
+
+        $match = $router->resolve('DELETE', '/widgets/42');
+
+        self::assertNotNull($match);
+        self::assertSame('destroy', $match['method']);
+        self::assertSame('42', $match['params']['id']);
+    }
 }

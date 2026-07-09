@@ -63,6 +63,19 @@ final class SettingsRegistrarTest extends TestCase
     }
 
     #[Test]
+    public function allReturnsEveryStagedDefinitionInAdditionOrder(): void
+    {
+        $registrar = new SettingsRegistrar();
+        $first = new SettingDefinition(optionGroup: 'middag_group', optionName: 'middag_a');
+        $second = new SettingDefinition(optionGroup: 'middag_group', optionName: 'middag_b');
+
+        $registrar->add($first);
+        $registrar->add($second);
+
+        self::assertSame([$first, $second], $registrar->all());
+    }
+
+    #[Test]
     public function registerAddsAFieldOnlyWhenTheDefinitionHasOne(): void
     {
         $registrar = new SettingsRegistrar();

@@ -67,4 +67,29 @@ final class WpUploadsFilesystemTest extends TestCase
 
         new WpUploadsFilesystem();
     }
+
+    #[Test]
+    public function anUnmkdirableRootThrows(): void
+    {
+        // A regular FILE occupies the exact path the constructor needs as a
+        // directory: is_dir() is false and mkdir() fails deterministically
+        // (cross-platform), unlike a permissions-based failure.
+        $blocked = $this->baseDir . '/blocked';
+        mkdir($this->baseDir);
+        touch($blocked);
+
+        // mkdir()'s own warning is expected here (that IS the failure this test
+        // proves is handled) — silence it exactly like RotatingStreamHandler's
+        // `silenced()` helper does, so the raised warning doesn't fail the test.
+        set_error_handler(static fn (): bool => true);
+
+        try {
+            $this->expectException(MiddagInfrastructureException::class);
+            $this->expectExceptionMessage('Cannot create uploads directory');
+
+            new WpUploadsFilesystem(baseDir: $blocked);
+        } finally {
+            restore_error_handler();
+        }
+    }
 }
