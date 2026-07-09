@@ -10,10 +10,10 @@ declare(strict_types=1);
  * @license     Apache-2.0
  */
 
-namespace Middag\WordPress\Tests\Kernel\Loader;
+namespace Middag\WordPress\Tests\Runtime\Loader;
 
 use FilesystemIterator;
-use Middag\WordPress\Kernel\Loader\WpHookfileLoader;
+use Middag\WordPress\Runtime\Loader\WpHookfileLoader;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use RecursiveDirectoryIterator;

@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license     Apache-2.0
  */
 
-namespace Middag\WordPress\Kernel\Loader;
+namespace Middag\WordPress\Runtime\Loader;
 
 use Middag\Framework\Kernel\Loader\HookfileLoader;
 use Middag\WordPress\Support\HookSupport;

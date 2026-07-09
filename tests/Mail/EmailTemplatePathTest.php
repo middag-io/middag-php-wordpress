@@ -13,8 +13,8 @@ declare(strict_types=1);
 namespace Middag\WordPress\Tests\Mail;
 
 use Middag\Framework\Kernel\HostContext;
-use Middag\WordPress\Kernel\WpComponentContext;
 use Middag\WordPress\Mail\EmailSender;
+use Middag\WordPress\Runtime\WpComponentContext;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

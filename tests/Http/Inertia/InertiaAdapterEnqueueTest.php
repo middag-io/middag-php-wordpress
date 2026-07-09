@@ -14,7 +14,7 @@ namespace Middag\WordPress\Tests\Http\Inertia;
 
 use Middag\Framework\Kernel\HostContext;
 use Middag\WordPress\Http\Inertia\InertiaAdapter;
-use Middag\WordPress\Kernel\WpComponentContext;
+use Middag\WordPress\Runtime\WpComponentContext;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

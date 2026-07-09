@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license     Apache-2.0
  */
 
-namespace Middag\WordPress\Kernel;
+namespace Middag\WordPress\Runtime;
 
 use Middag\Framework\Bus\Contract\UserContextResolverInterface;
 use Middag\Framework\Database\Contract\ConnectionAdapterInterface;
@@ -24,7 +24,7 @@ use Middag\WordPress\Bus\WpUserContext;
 use Middag\WordPress\Config\WpConfigResolver;
 use Middag\WordPress\Database\WpdbConnectionAdapter;
 use Middag\WordPress\Database\WpdbSqlDialect;
-use Middag\WordPress\Kernel\Loader\WpHookfileLoader;
+use Middag\WordPress\Runtime\Loader\WpHookfileLoader;
 use Middag\WordPress\Translation\WpTranslator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
