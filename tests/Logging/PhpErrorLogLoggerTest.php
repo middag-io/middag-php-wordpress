@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Tests\Logging;
 
-use Middag\WordPress\Logging\ErrorLogLogger;
+use Middag\WordPress\Logging\PhpErrorLogLogger;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -20,8 +20,8 @@ use PHPUnit\Framework\TestCase;
 /**
  * @internal
  */
-#[CoversClass(ErrorLogLogger::class)]
-final class ErrorLogLoggerTest extends TestCase
+#[CoversClass(PhpErrorLogLogger::class)]
+final class PhpErrorLogLoggerTest extends TestCase
 {
     private string $logFile;
 
@@ -42,7 +42,7 @@ final class ErrorLogLoggerTest extends TestCase
     #[Test]
     public function interpolatesContextAndAppendsLeftoverAsJson(): void
     {
-        (new ErrorLogLogger('adapter'))->warning('user {id} failed', ['id' => 42, 'ip' => '127.0.0.1']);
+        (new PhpErrorLogLogger('adapter'))->warning('user {id} failed', ['id' => 42, 'ip' => '127.0.0.1']);
 
         $line = (string) file_get_contents($this->logFile);
         self::assertStringContainsString('[adapter.warning] user 42 failed {"ip":"127.0.0.1"}', $line);
@@ -51,7 +51,7 @@ final class ErrorLogLoggerTest extends TestCase
     #[Test]
     public function defaultChannelAndLevelPrefixTheLine(): void
     {
-        (new ErrorLogLogger())->error('boom');
+        (new PhpErrorLogLogger())->error('boom');
 
         self::assertStringContainsString('[middag.error] boom', (string) file_get_contents($this->logFile));
     }
@@ -59,7 +59,7 @@ final class ErrorLogLoggerTest extends TestCase
     #[Test]
     public function nonScalarInterpolationFallsBackToJson(): void
     {
-        (new ErrorLogLogger())->info('payload {data}', ['data' => ['a' => 1]]);
+        (new PhpErrorLogLogger())->info('payload {data}', ['data' => ['a' => 1]]);
 
         self::assertStringContainsString('payload {"a":1}', (string) file_get_contents($this->logFile));
     }

@@ -63,20 +63,60 @@ final class InertiaAdapterCoverageTest extends TestCase
     }
 
     #[Test]
-    public function renderResolvesClosurePropsAndNormalizesContract(): void
+    public function renderResolvesClosurePropsAndForwardsCanonicalContractVerbatim(): void
     {
         InertiaAdapter::share('shared', 'S');
 
         ob_start();
         InertiaAdapter::render('Page', [
             'lazy' => static fn (): string => 'lazy-value',
-            'contract' => ['shell' => 'admin'],
+            'contract' => ['shell' => 'product', 'layout' => ['regions' => []]],
         ]);
         $html = (string) ob_get_clean();
 
         self::assertStringContainsString('lazy-value', $html);
-        // The 'admin' shell is normalized to 'product' by PageContractNormalizer.
+        // The canonical contract is emitted verbatim: no schema rewriting.
         self::assertStringContainsString('product', $html);
+    }
+
+    #[Test]
+    public function renderDoesNotSilentlyNormalizeALegacyContract(): void
+    {
+        ob_start();
+        InertiaAdapter::render('Page', [
+            'contract' => [
+                'shell' => 'admin',
+                'layout' => [
+                    'regions' => [
+                        'main' => [
+                            [
+                                'type' => 'dense_table',
+                                'data' => [
+                                    'columns' => [
+                                        ['key' => 'state', 'type' => 'badge', 'badgeVariants' => ['on' => 'success']],
+                                    ],
+                                    'pagination' => ['currentPage' => 1, 'pages' => 4],
+                                    'emptyMessage' => 'Empty',
+                                ],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+        $html = (string) ob_get_clean();
+
+        // The legacy contract is forwarded unchanged: the old auto-migration
+        // (shell admin->product, badge->status/statusMap, currentPage->page,
+        // emptyMessage->emptyState) no longer runs. The frontend rejects the
+        // legacy shape instead of it being silently accepted here.
+        self::assertStringContainsString('admin', $html);
+        self::assertStringContainsString('badgeVariants', $html);
+        self::assertStringContainsString('currentPage', $html);
+        self::assertStringContainsString('emptyMessage', $html);
+        self::assertStringNotContainsString('product', $html);
+        self::assertStringNotContainsString('statusMap', $html);
+        self::assertStringNotContainsString('emptyState', $html);
     }
 
     #[Test]

@@ -40,13 +40,13 @@ final class WpdbConnectionAdapterTest extends TestCase
     #[Test]
     public function supportsReportsTheMysqlCapabilityMatrix(): void
     {
-        self::assertTrue($this->adapter->supports(Capability::TRANSACTIONS));
-        self::assertTrue($this->adapter->supports(Capability::JSON_WHERE));
-        self::assertTrue($this->adapter->supports(Capability::UPSERT));
-        self::assertTrue($this->adapter->supports(Capability::ROW_LOCK));
-        self::assertFalse($this->adapter->supports(Capability::STREAMING));
-        self::assertFalse($this->adapter->supports(Capability::RETURNING));
-        self::assertFalse($this->adapter->supports(Capability::SCHEMA_DIFF));
+        self::assertTrue($this->adapter->supports(Capability::Transactions));
+        self::assertTrue($this->adapter->supports(Capability::JsonWhere));
+        self::assertTrue($this->adapter->supports(Capability::Upsert));
+        self::assertTrue($this->adapter->supports(Capability::RowLock));
+        self::assertFalse($this->adapter->supports(Capability::Streaming));
+        self::assertFalse($this->adapter->supports(Capability::Returning));
+        self::assertFalse($this->adapter->supports(Capability::SchemaDiff));
     }
 
     #[Test]

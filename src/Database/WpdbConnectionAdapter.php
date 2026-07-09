@@ -54,19 +54,19 @@ final readonly class WpdbConnectionAdapter implements ConnectionAdapterInterface
         return match ($feature) {
             // $wpdb has START TRANSACTION / COMMIT / ROLLBACK; only meaningful on
             // InnoDB. We report true and leave engine choice to the schema layer.
-            Capability::TRANSACTIONS => true,
+            Capability::Transactions => true,
             // No native unbuffered cursor; fetchAll buffers the whole result set.
-            Capability::STREAMING => false,
+            Capability::Streaming => false,
             // MySQL 5.7+/8.0 supports JSON predicates; modern WP baselines do.
-            Capability::JSON_WHERE => true,
+            Capability::JsonWhere => true,
             // MySQL has no RETURNING.
-            Capability::RETURNING => false,
+            Capability::Returning => false,
             // INSERT ... ON DUPLICATE KEY UPDATE.
-            Capability::UPSERT => true,
+            Capability::Upsert => true,
             // WordPress owns its own schema lifecycle via dbDelta(); no diffing.
-            Capability::SCHEMA_DIFF => false,
+            Capability::SchemaDiff => false,
             // InnoDB supports SELECT ... FOR UPDATE / FOR SHARE.
-            Capability::ROW_LOCK => true,
+            Capability::RowLock => true,
         };
     }
 
