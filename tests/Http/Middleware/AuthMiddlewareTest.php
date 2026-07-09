@@ -37,15 +37,24 @@ final class AuthMiddlewareTest extends TestCase
 
     private static string $publicKey;
 
+    private static string $opensslConfigPath;
+
     public static function setUpBeforeClass(): void
     {
+        // Self-contained openssl config: keygen must not depend on the
+        // calling shell's OPENSSL_CONF (broken/missing on some hosts breaks
+        // openssl_pkey_new/export with no portable fallback otherwise).
+        self::$opensslConfigPath = tempnam(sys_get_temp_dir(), 'mdga-openssl-');
+        file_put_contents(self::$opensslConfigPath, "[req]\ndistinguished_name = req_distinguished_name\n[req_distinguished_name]\n");
+        $configArgs = ['config' => self::$opensslConfigPath];
+
         $resource = openssl_pkey_new([
             'private_key_bits' => 2048,
             'private_key_type' => OPENSSL_KEYTYPE_RSA,
-        ]);
+        ] + $configArgs);
         self::assertNotFalse($resource, 'openssl must be able to generate a test RSA keypair');
 
-        openssl_pkey_export($resource, $privateKey);
+        openssl_pkey_export($resource, $privateKey, null, $configArgs);
         $details = openssl_pkey_get_details($resource);
         self::assertIsArray($details);
 
@@ -57,6 +66,7 @@ final class AuthMiddlewareTest extends TestCase
     {
         putenv('MDGA_PRIVATE_KEY');
         putenv('MDGA_PUBLIC_KEY');
+        unlink(self::$opensslConfigPath);
     }
 
     protected function setUp(): void
