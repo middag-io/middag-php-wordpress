@@ -10,10 +10,10 @@ declare(strict_types=1);
  * @license     Apache-2.0
  */
 
-namespace Middag\WordPress\Tests\Kernel;
+namespace Middag\WordPress\Tests\Runtime;
 
 use Middag\Framework\Kernel\Contract\HostComponentContextInterface;
-use Middag\WordPress\Kernel\WpComponentContext;
+use Middag\WordPress\Runtime\WpComponentContext;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

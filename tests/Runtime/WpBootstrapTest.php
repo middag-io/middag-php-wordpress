@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license     Apache-2.0
  */
 
-namespace Middag\WordPress\Tests\Kernel;
+namespace Middag\WordPress\Tests\Runtime;
 
 use Middag\Framework\Bus\Contract\UserContextResolverInterface;
 use Middag\Framework\Database\Contract\ConnectionAdapterInterface;
@@ -24,9 +24,9 @@ use Middag\WordPress\Bus\WpUserContext;
 use Middag\WordPress\Config\WpConfigResolver;
 use Middag\WordPress\Database\WpdbConnectionAdapter;
 use Middag\WordPress\Database\WpdbSqlDialect;
-use Middag\WordPress\Kernel\Loader\WpHookfileLoader;
-use Middag\WordPress\Kernel\WpBootstrap;
-use Middag\WordPress\Kernel\WpMaintenanceGate;
+use Middag\WordPress\Runtime\Loader\WpHookfileLoader;
+use Middag\WordPress\Runtime\WpBootstrap;
+use Middag\WordPress\Runtime\WpMaintenanceGate;
 use Middag\WordPress\Translation\WpTranslator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;

@@ -10,7 +10,7 @@ declare(strict_types=1);
  * @license     Apache-2.0
  */
 
-namespace Middag\WordPress\Kernel;
+namespace Middag\WordPress\Runtime;
 
 use Middag\Framework\Kernel\Contract\MaintenanceGateInterface;
 

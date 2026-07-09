@@ -38,7 +38,7 @@ Some WordPress host surfaces are **intentionally not targeted** by this adapter:
 | `src/Filesystem/` | WpUploadsFilesystem (framework FilesystemInterface → uploads dir, via LocalFilesystem) |
 | `src/Hook/` | HookRegistrar + `Contract/HookInterface` (requires an explicit, existing hook directory) |
 | `src/Http/` | `Client/{HttpClient,HttpResponse}` (wp_remote_* with optional mTLS — see below), `Contract/RestControllerInterface`, `Controller/BaseController`, `Response/RestResponse`, `Routing/{Router,RouteRegistrar}`, `Inertia/InertiaAdapter`, `Middleware/AuthMiddleware` (JWT host auth), `Security/CsrfGuard` |
-| `src/Kernel/` | WpBootstrap (BootstrapInterface), WpComponentContext (HostComponentContextInterface), WpMaintenanceGate, PluginLifecycle, Loader/WpHookfileLoader |
+| `src/Runtime/` | WpBootstrap (BootstrapInterface), WpComponentContext (HostComponentContextInterface), WpMaintenanceGate, PluginLifecycle, Loader/WpHookfileLoader |
 | `src/Logging/` | PhpErrorLogLogger (PSR-3 → error_log) |
 | `src/Mail/` | WpMailer (framework MailerInterface → wp_mail), EmailSender, EmailTemplate |
 | `src/Persistence/` | QueryBuilder (WP_Query/wp_posts) |

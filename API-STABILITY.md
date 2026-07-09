@@ -86,8 +86,8 @@ declared (and frozen) in `middag-io/framework`. Depend on the **framework**
 | `TranslatorInterface` | `Middag\WordPress\Translation\WpTranslator` |
 | `ConfigResolverInterface` | `Middag\WordPress\Config\WpConfigResolver` |
 | `UserContextResolverInterface` | `Middag\WordPress\Bus\WpUserContext` |
-| `MaintenanceGateInterface` | `Middag\WordPress\Kernel\WpMaintenanceGate` |
-| `BootstrapInterface` | `Middag\WordPress\Kernel\WpBootstrap` |
+| `MaintenanceGateInterface` | `Middag\WordPress\Runtime\WpMaintenanceGate` |
+| `BootstrapInterface` | `Middag\WordPress\Runtime\WpBootstrap` |
 
 The adapter also implements the framework's host-context, event-bridge and
 component-name seams (`WpComponentContext`, `WpHookfileLoader`, …). Those are

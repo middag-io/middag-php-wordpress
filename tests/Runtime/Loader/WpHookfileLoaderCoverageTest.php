@@ -10,9 +10,9 @@ declare(strict_types=1);
  * @license     Apache-2.0
  */
 
-namespace Middag\WordPress\Tests\Kernel\Loader;
+namespace Middag\WordPress\Tests\Runtime\Loader;
 
-use Middag\WordPress\Kernel\Loader\WpHookfileLoader;
+use Middag\WordPress\Runtime\Loader\WpHookfileLoader;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
