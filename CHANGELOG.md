@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.4.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.3.0...v1.4.0) (2026-07-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **runtime:** Middag\WordPress\Kernel\* FQCNs are gone; import Middag\WordPress\Runtime\* instead. Framework contracts (Middag\Framework\Kernel\*) are unaffected.
+
+### Refactoring
+
+* **runtime:** move Kernel namespace to Runtime ([3b3c5d8](https://github.com/middag-io/middag-php-wordpress/commit/3b3c5d81b47713f801e539b5ade4d2634e7ee9d7))
+
+
+### Miscellaneous
+
+* release 1.4.0 ([ebbf114](https://github.com/middag-io/middag-php-wordpress/commit/ebbf1148f4934e3d89b9056eac53f0a06ad146c6))
+
 ## [1.3.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.2.0...v1.3.0) (2026-07-09)
 
 
