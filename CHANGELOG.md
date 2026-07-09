@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.5.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.4.0...v1.5.0) (2026-07-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* **logging:** Middag\WordPress\Logging\PhpErrorLogLogger is removed. Use Middag\Framework\Logging\ErrorLogFallbackLogger instead (identical behaviour and constructor signature).
+
+### Bug Fixes
+
+* **tests:** make AuthMiddlewareTest and WpMaintenanceGateTest host-independent ([0d9fa07](https://github.com/middag-io/middag-php-wordpress/commit/0d9fa07b2d5a8c6560a44845efc910981c64ac3b))
+
+
+### Refactoring
+
+* **logging:** relocate error_log fallback to framework ([1a4c901](https://github.com/middag-io/middag-php-wordpress/commit/1a4c901ffb5fb8cc8d7691aa6a62a8b5161ab332))
+
+
+### Miscellaneous
+
+* **deps:** require middag-io/framework ^1.7 ([d577ef5](https://github.com/middag-io/middag-php-wordpress/commit/d577ef55b1bcbf5f05a668f931fe4dcc48267fe5))
+
 ## [1.4.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.3.0...v1.4.0) (2026-07-09)
 
 
