@@ -17,6 +17,7 @@ use Middag\WordPress\Http\Inertia\InertiaAdapter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 
 /**
  * Covers the non-terminating render path and request-detection/prop-resolution
@@ -130,5 +131,36 @@ final class InertiaAdapterCoverageTest extends TestCase
 
         unset($_SERVER['HTTP_X_INERTIA']);
         self::assertFalse(InertiaAdapter::isInertiaRequest());
+    }
+
+    /**
+     * isPartialReload()/getPartialData() are pure private helpers only called
+     * from sendJson() — which terminates with `exit` and is intentionally left
+     * untested (see the class docblock). Reflection drives them directly so
+     * their own logic is covered without going through the exit path.
+     */
+    #[Test]
+    public function isPartialReloadMatchesOnlyTheRequestedComponent(): void
+    {
+        $method = new ReflectionMethod(InertiaAdapter::class, 'isPartialReload');
+
+        $_SERVER['HTTP_X_INERTIA_PARTIAL_COMPONENT'] = 'Dashboard';
+        self::assertTrue($method->invoke(null, 'Dashboard'));
+        self::assertFalse($method->invoke(null, 'Other'));
+
+        unset($_SERVER['HTTP_X_INERTIA_PARTIAL_COMPONENT']);
+        self::assertFalse($method->invoke(null, 'Dashboard'));
+    }
+
+    #[Test]
+    public function getPartialDataSplitsTheCommaSeparatedHeaderOrReturnsEmpty(): void
+    {
+        $method = new ReflectionMethod(InertiaAdapter::class, 'getPartialData');
+
+        $_SERVER['HTTP_X_INERTIA_PARTIAL_DATA'] = 'user,stats';
+        self::assertSame(['user', 'stats'], $method->invoke(null));
+
+        unset($_SERVER['HTTP_X_INERTIA_PARTIAL_DATA']);
+        self::assertSame([], $method->invoke(null));
     }
 }

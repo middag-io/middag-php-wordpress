@@ -82,6 +82,35 @@ final class WpdbConnectionAdapterTest extends TestCase
     }
 
     #[Test]
+    public function executeFailureThrowsWithTheWpdbError(): void
+    {
+        $failing = new class extends wpdb {
+            public function query(string $query): bool
+            {
+                $this->last_error = 'syntax error';
+
+                return false;
+            }
+        };
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('syntax error');
+
+        (new WpdbConnectionAdapter($failing))->execute('UPDATE wp_t SET a = 1');
+    }
+
+    #[Test]
+    public function aNamedParamWithNoMatchingTokenLeavesTheSqlUnchanged(): void
+    {
+        // ":id" has no matching token in the SQL — replaceFirst() returns the
+        // haystack unchanged instead of injecting a placeholder for it.
+        $this->adapter->execute('UPDATE wp_t SET a = :a', ['a' => 'x', 'id' => 7]);
+
+        $query = $this->wpdb->calls[1];
+        self::assertSame('UPDATE wp_t SET a = x', $query['args'][0]);
+    }
+
+    #[Test]
     public function fetchRewritesPositionalParamsAndReturnsTheRow(): void
     {
         $this->wpdb->mock_row = ['id' => '5', 'title' => 'hello'];
@@ -172,6 +201,24 @@ final class WpdbConnectionAdapterTest extends TestCase
         $this->expectExceptionMessage('"id"');
 
         $this->adapter->update('wp_t', ['title' => 'x']);
+    }
+
+    #[Test]
+    public function updateFailureThrowsWithTheWpdbError(): void
+    {
+        $failing = new class extends wpdb {
+            public function update(string $table, array $data, array $where, mixed $format = null, mixed $where_format = null): false|int
+            {
+                $this->last_error = 'lock timeout';
+
+                return false;
+            }
+        };
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('lock timeout');
+
+        (new WpdbConnectionAdapter($failing))->update('wp_t', ['id' => 7, 'title' => 'x']);
     }
 
     #[Test]

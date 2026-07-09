@@ -19,6 +19,7 @@ use Middag\WordPress\Http\Client\HttpResponse;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use stdClass;
 use WP_Error;
 
 /**
@@ -124,6 +125,23 @@ final class HttpClientTest extends TestCase
             $GLOBALS['__wp_test_actions']['http_api_curl'] ?? [],
             'the closure is detached even when the request fails the mTLS guard',
         );
+    }
+
+    #[Test]
+    public function aNonCurlHandleHandedToTheActionStillThrowsWithoutArmingTheCertificate(): void
+    {
+        // Unlike the "action never fires" case above, this transport DOES fire
+        // http_api_curl — but hands it something other than a CurlHandle (e.g. a
+        // transport bug, or a future WP_Http backend). The guard inside the
+        // closure must reject it just as loudly as a transport that never fires.
+        $GLOBALS['__wp_test_http_curl_handle'] = new stdClass();
+
+        try {
+            (new HttpClient())->get('https://bank.example.test/pay', ['certPath' => '/secrets/client.pem']);
+            self::fail('expected MiddagInfrastructureException when the handle is not a CurlHandle');
+        } catch (MiddagInfrastructureException $middagInfrastructureException) {
+            self::assertStringContainsString('never received a cURL handle', $middagInfrastructureException->getMessage());
+        }
     }
 
     #[Test]

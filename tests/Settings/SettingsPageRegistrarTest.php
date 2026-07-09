@@ -107,4 +107,50 @@ final class SettingsPageRegistrarTest extends TestCase
 
         self::assertSame('acme-general', $this->registrar->tabPage('acme', $tab));
     }
+
+    #[Test]
+    public function theRegisteredSectionCallbackEchoesTheDescriptionWhenSet(): void
+    {
+        $this->registrar->register('acme', 'acme_group', [
+            new Tab('general', 'General', [
+                new Section('acme_core', 'Core', [
+                    new Field('acme_name', 'Name'),
+                ], description: 'Core settings for Acme.'),
+            ]),
+        ]);
+
+        $callback = $GLOBALS['__wp_test_settings_sections']['acme_core']['callback'];
+
+        ob_start();
+        $callback();
+        $html = ob_get_clean();
+
+        self::assertSame('<p>Core settings for Acme.</p>', $html);
+    }
+
+    #[Test]
+    public function theRegisteredFieldCallbackEchoesTheRenderedControlAndReturnsIt(): void
+    {
+        $GLOBALS['__wp_test_options']['acme_name'] = 'Ada';
+
+        $this->registrar->register('acme', 'acme_group', [
+            new Tab('general', 'General', [
+                new Section('acme_core', 'Core', [
+                    new Field('acme_name', 'Name'),
+                ]),
+            ]),
+        ]);
+
+        // add_settings_field() only RECORDS the callback in the stub (mirrors
+        // WordPress, which stores it for do_settings_fields() to invoke later at
+        // render time) — invoke it here to exercise echoField() for real.
+        $callback = $GLOBALS['__wp_test_settings_fields']['acme_name']['callback'];
+
+        ob_start();
+        $returned = $callback();
+        $html = ob_get_clean();
+
+        self::assertStringContainsString('value="Ada"', $html, 'echoField() must echo the rendered control');
+        self::assertSame($html, $returned, 'echoField() must also return what it echoed');
+    }
 }

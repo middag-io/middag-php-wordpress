@@ -54,6 +54,18 @@ final class FieldRendererTest extends TestCase
     }
 
     #[Test]
+    public function textareaRendersCurrentValueEscapedAsElementContent(): void
+    {
+        $GLOBALS['__wp_test_options']['acme_bio'] = 'a"b<c>';
+
+        $html = $this->renderer->render(new Field('acme_bio', 'Bio', FieldType::Textarea));
+
+        self::assertStringContainsString('<textarea', $html);
+        self::assertStringContainsString('name="acme_bio"', $html);
+        self::assertStringContainsString('a&quot;b&lt;c&gt;</textarea>', $html);
+    }
+
+    #[Test]
     public function checkboxIsCheckedWhenOptionTruthy(): void
     {
         $GLOBALS['__wp_test_options']['acme_flag'] = '1';
@@ -94,6 +106,15 @@ final class FieldRendererTest extends TestCase
 
         self::assertStringContainsString('name="acme_feats[]" value="x" checked', $html);
         self::assertStringContainsString('name="acme_feats[]" value="y"> Y', $html);
+    }
+
+    #[Test]
+    public function checkboxListDefaultSanitizerTextSanitizesEachSelectedValue(): void
+    {
+        $sanitizer = FieldType::CheckboxList->defaultSanitizer();
+
+        self::assertSame(['x', 'bold'], $sanitizer(['x', '<b>bold</b>']));
+        self::assertSame([], $sanitizer('not-an-array'));
     }
 
     #[Test]

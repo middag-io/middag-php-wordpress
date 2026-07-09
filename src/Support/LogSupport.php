@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Support;
 
+use Middag\Framework\Logging\ErrorLogFallbackLogger;
 use Middag\Framework\Logging\LoggerFactory;
-use Middag\WordPress\Logging\PhpErrorLogLogger;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Stringable;
@@ -76,7 +76,7 @@ final class LogSupport
      * channel)` tuple selects the on-disk destination of the framework's
      * rotating file handler, and consumers/adapters pick their own tuple over
      * the same base (a zero-dep `error_log` fallback such as
-     * {@see PhpErrorLogLogger} exists only for hosts
+     * {@see ErrorLogFallbackLogger} exists only for hosts
      * where no factory is wired).
      */
     public static function primeFromContainer(ContainerInterface $container, string $module = 'wordpress', string $channel = 'adapter'): bool

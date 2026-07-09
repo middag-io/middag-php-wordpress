@@ -304,7 +304,9 @@ if (!defined('ARRAY_A')) {
 }
 
 if (!defined('ABSPATH')) {
-    define('ABSPATH', '/tmp/wordpress/');
+    // Per-process temp dir, not a shared fixed path: a stale /tmp/wordpress
+    // owned by another local user (different uid/gid) breaks writes here.
+    define('ABSPATH', rtrim(sys_get_temp_dir(), '/') . '/wp-test-' . getmypid() . '/');
 }
 
 if (!defined('DAY_IN_SECONDS')) {

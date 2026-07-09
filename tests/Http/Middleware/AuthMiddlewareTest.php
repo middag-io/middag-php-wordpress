@@ -17,6 +17,7 @@ use Middag\WordPress\Http\Middleware\AuthMiddleware;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
 use RuntimeException;
 use WP_Error;
 use WP_REST_Request;
@@ -37,15 +38,24 @@ final class AuthMiddlewareTest extends TestCase
 
     private static string $publicKey;
 
+    private static string $opensslConfigPath;
+
     public static function setUpBeforeClass(): void
     {
+        // Self-contained openssl config: keygen must not depend on the
+        // calling shell's OPENSSL_CONF (broken/missing on some hosts breaks
+        // openssl_pkey_new/export with no portable fallback otherwise).
+        self::$opensslConfigPath = tempnam(sys_get_temp_dir(), 'mdga-openssl-');
+        file_put_contents(self::$opensslConfigPath, "[req]\ndistinguished_name = req_distinguished_name\n[req_distinguished_name]\n");
+        $configArgs = ['config' => self::$opensslConfigPath];
+
         $resource = openssl_pkey_new([
             'private_key_bits' => 2048,
             'private_key_type' => OPENSSL_KEYTYPE_RSA,
-        ]);
+        ] + $configArgs);
         self::assertNotFalse($resource, 'openssl must be able to generate a test RSA keypair');
 
-        openssl_pkey_export($resource, $privateKey);
+        openssl_pkey_export($resource, $privateKey, null, $configArgs);
         $details = openssl_pkey_get_details($resource);
         self::assertIsArray($details);
 
@@ -57,6 +67,7 @@ final class AuthMiddlewareTest extends TestCase
     {
         putenv('MDGA_PRIVATE_KEY');
         putenv('MDGA_PUBLIC_KEY');
+        unlink(self::$opensslConfigPath);
     }
 
     protected function setUp(): void
@@ -76,6 +87,26 @@ final class AuthMiddlewareTest extends TestCase
             $GLOBALS['__wp_test_metadata'],
             $GLOBALS['__wp_test_user_id'],
         );
+    }
+
+    #[Test]
+    public function setIssuerChangesTheIssuerValidatedOnIncomingTokens(): void
+    {
+        $user = $this->registerUser(7);
+        $now = time();
+        $token = JWT::encode(
+            ['sub' => 7, 'iss' => 'custom-issuer', 'iat' => $now, 'exp' => $now + 60],
+            self::$privateKey,
+            AuthMiddleware::ALGORITHM,
+        );
+
+        try {
+            AuthMiddleware::setIssuer('custom-issuer');
+
+            self::assertSame($user, AuthMiddleware::validateAccessToken($token));
+        } finally {
+            AuthMiddleware::setIssuer('middag');
+        }
     }
 
     #[Test]
@@ -178,6 +209,122 @@ final class AuthMiddlewareTest extends TestCase
         } finally {
             putenv('MDGA_PUBLIC_KEY=' . self::$publicKey);
         }
+    }
+
+    #[Test]
+    public function aTokenMissingTheSubjectClaimIsRejected(): void
+    {
+        $now = time();
+        $token = JWT::encode(
+            ['iss' => 'middag', 'iat' => $now, 'exp' => $now + 60],
+            self::$privateKey,
+            AuthMiddleware::ALGORITHM,
+        );
+
+        $error = AuthMiddleware::validateAccessToken($token);
+
+        self::assertInstanceOf(WP_Error::class, $error);
+        self::assertSame('token_invalid', $error->get_error_code());
+    }
+
+    #[Test]
+    public function resolveEnvFallsBackToTheBareEnvVarNameWithoutTheMdgaPrefix(): void
+    {
+        putenv('MDGA_PUBLIC_KEY');
+        putenv('PUBLIC_KEY=' . self::$publicKey);
+
+        try {
+            $error = AuthMiddleware::validateAccessToken('anything');
+
+            // "anything" isn't a valid JWT, but reaching token_invalid (rather
+            // than config_error) proves the public key WAS resolved — via the
+            // bare PUBLIC_KEY var, since MDGA_PUBLIC_KEY is unset here.
+            self::assertInstanceOf(WP_Error::class, $error);
+            self::assertSame('token_invalid', $error->get_error_code());
+        } finally {
+            putenv('PUBLIC_KEY');
+            putenv('MDGA_PUBLIC_KEY=' . self::$publicKey);
+        }
+    }
+
+    #[Test]
+    public function getCurrentUserAndIdReturnNullWithoutASessionOrARequest(): void
+    {
+        self::assertNull(AuthMiddleware::getCurrentUserId());
+        self::assertNull(AuthMiddleware::getCurrentUser());
+    }
+
+    #[Test]
+    public function validateRefreshTokenReturnsNullWithoutAPublicKey(): void
+    {
+        putenv('MDGA_PUBLIC_KEY');
+
+        try {
+            self::assertNull(AuthMiddleware::validateRefreshToken('anything'));
+        } finally {
+            putenv('MDGA_PUBLIC_KEY=' . self::$publicKey);
+        }
+    }
+
+    #[Test]
+    public function validateRefreshTokenReturnsNullForAGarbageToken(): void
+    {
+        self::assertNull(AuthMiddleware::validateRefreshToken('not-a-jwt'));
+    }
+
+    #[Test]
+    public function validateRefreshTokenReturnsNullForATokenMissingTheSubjectClaim(): void
+    {
+        $now = time();
+        $token = JWT::encode(
+            ['iss' => 'middag', 'iat' => $now, 'exp' => $now + 60],
+            self::$privateKey,
+            AuthMiddleware::ALGORITHM,
+        );
+
+        self::assertNull(AuthMiddleware::validateRefreshToken($token));
+    }
+
+    #[Test]
+    public function validateRefreshTokenReturnsNullForAnUnknownUser(): void
+    {
+        $now = time();
+        $token = JWT::encode(
+            ['sub' => 999, 'iss' => 'middag', 'iat' => $now, 'exp' => $now + 60],
+            self::$privateKey,
+            AuthMiddleware::ALGORITHM,
+        );
+
+        self::assertNull(AuthMiddleware::validateRefreshToken($token));
+    }
+
+    #[Test]
+    public function generateRefreshTokenAbortsWithoutAPrivateKey(): void
+    {
+        $user = $this->registerUser(7);
+        putenv('MDGA_PRIVATE_KEY');
+
+        try {
+            $this->expectException(RuntimeException::class);
+            // Private method: generateTokens() always calls generateAccessToken()
+            // first, which throws on the same guard before this one is ever
+            // reached — reflection drives generateRefreshToken() directly.
+            (new ReflectionMethod(AuthMiddleware::class, 'generateRefreshToken'))->invoke(null, $user);
+        } finally {
+            putenv('MDGA_PRIVATE_KEY=' . self::$privateKey);
+        }
+    }
+
+    #[Test]
+    public function getCurrentUserIdResolvesABearerTokenWhenThereIsNoSession(): void
+    {
+        $user = $this->registerUser(7);
+        $tokens = AuthMiddleware::generateTokens($user);
+
+        $request = new WP_REST_Request();
+        $request->set_header('Authorization', 'Bearer ' . $tokens['access_token']);
+
+        self::assertSame(7, AuthMiddleware::getCurrentUserId($request));
     }
 
     #[Test]
