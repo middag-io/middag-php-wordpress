@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Middag\WordPress\Tests\Http\Inertia;
 
 use Middag\WordPress\Http\Inertia\InertiaAdapter;
+use Middag\WordPress\Runtime\WpComponentContext;
 use Middag\WordPress\Support\EscapeSupport;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -24,7 +25,8 @@ use Throwable;
  * WP-04 output-boundary coverage: {@see InertiaAdapter::renderHtml()} emits the
  * page payload into the `data-page` attribute through the {@see EscapeSupport}
  * seam, escaped exactly once (no double-escaping of the framework's internal
- * JSON).
+ * JSON), and mounts on the component-namespaced id (`middag-app` for the
+ * `middag` component).
  *
  * Exercised through the private `renderHtml()` via reflection (mirroring
  * {@see InertiaAdapterCsrfShareTest}) to avoid the `render()` exit/echo path.
@@ -34,16 +36,6 @@ use Throwable;
 #[CoversClass(InertiaAdapter::class)]
 final class InertiaAdapterRenderEscapeTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        $this->resetSharedProps();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->resetSharedProps();
-    }
-
     #[Test]
     public function renderHtmlEscapesThePagePayloadInTheDataPageAttribute(): void
     {
@@ -91,12 +83,13 @@ final class InertiaAdapterRenderEscapeTest extends TestCase
      */
     private function renderHtml(array $page): string
     {
+        $adapter = new InertiaAdapter(new WpComponentContext('middag', '5.0.0'));
         $method = new ReflectionMethod(InertiaAdapter::class, 'renderHtml');
 
         ob_start();
 
         try {
-            $method->invoke(null, $page);
+            $method->invoke($adapter, $page);
 
             return ob_get_clean();
         } catch (Throwable $throwable) {
@@ -104,10 +97,5 @@ final class InertiaAdapterRenderEscapeTest extends TestCase
 
             throw $throwable;
         }
-    }
-
-    private function resetSharedProps(): void
-    {
-        InertiaAdapter::reset();
     }
 }

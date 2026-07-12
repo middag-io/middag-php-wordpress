@@ -24,9 +24,12 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(CsrfGuard::class)]
 final class CsrfGuardTest extends TestCase
 {
+    private string $nonceAction;
+
     protected function setUp(): void
     {
-        $GLOBALS['__wp_test_nonces'] = [CsrfGuard::NONCE_ACTION => 'valid-nonce'];
+        $this->nonceAction = CsrfGuard::nonceAction('middag');
+        $GLOBALS['__wp_test_nonces'] = [$this->nonceAction => 'valid-nonce'];
     }
 
     protected function tearDown(): void
@@ -90,25 +93,25 @@ final class CsrfGuardTest extends TestCase
     #[Test]
     public function safeMethodsPassWithoutANonce(): void
     {
-        self::assertTrue(CsrfGuard::isValidRequest('GET', null));
+        self::assertTrue(CsrfGuard::isValidRequest('GET', null, $this->nonceAction));
     }
 
     #[Test]
     public function mutatingRequestPassesWithAValidNonce(): void
     {
-        self::assertTrue(CsrfGuard::isValidRequest('POST', 'valid-nonce'));
+        self::assertTrue(CsrfGuard::isValidRequest('POST', 'valid-nonce', $this->nonceAction));
     }
 
     #[Test]
     public function mutatingRequestIsRejectedWithAnInvalidNonce(): void
     {
-        self::assertFalse(CsrfGuard::isValidRequest('POST', 'forged-nonce'));
+        self::assertFalse(CsrfGuard::isValidRequest('POST', 'forged-nonce', $this->nonceAction));
     }
 
     #[Test]
     public function mutatingRequestIsRejectedWhenTheNonceIsMissing(): void
     {
-        self::assertFalse(CsrfGuard::isValidRequest('DELETE', null));
+        self::assertFalse(CsrfGuard::isValidRequest('DELETE', null, $this->nonceAction));
     }
 
     #[Test]
@@ -129,8 +132,12 @@ final class CsrfGuardTest extends TestCase
     }
 
     #[Test]
-    public function guardsASingleSharedNonceAction(): void
+    public function nonceActionIsDerivedFromTheComponentSoPluginsDoNotCollide(): void
     {
-        self::assertSame('middag_inertia', CsrfGuard::NONCE_ACTION);
+        // Each host component owns an isolated nonce action, replacing the old
+        // fixed `middag_inertia` shared across every plugin.
+        self::assertSame('middag_inertia', CsrfGuard::nonceAction('middag'));
+        self::assertSame('acme_inertia', CsrfGuard::nonceAction('acme'));
+        self::assertNotSame(CsrfGuard::nonceAction('acme'), CsrfGuard::nonceAction('middag'));
     }
 }

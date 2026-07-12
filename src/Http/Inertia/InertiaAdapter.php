@@ -13,49 +13,61 @@ declare(strict_types=1);
 namespace Middag\WordPress\Http\Inertia;
 
 use Closure;
-use Middag\Framework\Kernel\HostContext;
+use Middag\Framework\Kernel\Contract\HostComponentContextInterface;
 use Middag\WordPress\Http\Security\CsrfGuard;
 use Middag\WordPress\Support\AssetSupport;
 use Middag\WordPress\Support\EscapeSupport;
 use Middag\WordPress\Support\SecuritySupport;
 
+/**
+ * Per-component Inertia adapter for the WordPress admin SPA pipeline.
+ *
+ * Instance-scoped: each host plugin builds one adapter from its own
+ * {@see HostComponentContextInterface} (resolved through the plugin's own DI
+ * container), so two plugins living in the same request never share shared-props,
+ * mount id, CSRF nonce action, or asset version. Nothing here reads process-wide
+ * static state — the multi-plugin collisions of the old static adapter (a global
+ * `$sharedProps` accumulator, a fixed `middag-app` mount id, and a fixed
+ * `page=middag` URL fallback) are gone by construction.
+ *
+ * The public {@see isInertiaRequest()} check stays static: it only inspects
+ * `$_SERVER` and holds no state. The private partial-reload readers are instance
+ * methods (only ever called from {@see sendJson()}) but likewise hold no state,
+ * so none of the request-detection helpers carry any collision risk.
+ *
+ * @api
+ */
 final class InertiaAdapter
 {
-    private static array $sharedProps = [];
+    /** @var array<string, mixed> */
+    private array $sharedProps = [];
 
-    public static function share(string $key, mixed $value): void
+    public function __construct(
+        private readonly HostComponentContextInterface $context,
+    ) {}
+
+    public function share(string $key, mixed $value): void
     {
-        self::$sharedProps[$key] = $value;
+        $this->sharedProps[$key] = $value;
     }
 
-    /**
-     * Clear all shared props. Test-isolation seam so suites can reset the static
-     * accumulator without reflecting into the private property.
-     *
-     * @internal
-     */
-    public static function reset(): void
-    {
-        self::$sharedProps = [];
-    }
-
-    public static function render(string $component, array $props = []): void
+    public function render(string $component, array $props = []): void
     {
         $page = [
             'component' => $component,
-            'props' => self::resolveProps($props),
-            'url' => self::getCurrentUrl(),
-            'version' => self::getVersion(),
+            'props' => $this->resolveProps($props),
+            'url' => $this->getCurrentUrl(),
+            'version' => $this->getVersion(),
         ];
 
         if (self::isInertiaRequest()) {
-            self::sendJson($page);
+            $this->sendJson($page);
         }
 
-        self::renderHtml($page);
+        $this->renderHtml($page);
     }
 
-    public static function location(string $url): never
+    public function location(string $url): never
     {
         if (self::isInertiaRequest()) {
             header('X-Inertia-Location: ' . $url);
@@ -75,8 +87,8 @@ final class InertiaAdapter
     }
 
     /**
-     * Register + enqueue the SPA bundle (and optional stylesheet) for the host
-     * component, cache-busted by the host's asset version from {@see HostContext}.
+     * Register + enqueue the SPA bundle (and optional stylesheet) for this host
+     * component, cache-busted by the component's asset version.
      *
      * Host-neutral by design: the host plugin supplies the asset URLs — only it
      * knows its own {@see plugins_url()} — while the adapter contributes the
@@ -84,13 +96,13 @@ final class InertiaAdapter
      * of {@see render()} (which emits only the mount node); call it from the
      * host's `admin_enqueue_scripts` / `wp_enqueue_scripts` hook.
      */
-    public static function enqueueAssets(
+    public function enqueueAssets(
         string $handle,
         string $scriptSrc,
         ?string $styleSrc = null,
         array $scriptDeps = [],
     ): void {
-        $version = self::getVersion();
+        $version = $this->getVersion();
 
         AssetSupport::enqueueScript($handle, $scriptSrc, $scriptDeps, $version, true);
 
@@ -99,15 +111,34 @@ final class InertiaAdapter
         }
     }
 
-    private static function resolveProps(array $props): array
+    /**
+     * The DOM id the SPA mounts on, namespaced by the host component so two
+     * plugins never collide on `#middag-app`. The frontend entry must mount on
+     * exactly this id.
+     */
+    public function mountId(): string
     {
-        $merged = array_merge(self::$sharedProps, $props);
+        return $this->context->componentName() . '-app';
+    }
+
+    /**
+     * The WordPress nonce action this component's admin SPA uses for CSRF,
+     * derived from the component so each plugin owns an isolated nonce.
+     */
+    public function nonceAction(): string
+    {
+        return CsrfGuard::nonceAction($this->context->componentName());
+    }
+
+    private function resolveProps(array $props): array
+    {
+        $merged = array_merge($this->sharedProps, $props);
 
         // Auto-share the WP nonce as `csrfToken` so the SPA can echo it back via
         // the `X-WP-Nonce` header that CsrfGuard verifies on mutating requests.
         // An explicit share/prop of the same key wins (set before this point).
         if (!array_key_exists('csrfToken', $merged)) {
-            $merged['csrfToken'] = SecuritySupport::createNonce(CsrfGuard::NONCE_ACTION);
+            $merged['csrfToken'] = SecuritySupport::createNonce($this->nonceAction());
         }
 
         $resolved = [];
@@ -123,34 +154,34 @@ final class InertiaAdapter
         return $resolved;
     }
 
-    private static function isPartialReload(string $component): bool
+    private function isPartialReload(string $component): bool
     {
         return isset($_SERVER['HTTP_X_INERTIA_PARTIAL_COMPONENT'])
             && $_SERVER['HTTP_X_INERTIA_PARTIAL_COMPONENT'] === $component;
     }
 
-    private static function getPartialData(): array
+    private function getPartialData(): array
     {
         $header = $_SERVER['HTTP_X_INERTIA_PARTIAL_DATA'] ?? '';
 
         return $header !== '' ? explode(',', $header) : [];
     }
 
-    private static function getCurrentUrl(): string
+    private function getCurrentUrl(): string
     {
-        return $_SERVER['REQUEST_URI'] ?? '/wp-admin/admin.php?page=middag';
+        return $_SERVER['REQUEST_URI'] ?? '/wp-admin/admin.php?page=' . $this->context->componentName();
     }
 
-    private static function getVersion(): string
+    private function getVersion(): string
     {
-        return HostContext::get()?->assetVersion() ?? '5.0.0';
+        return $this->context->assetVersion();
     }
 
-    private static function sendJson(array $page): never
+    private function sendJson(array $page): never
     {
         // Handle partial reloads
-        if (self::isPartialReload($page['component'])) {
-            $only = self::getPartialData();
+        if ($this->isPartialReload($page['component'])) {
+            $only = $this->getPartialData();
             if ($only !== []) {
                 $page['props'] = array_intersect_key($page['props'], array_flip($only));
             }
@@ -165,7 +196,7 @@ final class InertiaAdapter
         exit;
     }
 
-    private static function renderHtml(array $page): void
+    private function renderHtml(array $page): void
     {
         $json = wp_json_encode($page, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR);
 
@@ -174,7 +205,8 @@ final class InertiaAdapter
         // pre-escaped, so this attr() call is the single (and only) HTML-attribute
         // escaping layer over the data-page value. Do not add another.
         $attr = EscapeSupport::attr($json);
+        $mountId = EscapeSupport::attr($this->mountId());
 
-        echo '<div id="middag-app" data-page="' . $attr . '"></div>';
+        echo '<div id="' . $mountId . '" data-page="' . $attr . '"></div>';
     }
 }

@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Tests\Http\Inertia;
 
-use Middag\Framework\Kernel\HostContext;
 use Middag\WordPress\Http\Inertia\InertiaAdapter;
 use Middag\WordPress\Runtime\WpComponentContext;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -27,25 +26,23 @@ final class InertiaAdapterEnqueueTest extends TestCase
 {
     protected function setUp(): void
     {
-        HostContext::reset();
         $GLOBALS['__wp_test_enqueued_scripts'] = [];
         $GLOBALS['__wp_test_enqueued_styles'] = [];
     }
 
     protected function tearDown(): void
     {
-        HostContext::reset();
         unset($GLOBALS['__wp_test_enqueued_scripts'], $GLOBALS['__wp_test_enqueued_styles']);
     }
 
     #[Test]
-    public function enqueuesScriptAndStyleCacheBustedByTheHostAssetVersion(): void
+    public function enqueuesScriptAndStyleCacheBustedByTheComponentAssetVersion(): void
     {
-        // Sentinel version distinct from the fallback ('5.0.0') so the assertion
-        // proves the version is SOURCED FROM the host context, not hard-coded.
-        HostContext::set(new WpComponentContext('my-plugin', 'sentinel-7.7.7'));
+        // Sentinel version distinct from any hard-coded default so the assertion
+        // proves the version is SOURCED FROM the injected component context.
+        $adapter = new InertiaAdapter(new WpComponentContext('my-plugin', 'sentinel-7.7.7'));
 
-        InertiaAdapter::enqueueAssets(
+        $adapter->enqueueAssets(
             'middag-app',
             'https://example.test/wp-content/plugins/my/build/app.js',
             'https://example.test/wp-content/plugins/my/build/app.css',
@@ -68,19 +65,11 @@ final class InertiaAdapterEnqueueTest extends TestCase
     #[Test]
     public function skipsTheStylesheetWhenNoStyleUrlIsGiven(): void
     {
-        HostContext::set(new WpComponentContext('my-plugin', '1.0.0'));
+        $adapter = new InertiaAdapter(new WpComponentContext('my-plugin', '1.0.0'));
 
-        InertiaAdapter::enqueueAssets('middag-app', 'https://example.test/app.js');
+        $adapter->enqueueAssets('middag-app', 'https://example.test/app.js');
 
         self::assertArrayHasKey('middag-app', $GLOBALS['__wp_test_enqueued_scripts']);
         self::assertArrayNotHasKey('middag-app', $GLOBALS['__wp_test_enqueued_styles']);
-    }
-
-    #[Test]
-    public function fallsBackToTheSafeDefaultVersionWhenNoHostConfigured(): void
-    {
-        InertiaAdapter::enqueueAssets('middag-app', 'https://example.test/app.js');
-
-        self::assertSame('5.0.0', $GLOBALS['__wp_test_enqueued_scripts']['middag-app']['ver']);
     }
 }

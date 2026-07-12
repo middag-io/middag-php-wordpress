@@ -21,7 +21,7 @@ use PHPUnit\Framework\TestCase;
  * Covers the pass-through paths of enforce() that read the superglobals and
  * return without rejecting. The reject() branch terminates with `exit` and is
  * the intentionally-untested exit path (see the class docblock); it is tracked
- * in BACKLOG.md.
+ * in BACKLOG.md. The host passes the component's nonce action.
  *
  * @internal
  */
@@ -34,11 +34,14 @@ final class CsrfGuardCoverageTest extends TestCase
     /** @var array<string, mixed> */
     private array $postBackup;
 
+    private string $nonceAction;
+
     protected function setUp(): void
     {
         $this->serverBackup = $_SERVER;
         $this->postBackup = $_POST;
-        $GLOBALS['__wp_test_nonces'] = ['middag_inertia' => 'valid-nonce'];
+        $this->nonceAction = CsrfGuard::nonceAction('middag');
+        $GLOBALS['__wp_test_nonces'] = [$this->nonceAction => 'valid-nonce'];
     }
 
     protected function tearDown(): void
@@ -55,7 +58,7 @@ final class CsrfGuardCoverageTest extends TestCase
         $_POST = [];
         unset($_SERVER['HTTP_X_WP_NONCE']);
 
-        CsrfGuard::enforce();
+        CsrfGuard::enforce($this->nonceAction);
 
         // Reaching this point means enforce() returned instead of exiting.
         self::assertTrue(true);
@@ -68,7 +71,7 @@ final class CsrfGuardCoverageTest extends TestCase
         $_SERVER['HTTP_X_WP_NONCE'] = 'valid-nonce';
         $_POST = [];
 
-        CsrfGuard::enforce();
+        CsrfGuard::enforce($this->nonceAction);
 
         self::assertTrue(true);
     }
@@ -80,7 +83,7 @@ final class CsrfGuardCoverageTest extends TestCase
         unset($_SERVER['HTTP_X_WP_NONCE']);
         $_POST = ['_wpnonce' => 'valid-nonce'];
 
-        CsrfGuard::enforce();
+        CsrfGuard::enforce($this->nonceAction);
 
         self::assertTrue(true);
     }

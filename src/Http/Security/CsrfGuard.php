@@ -19,8 +19,9 @@ use Middag\WordPress\Support\SecuritySupport;
 /**
  * CSRF guard for the WordPress admin Inertia pipeline.
  *
- * The admin SPA dispatches through a single `middag_inertia` action over
- * WordPress hooks — not the framework's PSR-15 kernel — so the framework's
+ * The admin SPA dispatches through a per-component nonce action (see
+ * {@see nonceAction()}) over WordPress hooks — not the framework's PSR-15
+ * kernel — so the framework's
  * {@see VerifyCsrfMiddleware} (419 + Symfony
  * tokens) does not apply here. This guard enforces the *native* WordPress nonce
  * instead, via {@see SecuritySupport}.
@@ -45,9 +46,6 @@ use Middag\WordPress\Support\SecuritySupport;
  */
 final class CsrfGuard
 {
-    /** The single nonce action shared with the admin SPA. */
-    public const NONCE_ACTION = 'middag_inertia';
-
     /** HTTP status for a missing/invalid nonce (WordPress-native, not Laravel's 419). */
     public const STATUS_FORBIDDEN = 403;
 
@@ -59,6 +57,17 @@ final class CsrfGuard
 
     /** @var list<string> */
     private const UNSAFE_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
+
+    /**
+     * The WordPress nonce action for a host component's admin SPA. Derived from
+     * the component name so two plugins in the same request never share a nonce
+     * (this replaced the fixed `middag_inertia` action).
+     * {@see InertiaAdapter::nonceAction()} builds the same value on the emit side.
+     */
+    public static function nonceAction(string $component): string
+    {
+        return $component . '_inertia';
+    }
 
     /**
      * Whether the HTTP method changes server state and therefore requires a nonce.
@@ -92,15 +101,16 @@ final class CsrfGuard
 
     /**
      * Decide whether a request may proceed: safe verbs always pass; mutating
-     * verbs require a nonce valid for {@see NONCE_ACTION}.
+     * verbs require a nonce valid for the component's nonce action (see
+     * {@see nonceAction()}).
      */
-    public static function isValidRequest(string $method, ?string $nonce): bool
+    public static function isValidRequest(string $method, ?string $nonce, string $nonceAction): bool
     {
         if (!self::isMutating($method)) {
             return true;
         }
 
-        return SecuritySupport::verifyNonce($nonce, self::NONCE_ACTION);
+        return SecuritySupport::verifyNonce($nonce, $nonceAction);
     }
 
     /**
@@ -119,13 +129,15 @@ final class CsrfGuard
     /**
      * Guard the current request, reading method/nonce from PHP superglobals.
      * No-op for safe verbs and valid mutating requests; otherwise emits the
-     * 403 envelope and exits.
+     * 403 envelope and exits. The host passes the component's nonce action
+     * (see {@see nonceAction()}), the same value the SPA received via
+     * {@see InertiaAdapter}.
      *
      * Thin glue around the pure methods above — intentionally not unit-tested
      * (it reads superglobals and terminates the request, like
      * {@see InertiaAdapter::sendJson()}).
      */
-    public static function enforce(): void
+    public static function enforce(string $nonceAction): void
     {
         /** @var array<string, mixed> $server */
         $server = $_SERVER;
@@ -136,7 +148,7 @@ final class CsrfGuard
         $method = is_string($server['REQUEST_METHOD'] ?? null) ? $server['REQUEST_METHOD'] : 'GET';
         $nonce = self::extractNonce($server, $body);
 
-        if (self::isValidRequest($method, $nonce)) {
+        if (self::isValidRequest($method, $nonce, $nonceAction)) {
             return;
         }
 
