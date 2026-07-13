@@ -126,14 +126,10 @@ final class InertiaAdapterCoverageTest extends TestCase
     #[Test]
     public function isInertiaRequestDetectsTheHeaderFlag(): void
     {
-        $_SERVER['HTTP_X_INERTIA'] = 'true';
-        self::assertTrue(InertiaAdapter::isInertiaRequest());
-
-        $_SERVER['HTTP_X_INERTIA'] = 'false';
-        self::assertFalse(InertiaAdapter::isInertiaRequest());
-
-        unset($_SERVER['HTTP_X_INERTIA']);
-        self::assertFalse(InertiaAdapter::isInertiaRequest());
+        // Pure now: takes the server array instead of touching $_SERVER.
+        self::assertTrue(InertiaAdapter::isInertiaRequest(['HTTP_X_INERTIA' => 'true']));
+        self::assertFalse(InertiaAdapter::isInertiaRequest(['HTTP_X_INERTIA' => 'false']));
+        self::assertFalse(InertiaAdapter::isInertiaRequest([]));
     }
 
     /**
@@ -147,23 +143,18 @@ final class InertiaAdapterCoverageTest extends TestCase
     {
         $method = new ReflectionMethod(InertiaAdapter::class, 'isPartialReload');
 
-        $_SERVER['HTTP_X_INERTIA_PARTIAL_COMPONENT'] = 'Dashboard';
-        self::assertTrue($method->invoke($this->adapter, 'Dashboard'));
-        self::assertFalse($method->invoke($this->adapter, 'Other'));
-
-        unset($_SERVER['HTTP_X_INERTIA_PARTIAL_COMPONENT']);
-        self::assertFalse($method->invoke($this->adapter, 'Dashboard'));
+        $server = ['HTTP_X_INERTIA_PARTIAL_COMPONENT' => 'Dashboard'];
+        self::assertTrue($method->invoke($this->adapter, $server, 'Dashboard'));
+        self::assertFalse($method->invoke($this->adapter, $server, 'Other'));
+        self::assertFalse($method->invoke($this->adapter, [], 'Dashboard'));
     }
 
     #[Test]
-    public function getPartialDataSplitsTheCommaSeparatedHeaderOrReturnsEmpty(): void
+    public function partialDataSplitsTheCommaSeparatedHeaderOrReturnsEmpty(): void
     {
-        $method = new ReflectionMethod(InertiaAdapter::class, 'getPartialData');
+        $method = new ReflectionMethod(InertiaAdapter::class, 'partialData');
 
-        $_SERVER['HTTP_X_INERTIA_PARTIAL_DATA'] = 'user,stats';
-        self::assertSame(['user', 'stats'], $method->invoke($this->adapter));
-
-        unset($_SERVER['HTTP_X_INERTIA_PARTIAL_DATA']);
-        self::assertSame([], $method->invoke($this->adapter));
+        self::assertSame(['user', 'stats'], $method->invoke($this->adapter, ['HTTP_X_INERTIA_PARTIAL_DATA' => 'user,stats']));
+        self::assertSame([], $method->invoke($this->adapter, []));
     }
 }

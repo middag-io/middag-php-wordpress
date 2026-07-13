@@ -14,6 +14,8 @@ namespace Middag\WordPress\Http\Inertia;
 
 use Closure;
 use Middag\Framework\Kernel\Contract\HostComponentContextInterface;
+use Middag\WordPress\Http\Contract\ResponseEmitterInterface;
+use Middag\WordPress\Http\PhpSapiEmitter;
 use Middag\WordPress\Http\Security\CsrfGuard;
 use Middag\WordPress\Support\AssetSupport;
 use Middag\WordPress\Support\EscapeSupport;
@@ -25,15 +27,15 @@ use Middag\WordPress\Support\SecuritySupport;
  * Instance-scoped: each host plugin builds one adapter from its own
  * {@see HostComponentContextInterface} (resolved through the plugin's own DI
  * container), so two plugins living in the same request never share shared-props,
- * mount id, CSRF nonce action, or asset version. Nothing here reads process-wide
- * static state — the multi-plugin collisions of the old static adapter (a global
- * `$sharedProps` accumulator, a fixed `middag-app` mount id, and a fixed
- * `page=middag` URL fallback) are gone by construction.
+ * mount id, CSRF nonce action, or asset version.
  *
- * The public {@see isInertiaRequest()} check stays static: it only inspects
- * `$_SERVER` and holds no state. The private partial-reload readers are instance
- * methods (only ever called from {@see sendJson()}) but likewise hold no state,
- * so none of the request-detection helpers carry any collision risk.
+ * Request/response boundaries follow the CsrfGuard split: the request superglobal
+ * is read exactly once at the public entry points ({@see render()} / {@see
+ * location()}) and threaded to pure helpers as an array, while every response
+ * side-effect (headers, body, redirect, termination) goes through the injected
+ * {@see ResponseEmitterInterface}. This keeps the whole class unit-testable —
+ * including the JSON/redirect/exit paths that used to be untestable inline
+ * `header`/`echo`/`exit`.
  *
  * @api
  */
@@ -44,6 +46,7 @@ final class InertiaAdapter
 
     public function __construct(
         private readonly HostComponentContextInterface $context,
+        private readonly ResponseEmitterInterface $emitter = new PhpSapiEmitter(),
     ) {}
 
     public function share(string $key, mixed $value): void
@@ -53,15 +56,17 @@ final class InertiaAdapter
 
     public function render(string $component, array $props = []): void
     {
+        $server = $_SERVER;
+
         $page = [
             'component' => $component,
             'props' => $this->resolveProps($props),
-            'url' => $this->getCurrentUrl(),
+            'url' => $this->currentUrl($server),
             'version' => $this->getVersion(),
         ];
 
-        if (self::isInertiaRequest()) {
-            $this->sendJson($page);
+        if (self::isInertiaRequest($server)) {
+            $this->sendJson($page, $server);
         }
 
         $this->renderHtml($page);
@@ -69,21 +74,25 @@ final class InertiaAdapter
 
     public function location(string $url): never
     {
-        if (self::isInertiaRequest()) {
-            header('X-Inertia-Location: ' . $url);
-            http_response_code(409);
-
-            exit;
+        if (self::isInertiaRequest($_SERVER)) {
+            $this->emitter->header('X-Inertia-Location', $url);
+            $this->emitter->status(409);
+            $this->emitter->terminate();
         }
 
-        wp_redirect($url);
-
-        exit;
+        $this->emitter->redirect($url);
+        $this->emitter->terminate();
     }
 
-    public static function isInertiaRequest(): bool
+    /**
+     * Whether the current request is an Inertia XHR. Pure: takes the server
+     * array (read once at the boundary) instead of touching `$_SERVER` directly.
+     *
+     * @param array<string, mixed> $server
+     */
+    public static function isInertiaRequest(array $server): bool
     {
-        return isset($_SERVER['HTTP_X_INERTIA']) && $_SERVER['HTTP_X_INERTIA'] === 'true';
+        return isset($server['HTTP_X_INERTIA']) && $server['HTTP_X_INERTIA'] === 'true';
     }
 
     /**
@@ -154,22 +163,35 @@ final class InertiaAdapter
         return $resolved;
     }
 
-    private function isPartialReload(string $component): bool
+    /**
+     * @param array<string, mixed> $server
+     */
+    private function isPartialReload(array $server, string $component): bool
     {
-        return isset($_SERVER['HTTP_X_INERTIA_PARTIAL_COMPONENT'])
-            && $_SERVER['HTTP_X_INERTIA_PARTIAL_COMPONENT'] === $component;
+        return isset($server['HTTP_X_INERTIA_PARTIAL_COMPONENT'])
+            && $server['HTTP_X_INERTIA_PARTIAL_COMPONENT'] === $component;
     }
 
-    private function getPartialData(): array
+    /**
+     * @param array<string, mixed> $server
+     *
+     * @return list<string>
+     */
+    private function partialData(array $server): array
     {
-        $header = $_SERVER['HTTP_X_INERTIA_PARTIAL_DATA'] ?? '';
+        $header = (string) ($server['HTTP_X_INERTIA_PARTIAL_DATA'] ?? '');
 
         return $header !== '' ? explode(',', $header) : [];
     }
 
-    private function getCurrentUrl(): string
+    /**
+     * @param array<string, mixed> $server
+     */
+    private function currentUrl(array $server): string
     {
-        return $_SERVER['REQUEST_URI'] ?? '/wp-admin/admin.php?page=' . $this->context->componentName();
+        $uri = $server['REQUEST_URI'] ?? '/wp-admin/admin.php?page=' . $this->context->componentName();
+
+        return (string) $uri;
     }
 
     private function getVersion(): string
@@ -177,28 +199,35 @@ final class InertiaAdapter
         return $this->context->assetVersion();
     }
 
-    private function sendJson(array $page): never
+    /**
+     * @param array<string, mixed> $page
+     * @param array<string, mixed> $server
+     */
+    private function sendJson(array $page, array $server): never
     {
         // Handle partial reloads
-        if ($this->isPartialReload($page['component'])) {
-            $only = $this->getPartialData();
+        if ($this->isPartialReload($server, (string) $page['component'])) {
+            $only = $this->partialData($server);
             if ($only !== []) {
                 $page['props'] = array_intersect_key($page['props'], array_flip($only));
             }
         }
 
-        header('Content-Type: application/json');
-        header('X-Inertia: true');
-        header('Vary: X-Inertia');
+        $this->emitter->header('Content-Type', 'application/json');
+        $this->emitter->header('X-Inertia', 'true');
+        $this->emitter->header('Vary', 'X-Inertia');
 
-        echo wp_json_encode($page, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR);
+        $this->emitter->write((string) wp_json_encode($page, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR));
 
-        exit;
+        $this->emitter->terminate();
     }
 
+    /**
+     * @param array<string, mixed> $page
+     */
     private function renderHtml(array $page): void
     {
-        $json = wp_json_encode($page, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR);
+        $json = (string) wp_json_encode($page, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR);
 
         // Escape exactly once at the output boundary, through the Escape seam.
         // The JSON above is the framework's internal page payload — it is NOT
@@ -207,6 +236,6 @@ final class InertiaAdapter
         $attr = EscapeSupport::attr($json);
         $mountId = EscapeSupport::attr($this->mountId());
 
-        echo '<div id="' . $mountId . '" data-page="' . $attr . '"></div>';
+        $this->emitter->write('<div id="' . $mountId . '" data-page="' . $attr . '"></div>');
     }
 }
