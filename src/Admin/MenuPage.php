@@ -12,6 +12,9 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Admin;
 
+use Middag\WordPress\Security\Enum\CapabilityInterface;
+use Middag\WordPress\Security\Enum\NormalizesCapability;
+
 /**
  * Immutable description of the top-level wp-admin menu entry an
  * {@see AdminRouteRegistrar} registers.
@@ -24,12 +27,24 @@ namespace Middag\WordPress\Admin;
  */
 final readonly class MenuPage
 {
+    use NormalizesCapability;
+
+    /**
+     * Capability required to access the page (normalized to a plain string).
+     */
+    public string $capability;
+
+    /**
+     * @param CapabilityInterface|string $capability raw string or typed capability
+     */
     public function __construct(
         public string $pageTitle,
         public string $menuTitle,
-        public string $capability = 'manage_options',
+        CapabilityInterface|string $capability = 'manage_options',
         public string $icon = '',
         public ?int $position = null,
         public string $routeBase = '/',
-    ) {}
+    ) {
+        $this->capability = self::capabilityString($capability);
+    }
 }

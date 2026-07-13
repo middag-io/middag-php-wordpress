@@ -12,6 +12,9 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Admin;
 
+use Middag\WordPress\Security\Enum\CapabilityInterface;
+use Middag\WordPress\Security\Enum\NormalizesCapability;
+
 /**
  * Immutable description of one wp-admin submenu entry.
  *
@@ -24,11 +27,24 @@ namespace Middag\WordPress\Admin;
  */
 final readonly class SubMenuPage
 {
+    use NormalizesCapability;
+
+    /**
+     * Capability required to access the submenu, or null to inherit the parent
+     * {@see MenuPage} capability (normalized to a plain string when set).
+     */
+    public ?string $capability;
+
+    /**
+     * @param null|CapabilityInterface|string $capability raw string, typed capability, or null to inherit
+     */
     public function __construct(
         public string $slugSuffix,
         public string $pageTitle,
         public string $menuTitle,
         public string $routeBase = '/',
-        public ?string $capability = null,
-    ) {}
+        CapabilityInterface|string|null $capability = null,
+    ) {
+        $this->capability = $capability === null ? null : self::capabilityString($capability);
+    }
 }

@@ -14,6 +14,7 @@ namespace Middag\WordPress\Settings;
 
 use Middag\WordPress\Http\Contract\ResponseEmitterInterface;
 use Middag\WordPress\Http\PhpSapiEmitter;
+use Middag\WordPress\Security\Enum\CapabilityInterface;
 use Middag\WordPress\Support\EscapeSupport;
 use Middag\WordPress\Support\SettingsSupport;
 
@@ -42,12 +43,12 @@ final readonly class SettingsPageRegistrar
     /**
      * Stage and register every tab of a settings page.
      *
-     * @param non-empty-string $page        settings page slug (menu wiring is the consumer's concern)
-     * @param non-empty-string $optionGroup register_setting() option group
-     * @param list<Tab>        $tabs
-     * @param string           $capability  capability required to WRITE the options
+     * @param non-empty-string           $page        settings page slug (menu wiring is the consumer's concern)
+     * @param non-empty-string           $optionGroup register_setting() option group
+     * @param list<Tab>                  $tabs
+     * @param CapabilityInterface|string $capability  capability required to WRITE the options (raw string or typed)
      */
-    public function register(string $page, string $optionGroup, array $tabs, string $capability = 'manage_options'): void
+    public function register(string $page, string $optionGroup, array $tabs, CapabilityInterface|string $capability = 'manage_options'): void
     {
         foreach ($tabs as $tab) {
             $tabPage = $this->tabPage($page, $tab);

@@ -43,10 +43,16 @@ Some WordPress host surfaces are **intentionally not targeted** by this adapter:
 | `src/Mail/` | WpMailer (framework MailerInterface → wp_mail), EmailSender, EmailTemplate |
 | `src/Persistence/` | QueryBuilder (WP_Query/wp_posts) |
 | `src/Privacy/` | PrivacyRegistrar + `Contract/PersonalDataProviderInterface` (WordPress personal-data export/erasure glue) |
-| `src/Security/` | CapabilityRegistrar (declarative caps per role) |
+| `src/Security/` | CapabilityRegistrar (declarative caps per role); `Enum/{WpCapability, WooCommerceCapability}` (typed capability catalogs) + `CapabilityInterface`/`NormalizesCapability` |
 | `src/Settings/` | Declarative settings framework: Tab→Section→Field (FieldType with default sanitizer), FieldRenderer (escaped), SettingsPageRegistrar over SettingDefinition/SettingsRegistrar |
 | `src/Support/` | 24 `*Support` static seams over WordPress functions (hooks, options, meta, cache, transients, uploads, sanitize/escape, logging, rewrite, ...) |
 | `src/Translation/` | WpTranslator (framework TranslatorInterface) |
+
+## Capability catalogs (typed authorization vocabulary)
+
+`Security/Enum/WpCapability` (WordPress core) and `Security/Enum/WooCommerceCapability` are closed enums of the native capability strings, so a plugin references `WpCapability::ManageOptions` instead of retyping `'manage_options'` — a typo fails at compile time, and neither product nor plugin re-declares the platform's own vocabulary. Both implement `CapabilityInterface` (`->toString()` yields the exact WP string; `->isMeta()` flags map_meta_cap object-scoped caps that must never be granted to a role).
+
+Every authorization seam accepts `string|CapabilityInterface` (backward compatible — raw strings still work): the read side (`UserSupport::currentUserCan`, `CapabilitySupport::userCan`, `UserRepository::currentUserCan`, `AdminRouteRegistrar` gate), the write side (`CapabilitySupport::addCap/removeCap/addRole`, `CapabilityRegistrar`), and the declarative value objects (`MenuPage`/`SubMenuPage`/`SettingDefinition` normalize on construct). The one enum→string conversion lives in the `NormalizesCapability` trait. WooCommerce caps are split out because WooCommerce is optional; referencing a case never requires WooCommerce loaded, but granting one only matters once its roles (e.g. `shop_manager`) exist. Not to be confused with `Middag\Framework\Database\Enum\Capability` (a DB-feature enum).
 
 ## Routing surfaces
 

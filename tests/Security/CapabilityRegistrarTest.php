@@ -13,6 +13,8 @@ declare(strict_types=1);
 namespace Middag\WordPress\Tests\Security;
 
 use Middag\WordPress\Security\CapabilityRegistrar;
+use Middag\WordPress\Security\Enum\WooCommerceCapability;
+use Middag\WordPress\Security\Enum\WpCapability;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -74,5 +76,25 @@ final class CapabilityRegistrarTest extends TestCase
         $registrar = new CapabilityRegistrar(['editor' => ['middag_view']]);
 
         self::assertSame(['editor:middag_view' => false], $registrar->register());
+    }
+
+    #[Test]
+    public function acceptsTypedCapabilitiesAndNormalizesThemToStrings(): void
+    {
+        $registrar = new CapabilityRegistrar([
+            'administrator' => [WpCapability::ManageOptions, 'middag_custom'],
+            'shop_manager' => [WooCommerceCapability::ManageWooCommerce],
+        ]);
+
+        $results = $registrar->register();
+
+        // Result keys and granted caps use the normalized string value.
+        self::assertSame([
+            'administrator:manage_options' => true,
+            'administrator:middag_custom' => true,
+            'shop_manager:manage_woocommerce' => true,
+        ], $results);
+        self::assertArrayHasKey('manage_options', $GLOBALS['__wp_test_roles']['administrator']->capabilities);
+        self::assertArrayHasKey('manage_woocommerce', $GLOBALS['__wp_test_roles']['shop_manager']->capabilities);
     }
 }
