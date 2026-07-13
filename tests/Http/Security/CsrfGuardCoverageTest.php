@@ -13,6 +13,8 @@ declare(strict_types=1);
 namespace Middag\WordPress\Tests\Http\Security;
 
 use Middag\WordPress\Http\Security\CsrfGuard;
+use Middag\WordPress\Tests\Http\RecordingEmitter;
+use Middag\WordPress\Tests\Http\TerminateSignal;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -86,5 +88,30 @@ final class CsrfGuardCoverageTest extends TestCase
         CsrfGuard::enforce($this->nonceAction);
 
         self::assertTrue(true);
+    }
+
+    #[Test]
+    public function enforceRejectsAForgedMutatingRequestWith403AndTerminates(): void
+    {
+        // Previously the reject() exit path was untestable; the injected
+        // RecordingEmitter captures the 403 envelope and throws TerminateSignal
+        // instead of exiting.
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['HTTP_X_WP_NONCE'] = 'forged';
+        $_POST = [];
+        $emitter = new RecordingEmitter();
+
+        try {
+            CsrfGuard::enforce($this->nonceAction, $emitter);
+            self::fail('enforce() must reject a forged nonce');
+        } catch (TerminateSignal) {
+            // expected
+        }
+
+        self::assertSame(403, $emitter->status);
+        self::assertSame('application/json', $emitter->headers['Content-Type'] ?? null);
+
+        $payload = json_decode($emitter->body, true);
+        self::assertSame('csrf_check_failed', $payload['error']);
     }
 }

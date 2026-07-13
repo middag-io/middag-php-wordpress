@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Settings;
 
+use Middag\WordPress\Http\Contract\ResponseEmitterInterface;
+use Middag\WordPress\Http\PhpSapiEmitter;
 use Middag\WordPress\Support\EscapeSupport;
 use Middag\WordPress\Support\SettingsSupport;
 
@@ -34,6 +36,7 @@ final readonly class SettingsPageRegistrar
     public function __construct(
         private SettingsRegistrar $settings,
         private FieldRenderer $renderer = new FieldRenderer(),
+        private ResponseEmitterInterface $emitter = new PhpSapiEmitter(),
     ) {}
 
     /**
@@ -50,12 +53,13 @@ final readonly class SettingsPageRegistrar
             $tabPage = $this->tabPage($page, $tab);
 
             foreach ($tab->sections as $section) {
+                $emitter = $this->emitter;
                 SettingsSupport::addSection(
                     $section->id,
                     $section->title,
-                    static function () use ($section): void {
+                    static function () use ($section, $emitter): void {
                         if ($section->description !== '') {
-                            echo '<p>' . EscapeSupport::html($section->description) . '</p>';
+                            $emitter->write('<p>' . EscapeSupport::html($section->description) . '</p>');
                         }
                     },
                     $tabPage,
@@ -91,7 +95,7 @@ final readonly class SettingsPageRegistrar
     private function echoField(Field $field): string
     {
         $html = $this->renderer->render($field);
-        echo $html;
+        $this->emitter->write($html);
 
         return $html;
     }

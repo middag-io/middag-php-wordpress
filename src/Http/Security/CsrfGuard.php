@@ -13,7 +13,9 @@ declare(strict_types=1);
 namespace Middag\WordPress\Http\Security;
 
 use Middag\Framework\Http\Middleware\VerifyCsrfMiddleware;
+use Middag\WordPress\Http\Contract\ResponseEmitterInterface;
 use Middag\WordPress\Http\Middleware\AuthMiddleware;
+use Middag\WordPress\Http\PhpSapiEmitter;
 use Middag\WordPress\Support\SecuritySupport;
 
 /**
@@ -129,16 +131,16 @@ final class CsrfGuard
     /**
      * Guard the current request, reading method/nonce from PHP superglobals.
      * No-op for safe verbs and valid mutating requests; otherwise emits the
-     * 403 envelope and exits. The host passes the component's nonce action
+     * 403 envelope and terminates. The host passes the component's nonce action
      * (see {@see nonceAction()}), the same value the SPA received via
-     * {@see InertiaAdapter}.
-     *
-     * Thin glue around the pure methods above — intentionally not unit-tested
-     * (it reads superglobals and terminates the request, like
-     * {@see InertiaAdapter::sendJson()}).
+     * {@see InertiaAdapter}. Response side-effects go through the injected
+     * {@see ResponseEmitterInterface} (default {@see PhpSapiEmitter}); tests pass
+     * a recording emitter to assert the reject path in-process.
      */
-    public static function enforce(string $nonceAction): void
+    public static function enforce(string $nonceAction, ?ResponseEmitterInterface $emitter = null): void
     {
+        $emitter ??= new PhpSapiEmitter();
+
         /** @var array<string, mixed> $server */
         $server = $_SERVER;
 
@@ -152,21 +154,18 @@ final class CsrfGuard
             return;
         }
 
-        self::reject();
+        self::reject($emitter);
     }
 
     /**
-     * Emit the 403 envelope and terminate. Thin, untested exit path.
+     * Emit the 403 envelope and terminate, through the injected emitter (which
+     * guards headers_sent() and, in tests, throws instead of exiting).
      */
-    private static function reject(): never
+    private static function reject(ResponseEmitterInterface $emitter): never
     {
-        if (!headers_sent()) {
-            http_response_code(self::STATUS_FORBIDDEN);
-            header('Content-Type: application/json');
-        }
-
-        echo wp_json_encode(self::failurePayload(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR);
-
-        exit;
+        $emitter->status(self::STATUS_FORBIDDEN);
+        $emitter->header('Content-Type', 'application/json');
+        $emitter->write((string) wp_json_encode(self::failurePayload(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR));
+        $emitter->terminate();
     }
 }
