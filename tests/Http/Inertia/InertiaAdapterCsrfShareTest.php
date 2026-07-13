@@ -14,6 +14,7 @@ namespace Middag\WordPress\Tests\Http\Inertia;
 
 use Middag\WordPress\Http\Inertia\InertiaAdapter;
 use Middag\WordPress\Http\Security\CsrfGuard;
+use Middag\WordPress\Runtime\WpComponentContext;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -22,7 +23,8 @@ use ReflectionMethod;
 /**
  * Covers the WP-03 contract that {@see InertiaAdapter} auto-shares the native
  * WordPress nonce to the SPA as the `csrfToken` prop, so the client can echo it
- * back through the `X-WP-Nonce` header that {@see CsrfGuard} verifies.
+ * back through the `X-WP-Nonce` header that {@see CsrfGuard} verifies. The nonce
+ * action is derived from the component (`middag_inertia` for `middag`).
  *
  * Exercised through the private `resolveProps()` via reflection (mirroring
  * {@see InertiaAdapterVersionTest}) so the assertion stays on the prop pipeline
@@ -33,15 +35,16 @@ use ReflectionMethod;
 #[CoversClass(InertiaAdapter::class)]
 final class InertiaAdapterCsrfShareTest extends TestCase
 {
+    private InertiaAdapter $adapter;
+
     protected function setUp(): void
     {
-        $this->resetSharedProps();
-        $GLOBALS['__wp_test_nonces'] = [CsrfGuard::NONCE_ACTION => 'spa-nonce'];
+        $this->adapter = new InertiaAdapter(new WpComponentContext('middag', '5.0.0'));
+        $GLOBALS['__wp_test_nonces'] = [CsrfGuard::nonceAction('middag') => 'spa-nonce'];
     }
 
     protected function tearDown(): void
     {
-        $this->resetSharedProps();
         unset($GLOBALS['__wp_test_nonces']);
     }
 
@@ -64,7 +67,7 @@ final class InertiaAdapterCsrfShareTest extends TestCase
     #[Test]
     public function anExplicitlySharedCsrfTokenOverridesTheAutoSharedNonce(): void
     {
-        InertiaAdapter::share('csrfToken', 'shared-supplied');
+        $this->adapter->share('csrfToken', 'shared-supplied');
 
         $props = $this->resolveProps([]);
 
@@ -80,11 +83,6 @@ final class InertiaAdapterCsrfShareTest extends TestCase
     {
         $method = new ReflectionMethod(InertiaAdapter::class, 'resolveProps');
 
-        return (array) $method->invoke(null, $props);
-    }
-
-    private function resetSharedProps(): void
-    {
-        InertiaAdapter::reset();
+        return (array) $method->invoke($this->adapter, $props);
     }
 }

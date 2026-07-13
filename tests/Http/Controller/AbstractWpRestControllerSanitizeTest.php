@@ -12,28 +12,29 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Tests\Http\Controller;
 
-use Middag\WordPress\Http\Controller\BaseController;
+use Middag\WordPress\Http\Auth\WpSessionAuthenticator;
+use Middag\WordPress\Http\Controller\AbstractWpRestController;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use WP_REST_Request;
 
 /**
- * WP-04 inbound-boundary coverage: {@see BaseController}'s sanitized scalar
- * readers route request input through the Sanitize seam before the controller
- * sees it (delegation proven via the behavioral WP stubs).
+ * WP-04 inbound-boundary coverage: {@see AbstractWpRestController}'s sanitized
+ * scalar readers route request input through the Sanitize seam before the
+ * controller sees it (delegation proven via the behavioral WP stubs).
  *
  * @internal
  */
-#[CoversClass(BaseController::class)]
-final class BaseControllerSanitizeTest extends TestCase
+#[CoversClass(AbstractWpRestController::class)]
+final class AbstractWpRestControllerSanitizeTest extends TestCase
 {
     private object $controller;
 
     protected function setUp(): void
     {
         // Concrete subclass exposing the protected sanitize helpers under test.
-        $this->controller = new class extends BaseController {
+        $this->controller = new class(new WpSessionAuthenticator()) extends AbstractWpRestController {
             public function registerRoutes(string $namespace): void {}
 
             public function text(WP_REST_Request $r, string $k, string $d = ''): string

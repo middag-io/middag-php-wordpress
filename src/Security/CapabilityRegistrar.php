@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Security;
 
+use Middag\WordPress\Security\Enum\CapabilityInterface;
+use Middag\WordPress\Security\Enum\NormalizesCapability;
 use Middag\WordPress\Support\CapabilitySupport;
 
 /**
@@ -33,8 +35,12 @@ use Middag\WordPress\Support\CapabilitySupport;
  */
 final readonly class CapabilityRegistrar
 {
+    use NormalizesCapability;
+
     /**
-     * @param array<string, list<string>> $capabilitiesByRole role slug => capabilities to grant
+     * @param array<string, list<CapabilityInterface|string>> $capabilitiesByRole role slug =>
+     *                                                                            capabilities to grant (raw
+     *                                                                            strings or typed capabilities)
      */
     public function __construct(
         private array $capabilitiesByRole,
@@ -71,9 +77,10 @@ final readonly class CapabilityRegistrar
 
         foreach ($this->capabilitiesByRole as $role => $capabilities) {
             foreach ($capabilities as $capability) {
-                $results[$role . ':' . $capability] = $granting
-                    ? CapabilitySupport::addCap($role, $capability)
-                    : CapabilitySupport::removeCap($role, $capability);
+                $name = self::capabilityString($capability);
+                $results[$role . ':' . $name] = $granting
+                    ? CapabilitySupport::addCap($role, $name)
+                    : CapabilitySupport::removeCap($role, $name);
             }
         }
 

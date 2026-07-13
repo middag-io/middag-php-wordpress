@@ -14,10 +14,10 @@ namespace Middag\WordPress\Tests\Support;
 
 use Middag\Framework\Logging\Contract\ActorResolverInterface;
 use Middag\Framework\Logging\Contract\OriginResolverInterface;
+use Middag\Framework\Logging\ErrorLogFallbackLogger;
 use Middag\Framework\Logging\LoggerFactory;
 use Middag\WordPress\Support\LogSupport;
 use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -26,189 +26,70 @@ use Psr\Log\LoggerInterface;
 use Stringable;
 
 /**
+ * LogSupport is a stateless resolver now (no process-wide logger slot). Each
+ * call hands back a logger for a container: an explicitly-bound LoggerInterface
+ * first, then the framework channel logger, then the error_log fallback.
+ *
  * @internal
  */
 #[CoversClass(LogSupport::class)]
 final class LogSupportTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        LogSupport::setLogger(null);
-    }
-
-    protected function tearDown(): void
-    {
-        LogSupport::setLogger(null);
-    }
-
     #[Test]
-    public function setLoggerThenGetLoggerRoundTrips(): void
-    {
-        self::assertNull(LogSupport::getLogger());
-
-        $spy = $this->spyLogger();
-        LogSupport::setLogger($spy);
-
-        self::assertSame($spy, LogSupport::getLogger());
-    }
-
-    #[Test]
-    public function errorRoutesToTheWiredLoggerAtErrorLevel(): void
+    public function resolvesAnExplicitlyBoundLoggerVerbatim(): void
     {
         $spy = $this->spyLogger();
-        LogSupport::setLogger($spy);
 
-        LogSupport::error('boom', ['k' => 'v']);
+        $logger = LogSupport::resolve($this->container([LoggerInterface::class => $spy]));
 
-        self::assertCount(1, $spy->records);
-        self::assertSame('error', $spy->records[0]['level']);
-        self::assertSame('boom', $spy->records[0]['message']);
-        self::assertSame(['k' => 'v'], $spy->records[0]['context']);
+        self::assertSame($spy, $logger);
     }
 
     #[Test]
-    public function warningRoutesToTheWiredLoggerAtWarningLevel(): void
+    public function resolvesTheChannelLoggerFromTheContainerFactory(): void
+    {
+        $logger = LogSupport::resolve($this->container([LoggerFactory::class => $this->loggerFactory()]));
+
+        self::assertInstanceOf(LoggerInterface::class, $logger);
+        // A disabled factory hands out a NullLogger — the channel path, not the
+        // last-resort error_log fallback.
+        self::assertNotInstanceOf(ErrorLogFallbackLogger::class, $logger);
+    }
+
+    #[Test]
+    public function prefersTheExplicitLoggerOverTheFactory(): void
     {
         $spy = $this->spyLogger();
-        LogSupport::setLogger($spy);
 
-        LogSupport::warning('careful');
+        $logger = LogSupport::resolve($this->container([
+            LoggerInterface::class => $spy,
+            LoggerFactory::class => $this->loggerFactory(),
+        ]));
 
-        self::assertCount(1, $spy->records);
-        self::assertSame('warning', $spy->records[0]['level']);
-        self::assertSame('careful', $spy->records[0]['message']);
+        self::assertSame($spy, $logger);
     }
 
     #[Test]
-    #[DataProvider('levels')]
-    public function logForwardsTheGivenLevel(string $level): void
+    public function fallsBackToTheErrorLogLoggerWhenNeitherIsWired(): void
     {
-        $spy = $this->spyLogger();
-        LogSupport::setLogger($spy);
+        $logger = LogSupport::resolve($this->container([]));
 
-        LogSupport::log($level, 'msg');
-
-        self::assertSame($level, $spy->records[0]['level']);
-    }
-
-    /**
-     * @return iterable<string, array{0: string}>
-     */
-    public static function levels(): iterable
-    {
-        yield 'error' => ['error'];
-
-        yield 'warning' => ['warning'];
-
-        yield 'info' => ['info'];
-
-        yield 'debug' => ['debug'];
+        self::assertInstanceOf(ErrorLogFallbackLogger::class, $logger);
     }
 
     #[Test]
-    public function fallsBackToErrorLogWhenNoLoggerIsWired(): void
+    public function flowsTheModuleChannelTupleToTheFileHandler(): void
     {
-        // No logger wired -> the bootstrap fallback path (error_log) is used.
-        self::assertNull(LogSupport::getLogger());
-
-        $capture = tempnam(sys_get_temp_dir(), 'middag-logsupport-');
-        self::assertIsString($capture);
-
-        $previous = ini_get('error_log');
-
-        try {
-            ini_set('error_log', $capture);
-            LogSupport::error('bootstrap-failure');
-        } finally {
-            ini_set('error_log', $previous === false ? '' : $previous);
-        }
-
-        $written = (string) file_get_contents($capture);
-        @unlink($capture);
-
-        self::assertStringContainsString('bootstrap-failure', $written);
-    }
-
-    #[Test]
-    public function castsStringableMessagesWhenFallingBackToErrorLog(): void
-    {
-        $message = new class implements Stringable {
-            public function __toString(): string
-            {
-                return 'stringable-message';
-            }
-        };
-
-        $capture = tempnam(sys_get_temp_dir(), 'middag-logsupport-');
-        self::assertIsString($capture);
-
-        $previous = ini_get('error_log');
-
-        try {
-            ini_set('error_log', $capture);
-            LogSupport::error($message);
-        } finally {
-            ini_set('error_log', $previous === false ? '' : $previous);
-        }
-
-        $written = (string) file_get_contents($capture);
-        @unlink($capture);
-
-        self::assertStringContainsString('stringable-message', $written);
-    }
-
-    #[Test]
-    public function primeFromContainerResolvesTheFrameworkLoggerFactory(): void
-    {
-        self::assertNull(LogSupport::getLogger());
-
-        $container = $this->container([LoggerFactory::class => $this->loggerFactory()]);
-
-        $primed = LogSupport::primeFromContainer($container);
-
-        self::assertTrue($primed);
-        self::assertInstanceOf(LoggerInterface::class, LogSupport::getLogger());
-    }
-
-    #[Test]
-    public function primeFromContainerReturnsFalseWhenTheContainerHasNoLoggerFactory(): void
-    {
-        $primed = LogSupport::primeFromContainer($this->container([]));
-
-        self::assertFalse($primed);
-        self::assertNull(LogSupport::getLogger());
-    }
-
-    #[Test]
-    public function primeFromContainerIsIdempotentAndKeepsAnAlreadyWiredLogger(): void
-    {
-        $spy = $this->spyLogger();
-        LogSupport::setLogger($spy);
-
-        // Already wired → returns true without resolving/replacing the logger.
-        $primed = LogSupport::primeFromContainer($this->container([LoggerFactory::class => $this->loggerFactory()]));
-
-        self::assertTrue($primed);
-        self::assertSame($spy, LogSupport::getLogger());
-    }
-
-    #[Test]
-    public function primeFromContainerFlowsACustomChannelToTheFileHandler(): void
-    {
-        self::assertNull(LogSupport::getLogger());
-
         $base = sys_get_temp_dir() . '/middag-logsupport-channel-' . uniqid();
         $factory = $this->loggerFactory(basePath: $base, enabled: true);
 
-        $primed = LogSupport::primeFromContainer(
+        $logger = LogSupport::resolve(
             $this->container([LoggerFactory::class => $factory]),
             module: 'clientx',
             channel: 'payments',
         );
 
-        self::assertTrue($primed);
-
-        LogSupport::error('channel-routing-proof');
+        $logger->error('channel-routing-proof');
 
         // The (module, channel) tuple drives the on-disk path of the framework
         // RotatingStreamHandler: {base}/{module}/{channel}/*.log.
@@ -271,7 +152,7 @@ final class LogSupportTest extends TestCase
     /**
      * In-memory PSR-3 spy logger recording every record.
      */
-    private function spyLogger(): object
+    private function spyLogger(): LoggerInterface
     {
         return new class extends AbstractLogger {
             /** @var list<array{level: mixed, message: string, context: array<string, mixed>}> */

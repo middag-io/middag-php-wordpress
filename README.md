@@ -2,8 +2,9 @@
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-MIDDAG WordPress adapter — persistence, REST, hooks, cron, Inertia frontend, and
-email implementations of the [`middag-io/framework`](https://github.com/middag-io/middag-php-framework)
+MIDDAG WordPress adapter — persistence, three routing surfaces (REST / admin /
+public rewrite), hooks, cron, Inertia frontend, and email implementations of the
+[`middag-io/framework`](https://github.com/middag-io/middag-php-framework)
 contracts for WordPress.
 
 > **License:** Apache-2.0.

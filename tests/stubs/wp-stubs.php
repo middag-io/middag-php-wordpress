@@ -118,7 +118,11 @@ if (!function_exists('register_rest_route')) {
 if (!class_exists('WP_Error')) {
     class WP_Error
     {
-        public function __construct(private readonly string $code = '', private readonly string $message = '') {}
+        public function __construct(
+            private readonly string $code = '',
+            private readonly string $message = '',
+            private readonly mixed $data = '',
+        ) {}
 
         public function get_error_code(): string
         {
@@ -128,6 +132,11 @@ if (!class_exists('WP_Error')) {
         public function get_error_message(): string
         {
             return $this->message;
+        }
+
+        public function get_error_data(): mixed
+        {
+            return $this->data;
         }
     }
 }
@@ -1018,6 +1027,27 @@ if (!function_exists('add_submenu_page')) {
         $GLOBALS['__wp_test_admin_submenus'][$menu_slug] = ['parent_slug' => $parent_slug, 'page_title' => $page_title, 'menu_title' => $menu_title, 'capability' => $capability];
 
         return $parent_slug . '_page_' . $menu_slug;
+    }
+}
+
+// Stubbed rewrite API — records rules in $__wp_test_rewrite_rules, counts
+// flushes in $__wp_test_flush_rewrite, reads query vars from $__wp_test_query_vars.
+if (!function_exists('add_rewrite_rule')) {
+    function add_rewrite_rule(string $regex, string $query, string $after = 'top'): void
+    {
+        $GLOBALS['__wp_test_rewrite_rules'][] = ['regex' => $regex, 'query' => $query, 'after' => $after];
+    }
+}
+if (!function_exists('flush_rewrite_rules')) {
+    function flush_rewrite_rules(bool $hard = true): void
+    {
+        $GLOBALS['__wp_test_flush_rewrite'][] = $hard;
+    }
+}
+if (!function_exists('get_query_var')) {
+    function get_query_var(string $var, mixed $default = ''): mixed
+    {
+        return $GLOBALS['__wp_test_query_vars'][$var] ?? $default;
     }
 }
 

@@ -13,6 +13,9 @@ declare(strict_types=1);
 namespace Middag\WordPress\Tests\Cron;
 
 use Middag\WordPress\Cron\CronRegistrar;
+use Middag\WordPress\Cron\Enum\CronInterval;
+use Middag\WordPress\Runtime\WpComponentContext;
+use Middag\WordPress\Translation\WpTranslator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -32,6 +35,7 @@ final class CronRegistrarTest extends TestCase
         $GLOBALS['__wp_test_scheduled_events'] = [];
         $GLOBALS['__wp_test_actions'] = [];
         $GLOBALS['__wp_test_filters'] = [];
+        $GLOBALS['__wp_test_translations'] = [];
     }
 
     protected function tearDown(): void
@@ -43,6 +47,7 @@ final class CronRegistrarTest extends TestCase
             $GLOBALS['__wp_test_scheduled_events'],
             $GLOBALS['__wp_test_actions'],
             $GLOBALS['__wp_test_filters'],
+            $GLOBALS['__wp_test_translations'],
         );
     }
 
@@ -53,17 +58,15 @@ final class CronRegistrarTest extends TestCase
     #[Test]
     public function getRegisteredHooksReturnsEmptyArrayWhenNoEventsAdded(): void
     {
-        $registrar = new CronRegistrar();
-
-        self::assertSame([], $registrar->getRegisteredHooks());
+        self::assertSame([], $this->makeRegistrar()->getRegisteredHooks());
     }
 
     #[Test]
     public function addEventStoresEventsAndGetRegisteredHooksReturnsThemInOrder(): void
     {
-        $registrar = new CronRegistrar();
-        $registrar->addEvent('middag_sync', 'middag_hourly', static fn (): null => null);
-        $registrar->addEvent('middag_cleanup', 'middag_daily_morning', static fn (): null => null);
+        $registrar = $this->makeRegistrar();
+        $registrar->addEvent('middag_sync', CronInterval::Hourly, static fn (): null => null);
+        $registrar->addEvent('middag_cleanup', CronInterval::DailyMorning, static fn (): null => null);
 
         self::assertSame(['middag_sync', 'middag_cleanup'], $registrar->getRegisteredHooks());
     }
@@ -75,12 +78,12 @@ final class CronRegistrarTest extends TestCase
     #[Test]
     public function registerRegistersTheCronSchedulesFilter(): void
     {
-        $registrar = new CronRegistrar();
+        $registrar = $this->makeRegistrar();
         $registrar->register();
 
         self::assertArrayHasKey('cron_schedules', $GLOBALS['__wp_test_filters']);
         self::assertSame(
-            [CronRegistrar::class, 'addIntervals'],
+            [$registrar, 'registerIntervals'],
             $GLOBALS['__wp_test_filters']['cron_schedules'][0]['callback'],
         );
     }
@@ -90,8 +93,8 @@ final class CronRegistrarTest extends TestCase
     {
         $callback = static fn (): null => null;
 
-        $registrar = new CronRegistrar();
-        $registrar->addEvent('middag_sync', 'middag_hourly', $callback);
+        $registrar = $this->makeRegistrar();
+        $registrar->addEvent('middag_sync', CronInterval::Hourly, $callback);
         $registrar->register();
 
         self::assertArrayHasKey('middag_sync', $GLOBALS['__wp_test_actions']);
@@ -99,15 +102,16 @@ final class CronRegistrarTest extends TestCase
     }
 
     #[Test]
-    public function registerSchedulesEventWhenNotAlreadyScheduled(): void
+    public function registerSchedulesEventWithComponentPrefixedRecurrence(): void
     {
-        $registrar = new CronRegistrar();
-        $registrar->addEvent('middag_sync', 'middag_hourly', static fn (): null => null);
+        $registrar = $this->makeRegistrar('acme');
+        $registrar->addEvent('acme_sync', CronInterval::Hourly, static fn (): null => null);
         $registrar->register();
 
         self::assertCount(1, $GLOBALS['__wp_test_recurring_events']);
-        self::assertSame('middag_sync', $GLOBALS['__wp_test_recurring_events'][0]['hook']);
-        self::assertSame('middag_hourly', $GLOBALS['__wp_test_recurring_events'][0]['recurrence']);
+        self::assertSame('acme_sync', $GLOBALS['__wp_test_recurring_events'][0]['hook']);
+        // Recurrence key is {component}_{case value}, not a magic string.
+        self::assertSame('acme_hourly', $GLOBALS['__wp_test_recurring_events'][0]['recurrence']);
     }
 
     #[Test]
@@ -116,8 +120,8 @@ final class CronRegistrarTest extends TestCase
         // wp_next_scheduled() returns a truthy timestamp → no new schedule.
         $GLOBALS['__wp_test_next_scheduled']['middag_sync'] = 1_900_000_000;
 
-        $registrar = new CronRegistrar();
-        $registrar->addEvent('middag_sync', 'middag_hourly', static fn (): null => null);
+        $registrar = $this->makeRegistrar();
+        $registrar->addEvent('middag_sync', CronInterval::Hourly, static fn (): null => null);
         $registrar->register();
 
         // Action is still wired, but nothing new is scheduled.
@@ -126,38 +130,34 @@ final class CronRegistrarTest extends TestCase
     }
 
     #[Test]
-    public function registerComputesNextRunForEachRecurrenceBranch(): void
+    public function registerComputesNextRunForEachInterval(): void
     {
-        $registrar = new CronRegistrar();
-        $registrar->addEvent('hook_daily', 'middag_daily_morning', static fn (): null => null);
-        $registrar->addEvent('hook_five', 'middag_five_minutes', static fn (): null => null);
-        $registrar->addEvent('hook_hourly', 'middag_hourly', static fn (): null => null);
-        $registrar->addEvent('hook_twice', 'middag_twicedaily', static fn (): null => null);
-        $registrar->addEvent('hook_default', 'middag_every_minute', static fn (): null => null);
+        $registrar = $this->makeRegistrar();
+        foreach (CronInterval::cases() as $interval) {
+            $registrar->addEvent('hook_' . $interval->value, $interval, static fn (): null => null);
+        }
 
-        $before = time();
         $registrar->register();
-        $after = time();
 
         $byHook = [];
         foreach ($GLOBALS['__wp_test_recurring_events'] as $event) {
             $byHook[$event['hook']] = $event['timestamp'];
         }
 
-        self::assertCount(5, $byHook);
+        self::assertCount(count(CronInterval::cases()), $byHook);
 
-        // five/hourly/twicedaily round up to the next interval boundary.
-        self::assertSame(0, $byHook['hook_five'] % 300);
-        self::assertSame(0, $byHook['hook_hourly'] % 3600);
-        self::assertSame(0, $byHook['hook_twice'] % 43200);
-
-        // default arm returns "now".
-        self::assertGreaterThanOrEqual($before, $byHook['hook_default']);
-        self::assertLessThanOrEqual($after, $byHook['hook_default']);
+        // Interval cases round up to their next clock boundary.
+        foreach ([CronInterval::EveryMinute, CronInterval::FiveMinutes, CronInterval::FifteenMinutes, CronInterval::ThirtyMinutes, CronInterval::Hourly, CronInterval::TwiceDaily] as $interval) {
+            self::assertSame(
+                0,
+                $byHook['hook_' . $interval->value] % $interval->seconds(),
+                sprintf('%s should land on a %d-second boundary', $interval->name, $interval->seconds()),
+            );
+        }
 
         // daily_morning is today 06:00 (if still ahead) or tomorrow 06:00.
         self::assertContains(
-            $byHook['hook_daily'],
+            $byHook['hook_daily_morning'],
             [strtotime('06:00:00'), strtotime('tomorrow 06:00:00')],
         );
     }
@@ -171,8 +171,8 @@ final class CronRegistrarTest extends TestCase
     {
         $GLOBALS['__wp_test_next_scheduled']['middag_sync'] = 1_900_000_000;
 
-        $registrar = new CronRegistrar();
-        $registrar->addEvent('middag_sync', 'middag_hourly', static fn (): null => null);
+        $registrar = $this->makeRegistrar();
+        $registrar->addEvent('middag_sync', CronInterval::Hourly, static fn (): null => null);
         $registrar->unregister();
 
         self::assertCount(1, $GLOBALS['__wp_test_unscheduled_events']);
@@ -184,21 +184,21 @@ final class CronRegistrarTest extends TestCase
     public function unregisterSkipsEventsThatAreNotScheduled(): void
     {
         // No next-scheduled timestamp → wp_next_scheduled() returns false.
-        $registrar = new CronRegistrar();
-        $registrar->addEvent('middag_sync', 'middag_hourly', static fn (): null => null);
+        $registrar = $this->makeRegistrar();
+        $registrar->addEvent('middag_sync', CronInterval::Hourly, static fn (): null => null);
         $registrar->unregister();
 
         self::assertSame([], $GLOBALS['__wp_test_unscheduled_events']);
     }
 
     // -------------------------------------------------------------------------
-    // addIntervals()
+    // registerIntervals()
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function addIntervalsAddsEveryCustomInterval(): void
+    public function registerIntervalsAddsEveryCustomIntervalKeyedByComponent(): void
     {
-        $schedules = CronRegistrar::addIntervals([]);
+        $schedules = $this->makeRegistrar()->registerIntervals([]);
 
         self::assertArrayHasKey('middag_every_minute', $schedules);
         self::assertSame(60, $schedules['middag_every_minute']['interval']);
@@ -208,7 +208,7 @@ final class CronRegistrarTest extends TestCase
         self::assertArrayHasKey('middag_fifteen_minutes', $schedules);
         self::assertArrayHasKey('middag_thirty_minutes', $schedules);
         self::assertArrayHasKey('middag_hourly', $schedules);
-        self::assertArrayHasKey('middag_twicedaily', $schedules);
+        self::assertArrayHasKey('middag_twice_daily', $schedules);
 
         self::assertArrayHasKey('middag_daily_morning', $schedules);
         self::assertSame(86400, $schedules['middag_daily_morning']['interval']);
@@ -216,14 +216,14 @@ final class CronRegistrarTest extends TestCase
     }
 
     #[Test]
-    public function addIntervalsPreservesExistingSchedulesAndAddsTheRest(): void
+    public function registerIntervalsPreservesExistingSchedulesAndAddsTheRest(): void
     {
         $existing = [
             'middag_hourly' => ['interval' => 1, 'display' => 'Custom hourly'],
             'wp_daily' => ['interval' => 86400, 'display' => 'Once Daily'],
         ];
 
-        $schedules = CronRegistrar::addIntervals($existing);
+        $schedules = $this->makeRegistrar()->registerIntervals($existing);
 
         // Pre-existing key is not overwritten.
         self::assertSame(1, $schedules['middag_hourly']['interval']);
@@ -235,5 +235,38 @@ final class CronRegistrarTest extends TestCase
         // Missing custom intervals are still added.
         self::assertSame(60, $schedules['middag_every_minute']['interval']);
         self::assertSame(300, $schedules['middag_five_minutes']['interval']);
+    }
+
+    #[Test]
+    public function registerIntervalsRoutesLabelsThroughTheTranslator(): void
+    {
+        // A loaded translation for the lib's default domain is honoured — proof
+        // the label is not a hardcoded English literal.
+        $GLOBALS['__wp_test_translations']['middag']['Every hour'] = 'A cada hora';
+
+        $schedules = $this->makeRegistrar()->registerIntervals([]);
+
+        self::assertSame('A cada hora', $schedules['middag_hourly']['display']);
+    }
+
+    #[Test]
+    public function differentComponentsProduceDistinctIntervalKeys(): void
+    {
+        $acme = $this->makeRegistrar('acme')->registerIntervals([]);
+        $globex = $this->makeRegistrar('globex')->registerIntervals([]);
+
+        self::assertArrayHasKey('acme_hourly', $acme);
+        self::assertArrayNotHasKey('globex_hourly', $acme);
+
+        self::assertArrayHasKey('globex_hourly', $globex);
+        self::assertArrayNotHasKey('acme_hourly', $globex);
+    }
+
+    private function makeRegistrar(string $component = 'middag'): CronRegistrar
+    {
+        return new CronRegistrar(
+            new WpComponentContext($component, '5.0.0'),
+            new WpTranslator(),
+        );
     }
 }

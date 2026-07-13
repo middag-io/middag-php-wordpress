@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Tests\Mail;
 
-use Middag\Framework\Kernel\HostContext;
 use Middag\WordPress\Mail\EmailSender;
 use Middag\WordPress\Runtime\WpComponentContext;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -28,22 +27,20 @@ final class EmailTemplatePathTest extends TestCase
 {
     protected function setUp(): void
     {
-        HostContext::reset();
         $GLOBALS['__middag_test_wp_stylesheet_directory'] = '/var/www/themes/active';
     }
 
     protected function tearDown(): void
     {
-        HostContext::reset();
         unset($GLOBALS['__middag_test_wp_stylesheet_directory']);
     }
 
     #[Test]
     public function prependsHostBasePathCandidateWhenContextConfigured(): void
     {
-        HostContext::set(new WpComponentContext('my-plugin', '1.0.0', '/srv/my-plugin'));
+        $sender = new EmailSender(context: new WpComponentContext('my-plugin', '1.0.0', '/srv/my-plugin'));
 
-        $candidates = $this->resolveCandidates('welcome');
+        $candidates = $this->resolveCandidates($sender, 'welcome');
 
         self::assertCount(2, $candidates);
         self::assertSame('/srv/my-plugin/templates/emails/welcome.php', $candidates[0][0]);
@@ -55,7 +52,7 @@ final class EmailTemplatePathTest extends TestCase
     public function fallsBackToThemeOnlyWhenNoBasePathAvailable(): void
     {
         // No host context configured -> base path is null.
-        $candidates = $this->resolveCandidates('welcome');
+        $candidates = $this->resolveCandidates(new EmailSender(), 'welcome');
 
         self::assertCount(1, $candidates);
         self::assertSame('/var/www/themes/active/templates/emails/welcome.php', $candidates[0][0]);
@@ -64,10 +61,10 @@ final class EmailTemplatePathTest extends TestCase
     /**
      * @return list<array{0: string, 1: null|string}>
      */
-    private function resolveCandidates(string $name): array
+    private function resolveCandidates(EmailSender $sender, string $name): array
     {
         $method = new ReflectionMethod(EmailSender::class, 'getTemplateCandidatePaths');
 
-        return $method->invoke(new EmailSender(), $name);
+        return $method->invoke($sender, $name);
     }
 }

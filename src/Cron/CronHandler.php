@@ -28,21 +28,21 @@ final class CronHandler
      * Usage:
      *   $cronRegistrar->addEvent(
      *       'middag_sync_invoices',
-     *       'middag_five_minutes',
-     *       CronHandler::dispatch(InvoiceService::class, 'syncFromStripe')
+     *       CronInterval::FiveMinutes,
+     *       CronHandler::dispatch($container, InvoiceService::class, 'syncFromStripe')
      *   );
      */
     public static function dispatch(ContainerInterface $container, string $serviceClass, string $method): Closure
     {
         return static function () use ($container, $serviceClass, $method): void {
-            // Wire the framework PSR-3 logger from the container when the host has
-            // not primed the bridge yet (cron may run before any web boot). Falls
-            // back to error_log() inside LogSupport when no logger is available.
-            LogSupport::primeFromContainer($container, 'wordpress', 'cron');
+            // Resolve this cron run's logger from the container: the framework
+            // channel logger when wired, else the error_log() fallback. Stateless
+            // — no shared process-wide logger slot to collide on.
+            $logger = LogSupport::resolve($container, 'wordpress', 'cron');
 
             try {
                 if (!$container->has($serviceClass)) {
-                    LogSupport::error('[MIDDAG Cron] Service not found: ' . $serviceClass);
+                    $logger->error('[MIDDAG Cron] Service not found: ' . $serviceClass);
 
                     return;
                 }
@@ -50,7 +50,7 @@ final class CronHandler
                 $service = $container->get($serviceClass);
                 $service->{$method}();
             } catch (Throwable $throwable) {
-                LogSupport::error(sprintf('[MIDDAG Cron] Error in %s::%s: %s', $serviceClass, $method, $throwable->getMessage()));
+                $logger->error(sprintf('[MIDDAG Cron] Error in %s::%s: %s', $serviceClass, $method, $throwable->getMessage()));
             }
         };
     }

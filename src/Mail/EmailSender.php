@@ -12,17 +12,23 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Mail;
 
-use Middag\Framework\Kernel\HostContext;
-use Middag\WordPress\Support\LogSupport;
+use Middag\Framework\Kernel\Contract\HostComponentContextInterface;
+use Middag\Framework\Logging\ErrorLogFallbackLogger;
 use Middag\WordPress\Support\MailSupport;
 use Middag\WordPress\Support\PathSupport;
+use Psr\Log\LoggerInterface;
 
 /**
  * @api
  */
-final class EmailSender
+final readonly class EmailSender
 {
     private const DEFAULT_CONTENT_TYPE = 'text/html';
+
+    public function __construct(
+        private LoggerInterface $logger = new ErrorLogFallbackLogger(),
+        private ?HostComponentContextInterface $context = null,
+    ) {}
 
     /**
      * Send an email using a template.
@@ -38,7 +44,7 @@ final class EmailSender
         $template = $this->resolveTemplate($templateName);
 
         if (!$template instanceof EmailTemplate) {
-            LogSupport::error('[MIDDAG Email] Template not found: ' . $templateName);
+            $this->logger->error('[MIDDAG Email] Template not found: ' . $templateName);
 
             return false;
         }
@@ -113,7 +119,7 @@ final class EmailSender
             if (file_exists($htmlPath)) {
                 $plainExists = $plainPath !== null && file_exists($plainPath);
 
-                return new EmailTemplate($htmlPath, $plainExists ? $plainPath : null);
+                return new EmailTemplate($htmlPath, $plainExists ? $plainPath : null, $this->logger);
             }
         }
 
@@ -131,7 +137,7 @@ final class EmailSender
         $candidates = [];
 
         // 1. Host-provided base path (templates/emails/), when the host exposes one.
-        $basePath = HostContext::get()?->basePath();
+        $basePath = $this->context?->basePath();
         if ($basePath !== null && $basePath !== '') {
             $pluginBase = rtrim($basePath, '/\\') . '/templates/emails/';
             $candidates[] = [

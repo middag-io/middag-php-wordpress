@@ -12,8 +12,9 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Tests\Http\Routing;
 
+use Middag\Framework\Kernel\Contract\HostComponentContextInterface;
 use Middag\WordPress\Http\Contract\RestControllerInterface;
-use Middag\WordPress\Http\Routing\RouteRegistrar;
+use Middag\WordPress\Http\Routing\RestRouteRegistrar;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -22,14 +23,14 @@ use Psr\Container\ContainerInterface;
 /**
  * @internal
  */
-#[CoversClass(RouteRegistrar::class)]
-final class RouteRegistrarTest extends TestCase
+#[CoversClass(RestRouteRegistrar::class)]
+final class RestRouteRegistrarTest extends TestCase
 {
     protected function setUp(): void
     {
         parent::setUp();
 
-        // RouteRegistrar touches no WordPress globals; isolate the static
+        // RestRouteRegistrar touches no WordPress globals; isolate the static
         // recorders on the local support doubles instead.
         RouteRegistrarTestController::$namespaces = [];
         RouteRegistrarTestController::$constructions = 0;
@@ -37,17 +38,17 @@ final class RouteRegistrarTest extends TestCase
     }
 
     #[Test]
-    public function getNamespaceReturnsTheDefaultNamespaceWhenNoneIsConfigured(): void
+    public function getNamespaceDerivesFromComponentNameWithDefaultVersion(): void
     {
-        $registrar = new RouteRegistrar($this->createStub(ContainerInterface::class));
+        $registrar = new RestRouteRegistrar($this->createStub(ContainerInterface::class), $this->context('acme'));
 
-        self::assertSame('middag/v1', $registrar->getNamespace());
+        self::assertSame('acme/v1', $registrar->getNamespace());
     }
 
     #[Test]
-    public function getNamespaceReturnsTheConfiguredNamespace(): void
+    public function getNamespaceHonoursTheConfiguredApiVersion(): void
     {
-        $registrar = new RouteRegistrar($this->createStub(ContainerInterface::class), 'acme/v2');
+        $registrar = new RestRouteRegistrar($this->createStub(ContainerInterface::class), $this->context('acme'), 'v2');
 
         self::assertSame('acme/v2', $registrar->getNamespace());
     }
@@ -59,7 +60,7 @@ final class RouteRegistrarTest extends TestCase
         $container->expects($this->never())->method('has');
         $container->expects($this->never())->method('get');
 
-        $registrar = new RouteRegistrar($container);
+        $registrar = new RestRouteRegistrar($container, $this->context('acme'));
         $registrar->register();
 
         self::assertSame([], RouteRegistrarTestController::$namespaces);
@@ -79,7 +80,7 @@ final class RouteRegistrarTest extends TestCase
             ->with(RouteRegistrarTestController::class)
             ->willReturn($controller);
 
-        $registrar = new RouteRegistrar($container, 'acme/v2');
+        $registrar = new RestRouteRegistrar($container, $this->context('acme'), 'v2');
         $registrar->addController(RouteRegistrarTestController::class);
         $registrar->register();
 
@@ -94,12 +95,12 @@ final class RouteRegistrarTest extends TestCase
         $container->method('has')->with(RouteRegistrarTestController::class)->willReturn(false);
         $container->expects($this->never())->method('get');
 
-        $registrar = new RouteRegistrar($container);
+        $registrar = new RestRouteRegistrar($container, $this->context('acme'));
         $registrar->addController(RouteRegistrarTestController::class);
         $registrar->register();
 
         self::assertSame(1, RouteRegistrarTestController::$constructions);
-        self::assertSame(['middag/v1'], RouteRegistrarTestController::$namespaces);
+        self::assertSame(['acme/v1'], RouteRegistrarTestController::$namespaces);
     }
 
     #[Test]
@@ -109,7 +110,7 @@ final class RouteRegistrarTest extends TestCase
         $container->method('has')->willReturn(true);
         $container->method('get')->willReturn(new RouteRegistrarTestPlainClass());
 
-        $registrar = new RouteRegistrar($container);
+        $registrar = new RestRouteRegistrar($container, $this->context('acme'));
         $registrar->addController(RouteRegistrarTestPlainClass::class);
         $registrar->register();
 
@@ -123,7 +124,7 @@ final class RouteRegistrarTest extends TestCase
         $container->method('has')->willReturn(false);
         $container->expects($this->never())->method('get');
 
-        $registrar = new RouteRegistrar($container);
+        $registrar = new RestRouteRegistrar($container, $this->context('acme'));
         $registrar->addController(RouteRegistrarTestPlainClass::class);
         $registrar->register();
 
@@ -132,7 +133,7 @@ final class RouteRegistrarTest extends TestCase
     }
 
     #[Test]
-    public function registerProcessesEveryRegisteredControllerWithTheConfiguredNamespace(): void
+    public function registerProcessesEveryRegisteredControllerWithTheDerivedNamespace(): void
     {
         $container = $this->createMock(ContainerInterface::class);
         $container->method('has')->willReturn(true);
@@ -140,7 +141,7 @@ final class RouteRegistrarTest extends TestCase
             static fn (): RouteRegistrarTestController => new RouteRegistrarTestController(),
         );
 
-        $registrar = new RouteRegistrar($container, 'acme/v2');
+        $registrar = new RestRouteRegistrar($container, $this->context('acme'), 'v2');
         $registrar->addController(RouteRegistrarTestController::class);
         $registrar->addController(RouteRegistrarTestController::class);
         $registrar->register();
@@ -148,12 +149,20 @@ final class RouteRegistrarTest extends TestCase
         self::assertSame(['acme/v2', 'acme/v2'], RouteRegistrarTestController::$namespaces);
         self::assertSame(2, RouteRegistrarTestController::$constructions);
     }
+
+    private function context(string $componentName = 'acme'): HostComponentContextInterface
+    {
+        $context = $this->createStub(HostComponentContextInterface::class);
+        $context->method('componentName')->willReturn($componentName);
+
+        return $context;
+    }
 }
 
 /**
  * REST controller double: records the namespace passed to registerRoutes() and
  * counts constructions so the container-resolve vs. new-instantiation branches
- * of RouteRegistrar::register() can be told apart.
+ * of RestRouteRegistrar::register() can be told apart.
  *
  * @internal
  */

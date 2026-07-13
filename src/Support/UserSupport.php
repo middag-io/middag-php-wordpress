@@ -12,6 +12,10 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Support;
 
+use Middag\WordPress\Security\Enum\CapabilityInterface;
+use Middag\WordPress\Security\Enum\NormalizesCapability;
+use Middag\WordPress\Security\Enum\WooCommerceCapability;
+use Middag\WordPress\Security\Enum\WpCapability;
 use WP_User;
 
 /**
@@ -26,6 +30,8 @@ use WP_User;
  */
 final class UserSupport
 {
+    use NormalizesCapability;
+
     /**
      * Current logged-in user ID, or 0 when anonymous or the user API is absent.
      */
@@ -39,16 +45,18 @@ final class UserSupport
     }
 
     /**
-     * Whether the current user holds a capability. Returns false when the
-     * capability API is unavailable.
+     * Whether the current user holds a capability. Accepts a raw string or a
+     * typed {@see CapabilityInterface} ({@see WpCapability}
+     * / {@see WooCommerceCapability}). Returns
+     * false when the capability API is unavailable.
      */
-    public static function currentUserCan(string $capability, mixed ...$args): bool
+    public static function currentUserCan(CapabilityInterface|string $capability, mixed ...$args): bool
     {
         if (!function_exists('current_user_can')) {
             return false;
         }
 
-        return current_user_can($capability, ...$args);
+        return current_user_can(self::capabilityString($capability), ...$args);
     }
 
     /**

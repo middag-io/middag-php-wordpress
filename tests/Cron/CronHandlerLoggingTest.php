@@ -12,11 +12,7 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Tests\Cron;
 
-use Middag\Framework\Logging\Contract\ActorResolverInterface;
-use Middag\Framework\Logging\Contract\OriginResolverInterface;
-use Middag\Framework\Logging\LoggerFactory;
 use Middag\WordPress\Cron\CronHandler;
-use Middag\WordPress\Support\LogSupport;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -27,29 +23,21 @@ use RuntimeException;
 use Stringable;
 
 /**
+ * CronHandler resolves its logger per-run from the dispatch container (via
+ * LogSupport::resolve). Tests bind a spy `LoggerInterface` in the container to
+ * observe what a cron run reports.
+ *
  * @internal
  */
 #[CoversClass(CronHandler::class)]
 final class CronHandlerLoggingTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        LogSupport::setLogger(null);
-    }
-
-    protected function tearDown(): void
-    {
-        LogSupport::setLogger(null);
-    }
-
     #[Test]
-    public function serviceNotFoundReachesTheWiredLogger(): void
+    public function serviceNotFoundReachesTheResolvedLogger(): void
     {
         $spy = $this->spyLogger();
-        LogSupport::setLogger($spy);
 
-        $container = $this->container([]);
-        $callback = CronHandler::dispatch($container, 'App\Missing', 'run');
+        $callback = CronHandler::dispatch($this->container([LoggerInterface::class => $spy]), 'App\Missing', 'run');
         $callback();
 
         self::assertCount(1, $spy->records);
@@ -59,10 +47,9 @@ final class CronHandlerLoggingTest extends TestCase
     }
 
     #[Test]
-    public function serviceThrowingReachesTheWiredLogger(): void
+    public function serviceThrowingReachesTheResolvedLogger(): void
     {
         $spy = $this->spyLogger();
-        LogSupport::setLogger($spy);
 
         $service = new class {
             public function run(): never
@@ -71,7 +58,10 @@ final class CronHandlerLoggingTest extends TestCase
             }
         };
 
-        $container = $this->container([$service::class => $service]);
+        $container = $this->container([
+            LoggerInterface::class => $spy,
+            $service::class => $service,
+        ]);
         $callback = CronHandler::dispatch($container, $service::class, 'run');
         $callback();
 
@@ -84,7 +74,6 @@ final class CronHandlerLoggingTest extends TestCase
     public function logsAreNotProducedOnSuccessfulDispatch(): void
     {
         $spy = $this->spyLogger();
-        LogSupport::setLogger($spy);
 
         $service = new class {
             public bool $called = false;
@@ -95,7 +84,10 @@ final class CronHandlerLoggingTest extends TestCase
             }
         };
 
-        $container = $this->container([$service::class => $service]);
+        $container = $this->container([
+            LoggerInterface::class => $spy,
+            $service::class => $service,
+        ]);
         $callback = CronHandler::dispatch($container, $service::class, 'run');
         $callback();
 
@@ -104,19 +96,23 @@ final class CronHandlerLoggingTest extends TestCase
     }
 
     #[Test]
-    public function primesTheLoggerFromTheContainerLoggerFactoryWhenNoneIsWired(): void
+    public function dispatchesGracefullyWhenTheContainerWiresNoLogger(): void
     {
-        // No logger wired beforehand. The container exposes the framework's
-        // LoggerFactory (the real DI binding — the framework does NOT register a
-        // shared LoggerInterface), so CronHandler must prime LogSupport from it.
-        self::assertNull(LogSupport::getLogger());
+        // No LoggerInterface and no LoggerFactory bound: resolve() falls back to
+        // the error_log logger, and dispatch must still run the service.
+        $service = new class {
+            public bool $called = false;
 
-        $container = $this->container([LoggerFactory::class => $this->loggerFactory()]);
+            public function run(): void
+            {
+                $this->called = true;
+            }
+        };
 
-        $callback = CronHandler::dispatch($container, 'App\Missing', 'run');
+        $callback = CronHandler::dispatch($this->container([$service::class => $service]), $service::class, 'run');
         $callback();
 
-        self::assertInstanceOf(LoggerInterface::class, LogSupport::getLogger());
+        self::assertTrue($service->called);
     }
 
     /**
@@ -143,26 +139,9 @@ final class CronHandlerLoggingTest extends TestCase
     }
 
     /**
-     * A real, disabled LoggerFactory (forChannel() yields a NullLogger) wired
-     * with trivial actor/origin resolvers — enough to prove the resolution path
-     * without writing log files.
-     */
-    private function loggerFactory(): LoggerFactory
-    {
-        $resolver = new class implements ActorResolverInterface, OriginResolverInterface {
-            public function resolve(): string
-            {
-                return 'system';
-            }
-        };
-
-        return new LoggerFactory(sys_get_temp_dir(), $resolver, $resolver, false);
-    }
-
-    /**
      * In-memory PSR-3 spy logger recording every record.
      */
-    private function spyLogger(): object
+    private function spyLogger(): LoggerInterface
     {
         return new class extends AbstractLogger {
             /** @var list<array{level: mixed, message: string, context: array<string, mixed>}> */

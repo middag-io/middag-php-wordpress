@@ -18,6 +18,7 @@ use Middag\WordPress\Settings\Section;
 use Middag\WordPress\Settings\SettingsPageRegistrar;
 use Middag\WordPress\Settings\SettingsRegistrar;
 use Middag\WordPress\Settings\Tab;
+use Middag\WordPress\Tests\Http\RecordingEmitter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -152,5 +153,27 @@ final class SettingsPageRegistrarTest extends TestCase
 
         self::assertStringContainsString('value="Ada"', $html, 'echoField() must echo the rendered control');
         self::assertSame($html, $returned, 'echoField() must also return what it echoed');
+    }
+
+    #[Test]
+    public function theSectionCallbackWritesThroughTheInjectedEmitter(): void
+    {
+        // Proves the injected emitter is honoured (not just the default PhpSapiEmitter):
+        // the section-description markup lands in the recorder, not on the output buffer.
+        $emitter = new RecordingEmitter();
+        $registrar = new SettingsPageRegistrar($this->settings, emitter: $emitter);
+
+        $registrar->register('acme', 'acme_group', [
+            new Tab('general', 'General', [
+                new Section('acme_core', 'Core', [
+                    new Field('acme_name', 'Name'),
+                ], description: 'Core settings for Acme.'),
+            ]),
+        ]);
+
+        $callback = $GLOBALS['__wp_test_settings_sections']['acme_core']['callback'];
+        $callback();
+
+        self::assertSame('<p>Core settings for Acme.</p>', $emitter->body);
     }
 }

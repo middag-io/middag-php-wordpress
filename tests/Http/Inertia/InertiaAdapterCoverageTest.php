@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Tests\Http\Inertia;
 
-use Middag\Framework\Kernel\HostContext;
 use Middag\WordPress\Http\Inertia\InertiaAdapter;
+use Middag\WordPress\Runtime\WpComponentContext;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -25,6 +25,10 @@ use ReflectionMethod;
  * and are intentionally left to the untested exit path (see the class docblock);
  * they are tracked in BACKLOG.md.
  *
+ * The adapter is instance-scoped now: each test builds one from a
+ * {@see WpComponentContext} (component `middag`, so the mount id resolves to
+ * `middag-app`) instead of touching process-wide static state.
+ *
  * @internal
  */
 #[CoversClass(InertiaAdapter::class)]
@@ -33,11 +37,12 @@ final class InertiaAdapterCoverageTest extends TestCase
     /** @var array<string, mixed> */
     private array $serverBackup;
 
+    private InertiaAdapter $adapter;
+
     protected function setUp(): void
     {
         $this->serverBackup = $_SERVER;
-        HostContext::reset();
-        InertiaAdapter::reset();
+        $this->adapter = new InertiaAdapter(new WpComponentContext('middag', '5.0.0'));
         $GLOBALS['__wp_test_nonces'] = ['middag_inertia' => 'nonce-xyz'];
         unset($_SERVER['HTTP_X_INERTIA'], $_SERVER['HTTP_X_INERTIA_PARTIAL_COMPONENT']);
     }
@@ -45,8 +50,6 @@ final class InertiaAdapterCoverageTest extends TestCase
     protected function tearDown(): void
     {
         $_SERVER = $this->serverBackup;
-        HostContext::reset();
-        InertiaAdapter::reset();
         unset($GLOBALS['__wp_test_nonces']);
     }
 
@@ -56,7 +59,7 @@ final class InertiaAdapterCoverageTest extends TestCase
         $_SERVER['REQUEST_URI'] = '/wp-admin/admin.php?page=middag';
 
         ob_start();
-        InertiaAdapter::render('Dashboard', ['greeting' => 'hello']);
+        $this->adapter->render('Dashboard', ['greeting' => 'hello']);
         $html = (string) ob_get_clean();
 
         self::assertStringContainsString('id="middag-app"', $html);
@@ -66,10 +69,10 @@ final class InertiaAdapterCoverageTest extends TestCase
     #[Test]
     public function renderResolvesClosurePropsAndForwardsCanonicalContractVerbatim(): void
     {
-        InertiaAdapter::share('shared', 'S');
+        $this->adapter->share('shared', 'S');
 
         ob_start();
-        InertiaAdapter::render('Page', [
+        $this->adapter->render('Page', [
             'lazy' => static fn (): string => 'lazy-value',
             'contract' => ['shell' => 'product', 'layout' => ['regions' => []]],
         ]);
@@ -84,7 +87,7 @@ final class InertiaAdapterCoverageTest extends TestCase
     public function renderDoesNotSilentlyNormalizeALegacyContract(): void
     {
         ob_start();
-        InertiaAdapter::render('Page', [
+        $this->adapter->render('Page', [
             'contract' => [
                 'shell' => 'admin',
                 'layout' => [
@@ -123,44 +126,35 @@ final class InertiaAdapterCoverageTest extends TestCase
     #[Test]
     public function isInertiaRequestDetectsTheHeaderFlag(): void
     {
-        $_SERVER['HTTP_X_INERTIA'] = 'true';
-        self::assertTrue(InertiaAdapter::isInertiaRequest());
-
-        $_SERVER['HTTP_X_INERTIA'] = 'false';
-        self::assertFalse(InertiaAdapter::isInertiaRequest());
-
-        unset($_SERVER['HTTP_X_INERTIA']);
-        self::assertFalse(InertiaAdapter::isInertiaRequest());
+        // Pure now: takes the server array instead of touching $_SERVER.
+        self::assertTrue(InertiaAdapter::isInertiaRequest(['HTTP_X_INERTIA' => 'true']));
+        self::assertFalse(InertiaAdapter::isInertiaRequest(['HTTP_X_INERTIA' => 'false']));
+        self::assertFalse(InertiaAdapter::isInertiaRequest([]));
     }
 
     /**
-     * isPartialReload()/getPartialData() are pure private helpers only called
+     * isPartialReload()/getPartialData() are pure instance helpers only called
      * from sendJson() — which terminates with `exit` and is intentionally left
-     * untested (see the class docblock). Reflection drives them directly so
-     * their own logic is covered without going through the exit path.
+     * untested (see the class docblock). Reflection drives them directly on the
+     * adapter instance so their own logic is covered without the exit path.
      */
     #[Test]
     public function isPartialReloadMatchesOnlyTheRequestedComponent(): void
     {
         $method = new ReflectionMethod(InertiaAdapter::class, 'isPartialReload');
 
-        $_SERVER['HTTP_X_INERTIA_PARTIAL_COMPONENT'] = 'Dashboard';
-        self::assertTrue($method->invoke(null, 'Dashboard'));
-        self::assertFalse($method->invoke(null, 'Other'));
-
-        unset($_SERVER['HTTP_X_INERTIA_PARTIAL_COMPONENT']);
-        self::assertFalse($method->invoke(null, 'Dashboard'));
+        $server = ['HTTP_X_INERTIA_PARTIAL_COMPONENT' => 'Dashboard'];
+        self::assertTrue($method->invoke($this->adapter, $server, 'Dashboard'));
+        self::assertFalse($method->invoke($this->adapter, $server, 'Other'));
+        self::assertFalse($method->invoke($this->adapter, [], 'Dashboard'));
     }
 
     #[Test]
-    public function getPartialDataSplitsTheCommaSeparatedHeaderOrReturnsEmpty(): void
+    public function partialDataSplitsTheCommaSeparatedHeaderOrReturnsEmpty(): void
     {
-        $method = new ReflectionMethod(InertiaAdapter::class, 'getPartialData');
+        $method = new ReflectionMethod(InertiaAdapter::class, 'partialData');
 
-        $_SERVER['HTTP_X_INERTIA_PARTIAL_DATA'] = 'user,stats';
-        self::assertSame(['user', 'stats'], $method->invoke(null));
-
-        unset($_SERVER['HTTP_X_INERTIA_PARTIAL_DATA']);
-        self::assertSame([], $method->invoke(null));
+        self::assertSame(['user', 'stats'], $method->invoke($this->adapter, ['HTTP_X_INERTIA_PARTIAL_DATA' => 'user,stats']));
+        self::assertSame([], $method->invoke($this->adapter, []));
     }
 }
