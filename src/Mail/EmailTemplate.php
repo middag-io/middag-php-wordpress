@@ -28,8 +28,9 @@ final readonly class EmailTemplate
     ) {}
 
     /**
-     * Render the HTML template with the given data.
-     * Variables are extracted and available in the template file.
+     * Render the HTML template with the given data. The data is exposed to the
+     * template as a single `$view` array (e.g. `$view['name']`), never as
+     * extracted locals.
      */
     public function render(array $data = []): string
     {
@@ -58,12 +59,17 @@ final readonly class EmailTemplate
 
     private function renderFile(string $path, array $data): string
     {
-        extract($data, EXTR_SKIP);
-
         ob_start();
 
         try {
-            include $path;
+            // Isolated render scope: the included template sees ONLY $view (the
+            // render data) and the obscured $__templatePath — never $this, the
+            // raw $data, or any extracted local. No extract(): template vars are
+            // static-analyzable ($view['key']) and a data key that would have
+            // collided with a local (e.g. 'path') is no longer silently dropped.
+            (static function (string $__templatePath, array $view): void {
+                include $__templatePath;
+            })($path, $data);
         } catch (Throwable $throwable) {
             ob_end_clean();
             $this->logger->error(sprintf('[MIDDAG Email] Template render error in %s: %s', $path, $throwable->getMessage()));

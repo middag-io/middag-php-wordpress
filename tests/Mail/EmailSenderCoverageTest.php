@@ -38,11 +38,11 @@ final class EmailSenderCoverageTest extends TestCase
         mkdir($this->themeDir . '/templates/emails/plain', 0o777, true);
         file_put_contents(
             $this->themeDir . '/templates/emails/welcome.php',
-            "<?php echo 'Hi ' . (\$name ?? 'there');",
+            "<?php echo 'Hi ' . (\$view['name'] ?? 'there');",
         );
         file_put_contents(
             $this->themeDir . '/templates/emails/plain/welcome.php',
-            "<?php echo 'Hi (plain) ' . (\$name ?? 'there');",
+            "<?php echo 'Hi (plain) ' . (\$view['name'] ?? 'there');",
         );
 
         $GLOBALS['__middag_test_wp_stylesheet_directory'] = $this->themeDir;
