@@ -13,9 +13,7 @@ declare(strict_types=1);
 namespace Middag\WordPress\Tests\Mail;
 
 use FilesystemIterator;
-use Middag\Framework\Kernel\HostContext;
 use Middag\WordPress\Mail\EmailSender;
-use Middag\WordPress\Support\LogSupport;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -36,9 +34,6 @@ final class EmailSenderCoverageTest extends TestCase
 
     protected function setUp(): void
     {
-        HostContext::reset();
-        LogSupport::setLogger(null);
-
         $this->themeDir = sys_get_temp_dir() . '/middag-wp-email-' . uniqid('', true);
         mkdir($this->themeDir . '/templates/emails/plain', 0o777, true);
         file_put_contents(
@@ -57,8 +52,6 @@ final class EmailSenderCoverageTest extends TestCase
 
     protected function tearDown(): void
     {
-        HostContext::reset();
-        LogSupport::setLogger(null);
         unset(
             $GLOBALS['__middag_test_wp_stylesheet_directory'],
             $GLOBALS['__wp_test_mail'],

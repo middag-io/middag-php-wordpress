@@ -13,23 +13,26 @@ declare(strict_types=1);
 namespace Middag\WordPress\Runtime;
 
 use Middag\Framework\Kernel\Contract\HostComponentContextInterface;
-use Middag\Framework\Kernel\HostContext;
 
 /**
  * Neutral WordPress host context.
  *
- * The host plugin's composition root builds this once at boot and registers it
- * via {@see HostContext::set()} so adapter helpers
- * resolve the host's identity, asset version, and base path without referencing
- * any specific consumer plugin or its global constants.
+ * The host plugin's composition root builds this once at boot and injects it
+ * into the adapter's per-component services (InertiaAdapter, EmailSender, ...)
+ * through its own DI container, so they resolve the host's identity, asset
+ * version, and base path without referencing any specific consumer plugin or
+ * its global constants — and without sharing a process-wide slot with other
+ * plugins in the same request.
  *
  * Example (host plugin bootstrap):
  *
- *     HostContext::set(new WpComponentContext(
+ *     $context = new WpComponentContext(
  *         componentName: 'my-plugin',
  *         assetVersion: MY_PLUGIN_VERSION,
  *         basePath: plugin_dir_path(__FILE__),
- *     ));
+ *     );
+ *     $inertia = new InertiaAdapter($context);
+ *     $mailer = new EmailSender($logger, $context);
  *
  * @api
  */

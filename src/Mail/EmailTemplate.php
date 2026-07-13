@@ -12,7 +12,8 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Mail;
 
-use Middag\WordPress\Support\LogSupport;
+use Middag\Framework\Logging\ErrorLogFallbackLogger;
+use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
@@ -23,6 +24,7 @@ final readonly class EmailTemplate
     public function __construct(
         private string $htmlPath,
         private ?string $plainPath = null,
+        private LoggerInterface $logger = new ErrorLogFallbackLogger(),
     ) {}
 
     /**
@@ -64,7 +66,7 @@ final readonly class EmailTemplate
             include $path;
         } catch (Throwable $throwable) {
             ob_end_clean();
-            LogSupport::error(sprintf('[MIDDAG Email] Template render error in %s: %s', $path, $throwable->getMessage()));
+            $this->logger->error(sprintf('[MIDDAG Email] Template render error in %s: %s', $path, $throwable->getMessage()));
 
             return '';
         }

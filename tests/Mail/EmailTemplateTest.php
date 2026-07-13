@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Middag\WordPress\Tests\Mail;
 
 use Middag\WordPress\Mail\EmailTemplate;
-use Middag\WordPress\Support\LogSupport;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -30,15 +29,12 @@ final class EmailTemplateTest extends TestCase
 
     protected function setUp(): void
     {
-        LogSupport::setLogger(null);
         $this->tmpDir = sys_get_temp_dir() . '/middag_email_test_' . uniqid();
         mkdir($this->tmpDir, 0755, true);
     }
 
     protected function tearDown(): void
     {
-        LogSupport::setLogger(null);
-
         // Clean up temp files
         $files = glob($this->tmpDir . '/*');
         if ($files) {
@@ -185,10 +181,8 @@ final class EmailTemplateTest extends TestCase
                 $this->records[] = ['level' => $level, 'message' => (string) $message];
             }
         };
-        LogSupport::setLogger($spy);
-
         $path = $this->createTemplate('boom.php', '<?php throw new \RuntimeException("kaboom"); ?>');
-        $result = (new EmailTemplate($path))->render();
+        $result = (new EmailTemplate($path, null, $spy))->render();
 
         self::assertSame('', $result);
         self::assertCount(1, $spy->records);
