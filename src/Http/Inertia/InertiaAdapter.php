@@ -74,7 +74,9 @@ final class InertiaAdapter
 
     public function location(string $url): never
     {
-        if (self::isInertiaRequest($_SERVER)) {
+        $server = $_SERVER;
+
+        if (self::isInertiaRequest($server)) {
             $this->emitter->header('X-Inertia-Location', $url);
             $this->emitter->status(409);
             $this->emitter->terminate();
