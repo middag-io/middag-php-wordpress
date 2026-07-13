@@ -1,5 +1,46 @@
 # Changelog
 
+## [1.6.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.5.0...v1.6.0) (2026-07-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* **http:** Middag\WordPress\Http\Middleware\AuthMiddleware is removed and Middag\WordPress\Http\Controller\BaseController is renamed to AbstractWpRestController with a required RequestAuthenticatorInterface constructor argument. App-session JWT tokens are now issued/verified by middag-io/core's WordPressTokenService; controllers receive an injected RequestAuthenticatorInterface (the library ships WpSessionAuthenticator for the WP-session case). No compatibility shim (hard-cutover).
+* **routing:** 3 formal REST/ADMIN/PUBLIC surfaces per component (O5-LIB-02)
+* **cron:** CronRegistrar API changed (hard-cutover, no shim):
+    - `addEvent(string, CronInterval, callable)` -- 2nd arg no longer accepts a string.
+    - ctor now requires `(HostComponentContextInterface, TranslatorInterface)`,
+      resolved by the plugin's DI (mirrors the per-component pattern of LIB-03).
+    - static `addIntervals()` + const `INTERVALS` removed; becomes the instance
+      method `registerIntervals()`, with keys `{component}_{case->value}` in the
+      `cron_schedules` filter -- two plugins in the same request no longer collide.
+* **http:** CsrfGuard + SettingsPageRegistrar emit via ResponseEmitter (O5-LIB-04)
+* **inertia:** injectable emitter + edge superglobal in InertiaAdapter (O5-LIB-04)
+* **mail:** EmailTemplate renders via isolated $view, no extract() (O5-LIB-04)
+* **logging:** LogSupport becomes stateless resolver + per-instance logger (O5-LIB-03)
+* **inertia:** per-component InertiaAdapter + derived nonce (O5-LIB-03)
+
+### Features
+
+* **routing:** 3 formal REST/ADMIN/PUBLIC surfaces per component (O5-LIB-02) ([7af6cc6](https://github.com/middag-io/middag-php-wordpress/commit/7af6cc6de5d7c39cc10639d65d2ab42d52b78014))
+* **security:** typed catalog of WP + WooCommerce capabilities ([85794ef](https://github.com/middag-io/middag-php-wordpress/commit/85794ef2c3b94dc2f7db18ca563b4aa487777c63))
+
+
+### Refactoring
+
+* **cron:** type-safe CronInterval enum + i18n + per-component prefix (O5-LIB-06) ([e9283cf](https://github.com/middag-io/middag-php-wordpress/commit/e9283cf1473e5001a5f62e17aeb8149c0f5f8dd2))
+* **http:** CsrfGuard + SettingsPageRegistrar emit via ResponseEmitter (O5-LIB-04) ([24de2e9](https://github.com/middag-io/middag-php-wordpress/commit/24de2e9877073bd93475c7719a0641fefbb0ee79))
+* **http:** remove static AuthMiddleware; inject request auth into the controller (O5-LIB-05, O5-LIB-01) ([7281777](https://github.com/middag-io/middag-php-wordpress/commit/72817779779e480aab779dad6cc19ed5ce90430e))
+* **inertia:** injectable emitter + edge superglobal in InertiaAdapter (O5-LIB-04) ([96ebf37](https://github.com/middag-io/middag-php-wordpress/commit/96ebf37bb47ca987f64cc534e0d684f8dd599ccb))
+* **inertia:** per-component InertiaAdapter + derived nonce (O5-LIB-03) ([34514fd](https://github.com/middag-io/middag-php-wordpress/commit/34514fd49ae235e569ddd40a86056f65f8f11501))
+* **logging:** LogSupport becomes stateless resolver + per-instance logger (O5-LIB-03) ([db7841a](https://github.com/middag-io/middag-php-wordpress/commit/db7841a0788ada46454cb56e62947daaa7c99b35))
+* **mail:** EmailTemplate renders via isolated $view, no extract() (O5-LIB-04) ([12b4553](https://github.com/middag-io/middag-php-wordpress/commit/12b4553846f320e6d6891d6e75f125e86d18904a))
+
+
+### Miscellaneous
+
+* release middag-io/wordpress as 1.6.0 ([31c86d6](https://github.com/middag-io/middag-php-wordpress/commit/31c86d69e5b3ec0bbebc28b9711ec8452d948b46))
+
 ## [1.5.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.4.0...v1.5.0) (2026-07-09)
 
 
