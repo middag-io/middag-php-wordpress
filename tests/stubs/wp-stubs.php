@@ -1021,6 +1021,27 @@ if (!function_exists('add_submenu_page')) {
     }
 }
 
+// Stubbed rewrite API — records rules in $__wp_test_rewrite_rules, counts
+// flushes in $__wp_test_flush_rewrite, reads query vars from $__wp_test_query_vars.
+if (!function_exists('add_rewrite_rule')) {
+    function add_rewrite_rule(string $regex, string $query, string $after = 'top'): void
+    {
+        $GLOBALS['__wp_test_rewrite_rules'][] = ['regex' => $regex, 'query' => $query, 'after' => $after];
+    }
+}
+if (!function_exists('flush_rewrite_rules')) {
+    function flush_rewrite_rules(bool $hard = true): void
+    {
+        $GLOBALS['__wp_test_flush_rewrite'][] = $hard;
+    }
+}
+if (!function_exists('get_query_var')) {
+    function get_query_var(string $var, mixed $default = ''): mixed
+    {
+        return $GLOBALS['__wp_test_query_vars'][$var] ?? $default;
+    }
+}
+
 // Stubbed wp_upload_dir() — configurable via $__wp_test_upload_dir.
 if (!function_exists('wp_upload_dir')) {
     function wp_upload_dir(): array

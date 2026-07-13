@@ -14,7 +14,7 @@ composition root, not as proprietary infrastructure inside this adapter.
 
 ### Non-target host surfaces (by design)
 
-Some WordPress host surfaces are **intentionally not targeted** by this adapter: **widgets** (`register_widget` / `WP_Widget`) and **`admin-ajax.php`** action handlers. Modern MIDDAG frontends run through the Inertia/REST glue (`Http/Inertia`, `Http/Routing`), so classic widget areas and the legacy `admin-ajax` transport carry no consumer and no code here. This is a scope decision, not a gap — do not add widget/`admin-ajax` seams without a real consumer. See the coverage roadmap in `BACKLOG.md` for other by-design-absent surfaces (R1).
+Some WordPress host surfaces are **intentionally not targeted** by this adapter: **widgets** (`register_widget` / `WP_Widget`) and **`admin-ajax.php`** action handlers. Consumers reach the front end through the three formal routing surfaces below (REST, admin, public rewrite) plus the Inertia glue (`Http/Inertia`), so classic widget areas and the legacy `admin-ajax` transport carry no consumer and no code here. This is a scope decision, not a gap — do not add widget/`admin-ajax` seams without a real consumer. See the coverage roadmap in `BACKLOG.md` for other by-design-absent surfaces (R1).
 
 - **Depends on** `middag-io/framework`
 - **Consumed by:** a WordPress host plugin, through its own composition root
@@ -23,6 +23,7 @@ Some WordPress host surfaces are **intentionally not targeted** by this adapter:
 
 | Directory | Contents |
 |-----------|----------|
+| `src/Admin/` | AdminRouteRegistrar (wp-admin menu tree → Router dispatch) + MenuPage/SubMenuPage value objects — the ADMIN routing surface |
 | `src/Bus/` | WpUserContext (UserContextResolverInterface) |
 | `src/Config/` | WpConfigResolver (ConfigResolverInterface) |
 | `src/Cron/` | CronHandler, CronRegistrar (basic wp-cron) |
@@ -37,15 +38,29 @@ Some WordPress host surfaces are **intentionally not targeted** by this adapter:
 | `src/Exception/` | Adapter-specific exception hierarchy for hooks, settings rendering, database failures |
 | `src/Filesystem/` | WpUploadsFilesystem (framework FilesystemInterface → uploads dir, via LocalFilesystem) |
 | `src/Hook/` | HookRegistrar + `Contract/HookInterface` (requires an explicit, existing hook directory) |
-| `src/Http/` | `Client/{HttpClient,HttpResponse}` (wp_remote_* with optional mTLS — see below), `Contract/RestControllerInterface`, `Controller/BaseController`, `Response/RestResponse`, `Routing/{Router,RouteRegistrar}`, `Inertia/InertiaAdapter`, `Middleware/AuthMiddleware` (JWT host auth), `Security/CsrfGuard` |
+| `src/Http/` | `Client/{HttpClient,HttpResponse}` (wp_remote_* with optional mTLS — see below), `Contract/RestControllerInterface`, `Controller/BaseController`, `Response/RestResponse`, `Routing/{Router, RestRouteRegistrar (REST surface), PublicRouteRegistrar (public rewrite surface)}`, `ControllerResolver`, `Inertia/InertiaAdapter`, `Middleware/AuthMiddleware` (JWT host auth), `Security/CsrfGuard` |
 | `src/Runtime/` | WpBootstrap (BootstrapInterface), WpComponentContext (HostComponentContextInterface), WpMaintenanceGate, PluginLifecycle, Loader/WpHookfileLoader |
 | `src/Mail/` | WpMailer (framework MailerInterface → wp_mail), EmailSender, EmailTemplate |
 | `src/Persistence/` | QueryBuilder (WP_Query/wp_posts) |
 | `src/Privacy/` | PrivacyRegistrar + `Contract/PersonalDataProviderInterface` (WordPress personal-data export/erasure glue) |
 | `src/Security/` | CapabilityRegistrar (declarative caps per role) |
 | `src/Settings/` | Declarative settings framework: Tab→Section→Field (FieldType with default sanitizer), FieldRenderer (escaped), SettingsPageRegistrar over SettingDefinition/SettingsRegistrar |
-| `src/Support/` | 23 `*Support` static seams over WordPress functions (hooks, options, meta, cache, transients, uploads, sanitize/escape, logging, ...) |
+| `src/Support/` | 24 `*Support` static seams over WordPress functions (hooks, options, meta, cache, transients, uploads, sanitize/escape, logging, rewrite, ...) |
 | `src/Translation/` | WpTranslator (framework TranslatorInterface) |
+
+## Routing surfaces
+
+Three formal surfaces, each per-component (namespace/slug/query-var derived from `WpComponentContext::componentName()` — **no brand literal**; the `tests/Architecture/RoutingBrandLiteralTest` guard fails the build if any routing string literal contains `middag`). A host plugin wires them in its own composition root.
+
+| Surface | Class | WordPress mechanism | Namespacing |
+|---|---|---|---|
+| **REST** | `Http/Routing/RestRouteRegistrar` | `register_rest_route` (via controllers) | `{component}/{version}` (default `v1`) |
+| **ADMIN** | `Admin/AdminRouteRegistrar` | `add_menu_page`/`add_submenu_page` + `Router` dispatch | menu slug `{component}`, submenu `{component}-{suffix}` |
+| **PUBLIC** | `Http/Routing/PublicRouteRegistrar` | `add_rewrite_rule` + `query_vars` + `template_redirect` | query var `{component}_route` |
+
+- **REST** — controllers implement `RestControllerInterface`; the registrar hands each the derived namespace on `register()` (call from `rest_api_init`).
+- **ADMIN** — registers a menu tree whose pages all render through one `renderApp()` dispatch; unmatched routes fall to an injected callable (the lib forces neither Inertia nor a default page). Controllers resolve from the plugin's own PSR-11 container.
+- **PUBLIC** — the third surface, formerly absent by design. Maps pretty URLs to handlers via the rewrite system; `RewriteSupport` is the `@internal` seam over `add_rewrite_rule`/`flush_rewrite_rules`/`get_query_var`. Rewrite flushing is expensive and driven from `PluginLifecycle` activate/deactivate, never from `register()`.
 
 ## Contracts bridge
 
