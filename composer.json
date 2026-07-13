@@ -38,7 +38,10 @@
   "autoload": {
     "psr-4": {
       "Middag\\WordPress\\": "src/"
-    }
+    },
+    "exclude-from-classmap": [
+      "/tests/stubs/"
+    ]
   },
   "autoload-dev": {
     "psr-4": {
