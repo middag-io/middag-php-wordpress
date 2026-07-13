@@ -28,8 +28,8 @@ final class CronHandler
      * Usage:
      *   $cronRegistrar->addEvent(
      *       'middag_sync_invoices',
-     *       'middag_five_minutes',
-     *       CronHandler::dispatch(InvoiceService::class, 'syncFromStripe')
+     *       CronInterval::FiveMinutes,
+     *       CronHandler::dispatch($container, InvoiceService::class, 'syncFromStripe')
      *   );
      */
     public static function dispatch(ContainerInterface $container, string $serviceClass, string $method): Closure
