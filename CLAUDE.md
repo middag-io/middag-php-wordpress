@@ -93,6 +93,15 @@ Three formal surfaces, each per-component (namespace/slug/query-var derived from
 - `tests/AdapterPluginIsolationTest.php` — source-scans every `src/` file for non-OSS MIDDAG namespaces, consumer-plugin namespaces, and hard-coded product gold tables. Runs with `composer test`.
 - `tests/ClassLoadabilityTest.php` — autoload smoke test over the whole `src/` tree.
 
+### Architecture guards (`tests/Architecture/`)
+
+Enforced policies (all run under `composer test`):
+
+- **No static mutable state** (`NoStaticMutableStateTest`) — no `src/` class declares a static property. PHP has no readonly static, so a static property is process-wide state that collides between two plugins in one request. Per-request state is an injected instance dependency. Constants and static methods are fine.
+- **No bundled token auth** (`NoBundledTokenAuthTest`) — no `src/` file references `Firebase\JWT`. App-token/JWT logic (issue/verify/refresh) is product code and lives in the proprietary core (`WordPressTokenService`); the library exposes only the `RequestAuthenticatorInterface` seam (default `WpSessionAuthenticator`, WP-session only).
+- **No routing brand literal** (`RoutingBrandLiteralTest`) — routing sources never hard-code the lowercase `middag` literal; namespaces/slugs derive from `componentName()`.
+- **Enum case PascalCase** (`EnumCasePascalCaseTest`).
+
 ## Composer scripts
 
 - `composer check` — style → rector → stan (all analysis/dry-run)
