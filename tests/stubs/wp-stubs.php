@@ -118,7 +118,11 @@ if (!function_exists('register_rest_route')) {
 if (!class_exists('WP_Error')) {
     class WP_Error
     {
-        public function __construct(private readonly string $code = '', private readonly string $message = '') {}
+        public function __construct(
+            private readonly string $code = '',
+            private readonly string $message = '',
+            private readonly mixed $data = '',
+        ) {}
 
         public function get_error_code(): string
         {
@@ -128,6 +132,11 @@ if (!class_exists('WP_Error')) {
         public function get_error_message(): string
         {
             return $this->message;
+        }
+
+        public function get_error_data(): mixed
+        {
+            return $this->data;
         }
     }
 }

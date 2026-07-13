@@ -12,7 +12,9 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Tests\Http\Controller;
 
-use Middag\WordPress\Http\Controller\BaseController;
+use Middag\WordPress\Http\Auth\WpSessionAuthenticator;
+use Middag\WordPress\Http\Contract\RequestAuthenticatorInterface;
+use Middag\WordPress\Http\Controller\AbstractWpRestController;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -22,12 +24,12 @@ use WP_REST_Response;
 use WP_User;
 
 /**
- * Concrete fixture exposing the abstract base controller's protected seam so
- * the coverage test can drive it directly.
+ * Concrete fixture exposing the abstract controller's protected seam so the
+ * coverage test can drive it directly.
  *
  * @internal
  */
-final class BaseControllerCoverageFixture extends BaseController
+final class AbstractWpRestControllerCoverageFixture extends AbstractWpRestController
 {
     public function registerRoutes(string $namespace): void {}
 
@@ -58,14 +60,15 @@ final class BaseControllerCoverageFixture extends BaseController
 }
 
 /**
- * Drives the permission callbacks, request readers, validation and route
- * helper of the abstract base controller through a concrete fixture. The
- * sanitize seam helpers are covered by {@see BaseControllerSanitizeTest}.
+ * Drives the permission callbacks, request readers, validation and route helper
+ * of the abstract controller through a concrete fixture and the WP-session
+ * authenticator. The sanitize seam helpers are covered by
+ * {@see AbstractWpRestControllerSanitizeTest}.
  *
  * @internal
  */
-#[CoversClass(BaseController::class)]
-final class BaseControllerCoverageTest extends TestCase
+#[CoversClass(AbstractWpRestController::class)]
+final class AbstractWpRestControllerCoverageTest extends TestCase
 {
     protected function setUp(): void
     {
@@ -98,7 +101,10 @@ final class BaseControllerCoverageTest extends TestCase
         $request = new WP_REST_Request();
         $request->set_method('GET');
 
-        self::assertInstanceOf(WP_Error::class, $this->controller()->permissionCheck($request));
+        $result = $this->controller()->permissionCheck($request);
+        self::assertInstanceOf(WP_Error::class, $result);
+        self::assertSame('unauthorized', $result->get_error_code());
+        self::assertSame(['status' => 401], $result->get_error_data());
     }
 
     #[Test]
@@ -112,12 +118,55 @@ final class BaseControllerCoverageTest extends TestCase
     }
 
     #[Test]
+    public function permissionCheckPropagatesAnAuthenticatorError(): void
+    {
+        // The WP-session authenticator never returns a WP_Error, but a
+        // token-backed one can (a rejected bearer token). The controller must
+        // surface it verbatim rather than masking it as a generic 401.
+        $request = new WP_REST_Request();
+        $request->set_method('GET');
+
+        $result = $this->controllerWith($this->rejectingAuthenticator('token_expired'))->permissionCheck($request);
+
+        self::assertInstanceOf(WP_Error::class, $result);
+        self::assertSame('token_expired', $result->get_error_code());
+    }
+
+    #[Test]
     public function adminPermissionCheckRejectsUnauthenticated(): void
     {
         $request = new WP_REST_Request();
         $request->set_method('GET');
 
-        self::assertInstanceOf(WP_Error::class, $this->controller()->adminPermissionCheck($request));
+        $result = $this->controller()->adminPermissionCheck($request);
+        self::assertInstanceOf(WP_Error::class, $result);
+        self::assertSame('unauthorized', $result->get_error_code());
+        self::assertSame(['status' => 401], $result->get_error_data());
+    }
+
+    #[Test]
+    public function adminPermissionCheckDoesNotPassOptionsPreflight(): void
+    {
+        // Unlike permissionCheck, admin routes have NO OPTIONS passthrough: an
+        // anonymous preflight must still be rejected, not waved through.
+        $request = new WP_REST_Request();
+        $request->set_method('OPTIONS');
+
+        $result = $this->controller()->adminPermissionCheck($request);
+        self::assertInstanceOf(WP_Error::class, $result);
+        self::assertSame('unauthorized', $result->get_error_code());
+    }
+
+    #[Test]
+    public function adminPermissionCheckPropagatesAnAuthenticatorError(): void
+    {
+        $request = new WP_REST_Request();
+        $request->set_method('GET');
+
+        $result = $this->controllerWith($this->rejectingAuthenticator('token_invalid'))->adminPermissionCheck($request);
+
+        self::assertInstanceOf(WP_Error::class, $result);
+        self::assertSame('token_invalid', $result->get_error_code());
     }
 
     #[Test]
@@ -131,6 +180,7 @@ final class BaseControllerCoverageTest extends TestCase
 
         self::assertInstanceOf(WP_Error::class, $result);
         self::assertSame('forbidden', $result->get_error_code());
+        self::assertSame(['status' => 403], $result->get_error_data());
     }
 
     #[Test]
@@ -225,11 +275,36 @@ final class BaseControllerCoverageTest extends TestCase
         self::assertSame('/things', $GLOBALS['__wp_test_rest_routes'][0]['route']);
     }
 
-    private function controller(): BaseControllerCoverageFixture
+    private function controller(): AbstractWpRestControllerCoverageFixture
     {
-        return new BaseControllerCoverageFixture();
+        return $this->controllerWith(new WpSessionAuthenticator());
     }
 
+    private function controllerWith(RequestAuthenticatorInterface $authenticator): AbstractWpRestControllerCoverageFixture
+    {
+        return new AbstractWpRestControllerCoverageFixture($authenticator);
+    }
+
+    private function rejectingAuthenticator(string $code): RequestAuthenticatorInterface
+    {
+        return new class($code) implements RequestAuthenticatorInterface {
+            public function __construct(private readonly string $code) {}
+
+            public function resolveUser(WP_REST_Request $request): WP_Error
+            {
+                return new WP_Error($this->code, 'Rejected.', ['status' => 401]);
+            }
+
+            public function isAdmin(WP_REST_Request $request): bool
+            {
+                return false;
+            }
+        };
+    }
+
+    /**
+     * @param array<int, string> $roles
+     */
     private function loginAs(int $id, array $roles): void
     {
         $user = new WP_User($id);

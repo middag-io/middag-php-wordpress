@@ -14,7 +14,6 @@ namespace Middag\WordPress\Http\Security;
 
 use Middag\Framework\Http\Middleware\VerifyCsrfMiddleware;
 use Middag\WordPress\Http\Contract\ResponseEmitterInterface;
-use Middag\WordPress\Http\Middleware\AuthMiddleware;
 use Middag\WordPress\Http\PhpSapiEmitter;
 use Middag\WordPress\Support\SecuritySupport;
 
@@ -36,9 +35,9 @@ use Middag\WordPress\Support\SecuritySupport;
  *  - On a missing/invalid nonce the request is rejected with HTTP 403 and an
  *    Inertia-aware JSON envelope (deliberately *not* 419, which the Inertia
  *    client treats as a session-expired auto-reload).
- *  - The REST/JWT surface ({@see AuthMiddleware})
- *    is untouched: WordPress already nonce-protects `wp-json` via `X-WP-Nonce`
- *    and bearer tokens are not cookie-bound.
+ *  - The REST/JWT bearer-token surface is untouched: WordPress already
+ *    nonce-protects `wp-json` via `X-WP-Nonce` and bearer tokens are not
+ *    cookie-bound.
  *
  * Decision/extraction/payload methods are pure and unit-tested; {@see enforce()}
  * is the thin superglobal-reading exit path (mirrors {@see InertiaAdapter}'s

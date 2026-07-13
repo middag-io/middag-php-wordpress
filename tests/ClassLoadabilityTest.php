@@ -33,9 +33,11 @@ use Middag\WordPress\Exception\WordPressAdapterException;
 use Middag\WordPress\Exception\WordPressDatabaseException;
 use Middag\WordPress\Hook\Contract\HookInterface;
 use Middag\WordPress\Hook\HookRegistrar;
+use Middag\WordPress\Http\Auth\WpSessionAuthenticator;
+use Middag\WordPress\Http\Contract\RequestAuthenticatorInterface;
 use Middag\WordPress\Http\Contract\RestControllerInterface;
+use Middag\WordPress\Http\Controller\AbstractWpRestController;
 use Middag\WordPress\Http\Inertia\InertiaAdapter;
-use Middag\WordPress\Http\Middleware\AuthMiddleware;
 use Middag\WordPress\Http\Response\RestResponse;
 use Middag\WordPress\Mail\EmailSender;
 use Middag\WordPress\Mail\EmailTemplate;
@@ -90,7 +92,9 @@ final class ClassLoadabilityTest extends TestCase
             'PluginLifecycle' => [PluginLifecycle::class],
             'EmailSender' => [EmailSender::class],
             'EmailTemplate' => [EmailTemplate::class],
-            'AuthMiddleware' => [AuthMiddleware::class],
+            'RequestAuthenticatorInterface' => [RequestAuthenticatorInterface::class],
+            'WpSessionAuthenticator' => [WpSessionAuthenticator::class],
+            'AbstractWpRestController' => [AbstractWpRestController::class],
             'WpBootstrap' => [WpBootstrap::class],
             'WpUserContext' => [WpUserContext::class],
             'WpdbConnectionAdapter' => [WpdbConnectionAdapter::class],
