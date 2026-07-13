@@ -13,7 +13,10 @@ declare(strict_types=1);
 namespace Middag\WordPress\Tests\Runtime;
 
 use Middag\WordPress\Cron\CronRegistrar;
+use Middag\WordPress\Cron\Enum\CronInterval;
 use Middag\WordPress\Runtime\PluginLifecycle;
+use Middag\WordPress\Runtime\WpComponentContext;
+use Middag\WordPress\Translation\WpTranslator;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -53,7 +56,7 @@ final class PluginLifecycleTest extends TestCase
     #[Test]
     public function registerWiresActivationAndDeactivationCallbacks(): void
     {
-        $lifecycle = new PluginLifecycle(self::PLUGIN_FILE, new CronRegistrar());
+        $lifecycle = new PluginLifecycle(self::PLUGIN_FILE, new CronRegistrar(new WpComponentContext('middag', '5.0.0'), new WpTranslator()));
 
         $lifecycle->register();
 
@@ -67,8 +70,8 @@ final class PluginLifecycleTest extends TestCase
     #[Test]
     public function deactivateClearsScheduledCronHooks(): void
     {
-        $registrar = new CronRegistrar();
-        $registrar->addEvent('middag_sync', 'middag_hourly', static fn (): null => null);
+        $registrar = new CronRegistrar(new WpComponentContext('middag', '5.0.0'), new WpTranslator());
+        $registrar->addEvent('middag_sync', CronInterval::Hourly, static fn (): null => null);
 
         // Simulate the event already being scheduled in WP-Cron.
         $GLOBALS['__wp_test_next_scheduled']['middag_sync'] = 1_700_000_000;
@@ -85,8 +88,8 @@ final class PluginLifecycleTest extends TestCase
     #[Test]
     public function deactivateDoesNotUnscheduleHooksThatAreNotScheduled(): void
     {
-        $registrar = new CronRegistrar();
-        $registrar->addEvent('middag_sync', 'middag_hourly', static fn (): null => null);
+        $registrar = new CronRegistrar(new WpComponentContext('middag', '5.0.0'), new WpTranslator());
+        $registrar->addEvent('middag_sync', CronInterval::Hourly, static fn (): null => null);
         // No entry in __wp_test_next_scheduled -> wp_next_scheduled() returns false.
 
         $lifecycle = new PluginLifecycle(self::PLUGIN_FILE, $registrar);
@@ -99,7 +102,7 @@ final class PluginLifecycleTest extends TestCase
     public function activateRunsRegisteredActivationCallbacks(): void
     {
         $ran = false;
-        $lifecycle = new PluginLifecycle(self::PLUGIN_FILE, new CronRegistrar());
+        $lifecycle = new PluginLifecycle(self::PLUGIN_FILE, new CronRegistrar(new WpComponentContext('middag', '5.0.0'), new WpTranslator()));
         $lifecycle->onActivate(static function () use (&$ran): void {
             $ran = true;
         });
@@ -113,7 +116,7 @@ final class PluginLifecycleTest extends TestCase
     public function deactivateRunsExtraCallbacksBeforeCronCleanup(): void
     {
         $ran = false;
-        $lifecycle = new PluginLifecycle(self::PLUGIN_FILE, new CronRegistrar());
+        $lifecycle = new PluginLifecycle(self::PLUGIN_FILE, new CronRegistrar(new WpComponentContext('middag', '5.0.0'), new WpTranslator()));
         $lifecycle->onDeactivate(static function () use (&$ran): void {
             $ran = true;
         });

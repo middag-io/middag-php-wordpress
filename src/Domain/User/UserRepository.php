@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Domain\User;
 
+use Middag\WordPress\Security\Enum\CapabilityInterface;
 use Middag\WordPress\Support\UserSupport;
 use WP_Error;
 use WP_User;
@@ -71,7 +72,7 @@ final class UserRepository
     /**
      * Check if current user has a capability.
      */
-    public function currentUserCan(string $capability): bool
+    public function currentUserCan(CapabilityInterface|string $capability): bool
     {
         return UserSupport::currentUserCan($capability);
     }

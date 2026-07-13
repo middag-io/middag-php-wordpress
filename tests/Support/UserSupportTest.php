@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Tests\Support;
 
+use Middag\WordPress\Security\Enum\WooCommerceCapability;
+use Middag\WordPress\Security\Enum\WpCapability;
 use Middag\WordPress\Support\UserSupport;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -60,6 +62,17 @@ final class UserSupportTest extends TestCase
 
         self::assertTrue(UserSupport::currentUserCan('manage_options'));
         self::assertFalse(UserSupport::currentUserCan('edit_posts'));
+    }
+
+    #[Test]
+    public function currentUserCanAcceptsATypedCapability(): void
+    {
+        $GLOBALS['__wp_test_caps']['manage_options'] = true;
+
+        // The typed capability normalizes to the same string the map is keyed by.
+        self::assertTrue(UserSupport::currentUserCan(WpCapability::ManageOptions));
+        self::assertFalse(UserSupport::currentUserCan(WpCapability::EditPosts));
+        self::assertFalse(UserSupport::currentUserCan(WooCommerceCapability::ManageWooCommerce));
     }
 
     #[Test]

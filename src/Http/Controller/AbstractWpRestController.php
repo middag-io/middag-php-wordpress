@@ -12,8 +12,8 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Http\Controller;
 
+use Middag\WordPress\Http\Contract\RequestAuthenticatorInterface;
 use Middag\WordPress\Http\Contract\RestControllerInterface;
-use Middag\WordPress\Http\Middleware\AuthMiddleware;
 use Middag\WordPress\Http\Response\RestResponse;
 use Middag\WordPress\Support\SanitizeSupport;
 use WP_Error;
@@ -22,10 +22,19 @@ use WP_REST_Response;
 use WP_User;
 
 /**
+ * Base for WordPress REST controllers: instance-based with a
+ * {@see RequestAuthenticatorInterface} injected for its permission callbacks
+ * (replacing the old static auth middleware), plus the sanitize seam readers,
+ * required-field validation and the `route()` registration helper.
+ *
  * @api
  */
-abstract class BaseController implements RestControllerInterface
+abstract class AbstractWpRestController implements RestControllerInterface
 {
+    public function __construct(
+        protected readonly RequestAuthenticatorInterface $authenticator,
+    ) {}
+
     /**
      * Permission callback for authenticated routes.
      */
@@ -36,13 +45,16 @@ abstract class BaseController implements RestControllerInterface
             return true;
         }
 
-        // Authentication
-        $auth = AuthMiddleware::isAuthenticated($request);
-        if (is_wp_error($auth)) {
-            return $auth;
+        $user = $this->authenticator->resolveUser($request);
+        if (is_wp_error($user)) {
+            return $user;
         }
 
-        return true;
+        if ($user instanceof WP_User) {
+            return true;
+        }
+
+        return new WP_Error('unauthorized', 'User not authenticated.', ['status' => 401]);
     }
 
     /**
@@ -50,12 +62,16 @@ abstract class BaseController implements RestControllerInterface
      */
     public function adminPermissionCheck(WP_REST_Request $request): true|WP_Error
     {
-        $auth = AuthMiddleware::isAuthenticated($request);
-        if (is_wp_error($auth)) {
-            return $auth;
+        $user = $this->authenticator->resolveUser($request);
+        if (is_wp_error($user)) {
+            return $user;
         }
 
-        if (!AuthMiddleware::isAdmin($request)) {
+        if (!$user instanceof WP_User) {
+            return new WP_Error('unauthorized', 'User not authenticated.', ['status' => 401]);
+        }
+
+        if (!$this->authenticator->isAdmin($request)) {
             return new WP_Error('forbidden', 'Access restricted to administrators.', ['status' => 403]);
         }
 
@@ -75,7 +91,7 @@ abstract class BaseController implements RestControllerInterface
      */
     protected function getUser(WP_REST_Request $request): ?WP_User
     {
-        $user = AuthMiddleware::getCurrentUser($request);
+        $user = $this->authenticator->resolveUser($request);
 
         return $user instanceof WP_User ? $user : null;
     }

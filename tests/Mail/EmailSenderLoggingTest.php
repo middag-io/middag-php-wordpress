@@ -12,13 +12,12 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Tests\Mail;
 
-use Middag\Framework\Kernel\HostContext;
 use Middag\WordPress\Mail\EmailSender;
-use Middag\WordPress\Support\LogSupport;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
+use Psr\Log\LoggerInterface;
 use Stringable;
 
 /**
@@ -29,8 +28,6 @@ final class EmailSenderLoggingTest extends TestCase
 {
     protected function setUp(): void
     {
-        HostContext::reset();
-        LogSupport::setLogger(null);
         // Point the theme fallback at a directory with no email templates.
         $GLOBALS['__middag_test_wp_stylesheet_directory'] = sys_get_temp_dir() . '/middag-no-such-theme';
         $GLOBALS['__wp_test_mail'] = [];
@@ -38,8 +35,6 @@ final class EmailSenderLoggingTest extends TestCase
 
     protected function tearDown(): void
     {
-        HostContext::reset();
-        LogSupport::setLogger(null);
         unset(
             $GLOBALS['__middag_test_wp_stylesheet_directory'],
             $GLOBALS['__wp_test_mail'],
@@ -47,12 +42,11 @@ final class EmailSenderLoggingTest extends TestCase
     }
 
     #[Test]
-    public function templateNotFoundReachesTheWiredLogger(): void
+    public function templateNotFoundReachesTheInjectedLogger(): void
     {
         $spy = $this->spyLogger();
-        LogSupport::setLogger($spy);
 
-        $result = (new EmailSender())->send('to@example.test', 'Subject', 'does-not-exist');
+        $result = (new EmailSender($spy))->send('to@example.test', 'Subject', 'does-not-exist');
 
         self::assertFalse($result);
         self::assertSame([], $GLOBALS['__wp_test_mail'], 'no mail should be sent when the template is missing');
@@ -66,7 +60,7 @@ final class EmailSenderLoggingTest extends TestCase
     /**
      * In-memory PSR-3 spy logger recording every record.
      */
-    private function spyLogger(): object
+    private function spyLogger(): LoggerInterface
     {
         return new class extends AbstractLogger {
             /** @var list<array{level: mixed, message: string, context: array<string, mixed>}> */

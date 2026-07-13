@@ -13,7 +13,6 @@ declare(strict_types=1);
 namespace Middag\WordPress\Tests\Mail;
 
 use Middag\WordPress\Mail\EmailTemplate;
-use Middag\WordPress\Support\LogSupport;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -30,15 +29,12 @@ final class EmailTemplateTest extends TestCase
 
     protected function setUp(): void
     {
-        LogSupport::setLogger(null);
         $this->tmpDir = sys_get_temp_dir() . '/middag_email_test_' . uniqid();
         mkdir($this->tmpDir, 0755, true);
     }
 
     protected function tearDown(): void
     {
-        LogSupport::setLogger(null);
-
         // Clean up temp files
         $files = glob($this->tmpDir . '/*');
         if ($files) {
@@ -56,7 +52,7 @@ final class EmailTemplateTest extends TestCase
     #[Test]
     public function renderProducesHtmlFromTemplate(): void
     {
-        $path = $this->createTemplate('html.php', '<h1><?= $title ?></h1>');
+        $path = $this->createTemplate('html.php', '<h1><?= $view["title"] ?></h1>');
 
         $template = new EmailTemplate($path);
         $result = $template->render(['title' => 'Hello World']);
@@ -78,7 +74,7 @@ final class EmailTemplateTest extends TestCase
     #[Test]
     public function renderExtractsMultipleVariables(): void
     {
-        $path = $this->createTemplate('multi.php', '<?= $name ?> - <?= $role ?>');
+        $path = $this->createTemplate('multi.php', '<?= $view["name"] ?> - <?= $view["role"] ?>');
 
         $template = new EmailTemplate($path);
         $result = $template->render(['name' => 'Alice', 'role' => 'Admin']);
@@ -114,8 +110,8 @@ final class EmailTemplateTest extends TestCase
     #[Test]
     public function renderPlainRendersPlainTemplate(): void
     {
-        $htmlPath = $this->createTemplate('html.php', '<p><?= $name ?></p>');
-        $plainPath = $this->createTemplate('plain.php', 'Hello <?= $name ?>');
+        $htmlPath = $this->createTemplate('html.php', '<p><?= $view["name"] ?></p>');
+        $plainPath = $this->createTemplate('plain.php', 'Hello <?= $view["name"] ?>');
 
         $template = new EmailTemplate($htmlPath, $plainPath);
         $result = $template->renderPlain(['name' => 'Bob']);
@@ -149,20 +145,22 @@ final class EmailTemplateTest extends TestCase
     }
 
     // -------------------------------------------------------------------------
-    // EXTR_SKIP safety — existing variables must not be overwritten
+    // Scope isolation — render data reaches the template only via $view
     // -------------------------------------------------------------------------
 
     #[Test]
-    public function renderDoesNotOverwriteExistingVariables(): void
+    public function viewKeysCollidingWithInternalLocalsAreNotDropped(): void
     {
-        // The 'this' key in data should not shadow $this inside the template scope.
-        // EXTR_SKIP ensures existing vars are preserved.
-        $path = $this->createTemplate('safe.php', '<?= $greeting ?>');
+        // Under the old extract($data, EXTR_SKIP), a data key named 'path'
+        // collided with renderFile's internal $path local and was silently
+        // skipped. With the single $view array there is no extraction and no
+        // collision: $view['path'] carries the data verbatim.
+        $path = $this->createTemplate('iso.php', '<?= $view["path"] ?>');
 
         $template = new EmailTemplate($path);
-        $result = $template->render(['greeting' => 'Hi']);
+        $result = $template->render(['path' => 'view-wins']);
 
-        self::assertSame('Hi', $result);
+        self::assertSame('view-wins', $result);
     }
 
     // -------------------------------------------------------------------------
@@ -185,10 +183,8 @@ final class EmailTemplateTest extends TestCase
                 $this->records[] = ['level' => $level, 'message' => (string) $message];
             }
         };
-        LogSupport::setLogger($spy);
-
         $path = $this->createTemplate('boom.php', '<?php throw new \RuntimeException("kaboom"); ?>');
-        $result = (new EmailTemplate($path))->render();
+        $result = (new EmailTemplate($path, null, $spy))->render();
 
         self::assertSame('', $result);
         self::assertCount(1, $spy->records);

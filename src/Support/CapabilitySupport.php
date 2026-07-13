@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Support;
 
+use Middag\WordPress\Security\Enum\CapabilityInterface;
+use Middag\WordPress\Security\Enum\NormalizesCapability;
 use WP_Role;
 
 /**
@@ -36,14 +38,17 @@ use WP_Role;
  */
 final class CapabilitySupport
 {
+    use NormalizesCapability;
+
     /**
-     * Grant a capability to a role. Returns false when the role does not exist
-     * or the roles API is unavailable; true once the grant has been applied.
+     * Grant a capability to a role. Accepts a raw string or a typed
+     * {@see CapabilityInterface}. Returns false when the role does not exist or
+     * the roles API is unavailable; true once the grant has been applied.
      *
      * Mutations made here persist for the role only when WordPress is loaded —
      * the underlying `WP_Role::add_cap()` writes to the roles option.
      */
-    public static function addCap(string $role, string $capability, bool $grant = true): bool
+    public static function addCap(string $role, CapabilityInterface|string $capability, bool $grant = true): bool
     {
         $roleObject = self::role($role);
 
@@ -51,7 +56,7 @@ final class CapabilitySupport
             return false;
         }
 
-        $roleObject->add_cap($capability, $grant);
+        $roleObject->add_cap(self::capabilityString($capability), $grant);
 
         return true;
     }
@@ -61,7 +66,7 @@ final class CapabilitySupport
      * exist or the roles API is unavailable; true once the capability has been
      * removed.
      */
-    public static function removeCap(string $role, string $capability): bool
+    public static function removeCap(string $role, CapabilityInterface|string $capability): bool
     {
         $roleObject = self::role($role);
 
@@ -69,7 +74,7 @@ final class CapabilitySupport
             return false;
         }
 
-        $roleObject->remove_cap($capability);
+        $roleObject->remove_cap(self::capabilityString($capability));
 
         return true;
     }
@@ -83,9 +88,10 @@ final class CapabilitySupport
      * already exists; this re-reads via `get_role()` so the return type is a
      * predictable `?WP_Role` regardless of that quirk.
      *
-     * @param array<int, string>|array<string, bool> $capabilities capability
-     *                                                             names to grant; either a list of names
-     *                                                             or a name => granted map
+     * @param array<int, CapabilityInterface|string>|array<string, bool> $capabilities capability
+     *                                                                                 names to grant; either a list of names
+     *                                                                                 (raw strings or typed capabilities) or a
+     *                                                                                 name => granted map
      */
     public static function addRole(string $role, string $displayName, array $capabilities = []): ?WP_Role
     {
@@ -97,7 +103,7 @@ final class CapabilitySupport
             return null;
         }
 
-        add_role($role, $displayName, $capabilities);
+        add_role($role, $displayName, self::normalizeCapabilityList($capabilities));
 
         return self::role($role);
     }
@@ -131,9 +137,35 @@ final class CapabilitySupport
      * seam) so lifecycle/grant code can verify a permission without importing a
      * second seam. Returns false when the capability API is unavailable.
      */
-    public static function userCan(string $capability, mixed ...$args): bool
+    public static function userCan(CapabilityInterface|string $capability, mixed ...$args): bool
     {
         return UserSupport::currentUserCan($capability, ...$args);
+    }
+
+    /**
+     * Normalize a capability collection for `add_role()`: typed capabilities in
+     * a positional list become their string values; a `name => granted` boolean
+     * map is left untouched (array keys are already the cap strings).
+     *
+     * @param array<int, CapabilityInterface|string>|array<string, bool> $capabilities
+     *
+     * @return array<int, string>|array<string, bool>
+     */
+    private static function normalizeCapabilityList(array $capabilities): array
+    {
+        $normalized = [];
+
+        foreach ($capabilities as $key => $value) {
+            if (is_int($key)) {
+                $normalized[$key] = self::capabilityString($value);
+
+                continue;
+            }
+
+            $normalized[$key] = $value;
+        }
+
+        return $normalized;
     }
 
     /**

@@ -13,14 +13,16 @@ declare(strict_types=1);
 namespace Middag\WordPress\Http\Security;
 
 use Middag\Framework\Http\Middleware\VerifyCsrfMiddleware;
-use Middag\WordPress\Http\Middleware\AuthMiddleware;
+use Middag\WordPress\Http\Contract\ResponseEmitterInterface;
+use Middag\WordPress\Http\PhpSapiEmitter;
 use Middag\WordPress\Support\SecuritySupport;
 
 /**
  * CSRF guard for the WordPress admin Inertia pipeline.
  *
- * The admin SPA dispatches through a single `middag_inertia` action over
- * WordPress hooks — not the framework's PSR-15 kernel — so the framework's
+ * The admin SPA dispatches through a per-component nonce action (see
+ * {@see nonceAction()}) over WordPress hooks — not the framework's PSR-15
+ * kernel — so the framework's
  * {@see VerifyCsrfMiddleware} (419 + Symfony
  * tokens) does not apply here. This guard enforces the *native* WordPress nonce
  * instead, via {@see SecuritySupport}.
@@ -33,9 +35,9 @@ use Middag\WordPress\Support\SecuritySupport;
  *  - On a missing/invalid nonce the request is rejected with HTTP 403 and an
  *    Inertia-aware JSON envelope (deliberately *not* 419, which the Inertia
  *    client treats as a session-expired auto-reload).
- *  - The REST/JWT surface ({@see AuthMiddleware})
- *    is untouched: WordPress already nonce-protects `wp-json` via `X-WP-Nonce`
- *    and bearer tokens are not cookie-bound.
+ *  - The REST/JWT bearer-token surface is untouched: WordPress already
+ *    nonce-protects `wp-json` via `X-WP-Nonce` and bearer tokens are not
+ *    cookie-bound.
  *
  * Decision/extraction/payload methods are pure and unit-tested; {@see enforce()}
  * is the thin superglobal-reading exit path (mirrors {@see InertiaAdapter}'s
@@ -45,9 +47,6 @@ use Middag\WordPress\Support\SecuritySupport;
  */
 final class CsrfGuard
 {
-    /** The single nonce action shared with the admin SPA. */
-    public const NONCE_ACTION = 'middag_inertia';
-
     /** HTTP status for a missing/invalid nonce (WordPress-native, not Laravel's 419). */
     public const STATUS_FORBIDDEN = 403;
 
@@ -59,6 +58,17 @@ final class CsrfGuard
 
     /** @var list<string> */
     private const UNSAFE_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
+
+    /**
+     * The WordPress nonce action for a host component's admin SPA. Derived from
+     * the component name so two plugins in the same request never share a nonce
+     * (this replaced the fixed `middag_inertia` action).
+     * {@see InertiaAdapter::nonceAction()} builds the same value on the emit side.
+     */
+    public static function nonceAction(string $component): string
+    {
+        return $component . '_inertia';
+    }
 
     /**
      * Whether the HTTP method changes server state and therefore requires a nonce.
@@ -92,15 +102,16 @@ final class CsrfGuard
 
     /**
      * Decide whether a request may proceed: safe verbs always pass; mutating
-     * verbs require a nonce valid for {@see NONCE_ACTION}.
+     * verbs require a nonce valid for the component's nonce action (see
+     * {@see nonceAction()}).
      */
-    public static function isValidRequest(string $method, ?string $nonce): bool
+    public static function isValidRequest(string $method, ?string $nonce, string $nonceAction): bool
     {
         if (!self::isMutating($method)) {
             return true;
         }
 
-        return SecuritySupport::verifyNonce($nonce, self::NONCE_ACTION);
+        return SecuritySupport::verifyNonce($nonce, $nonceAction);
     }
 
     /**
@@ -119,14 +130,16 @@ final class CsrfGuard
     /**
      * Guard the current request, reading method/nonce from PHP superglobals.
      * No-op for safe verbs and valid mutating requests; otherwise emits the
-     * 403 envelope and exits.
-     *
-     * Thin glue around the pure methods above — intentionally not unit-tested
-     * (it reads superglobals and terminates the request, like
-     * {@see InertiaAdapter::sendJson()}).
+     * 403 envelope and terminates. The host passes the component's nonce action
+     * (see {@see nonceAction()}), the same value the SPA received via
+     * {@see InertiaAdapter}. Response side-effects go through the injected
+     * {@see ResponseEmitterInterface} (default {@see PhpSapiEmitter}); tests pass
+     * a recording emitter to assert the reject path in-process.
      */
-    public static function enforce(): void
+    public static function enforce(string $nonceAction, ?ResponseEmitterInterface $emitter = null): void
     {
+        $emitter ??= new PhpSapiEmitter();
+
         /** @var array<string, mixed> $server */
         $server = $_SERVER;
 
@@ -136,25 +149,22 @@ final class CsrfGuard
         $method = is_string($server['REQUEST_METHOD'] ?? null) ? $server['REQUEST_METHOD'] : 'GET';
         $nonce = self::extractNonce($server, $body);
 
-        if (self::isValidRequest($method, $nonce)) {
+        if (self::isValidRequest($method, $nonce, $nonceAction)) {
             return;
         }
 
-        self::reject();
+        self::reject($emitter);
     }
 
     /**
-     * Emit the 403 envelope and terminate. Thin, untested exit path.
+     * Emit the 403 envelope and terminate, through the injected emitter (which
+     * guards headers_sent() and, in tests, throws instead of exiting).
      */
-    private static function reject(): never
+    private static function reject(ResponseEmitterInterface $emitter): never
     {
-        if (!headers_sent()) {
-            http_response_code(self::STATUS_FORBIDDEN);
-            header('Content-Type: application/json');
-        }
-
-        echo wp_json_encode(self::failurePayload(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR);
-
-        exit;
+        $emitter->status(self::STATUS_FORBIDDEN);
+        $emitter->header('Content-Type', 'application/json');
+        $emitter->write((string) wp_json_encode(self::failurePayload(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR));
+        $emitter->terminate();
     }
 }
