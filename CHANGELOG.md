@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.6.0...v1.6.1) (2026-07-14)
+
+
+### Bug Fixes
+
+* **autoload:** release the classmap host-stub exclusion ([8ba19e3](https://github.com/middag-io/middag-php-wordpress/commit/8ba19e3f652fed62262f4c39f9fec1300d4a8b91))
+
 ## [1.6.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.5.0...v1.6.0) (2026-07-13)
 
 
