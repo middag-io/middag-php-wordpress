@@ -22,6 +22,12 @@ namespace Middag\WordPress\Http\Routing;
  * Route patterns use the `{param}` placeholder syntax and are compiled
  * to PCRE on registration.
  *
+ * @deprecated since 1.7 — use {@see WpRouter} (Symfony RouteCollection +
+ *             framework `#[Route]` attribute discovery) with `WpHttpKernel`;
+ *             the central route array this class implies is superseded by
+ *             controller-declared attributes. Scheduled for removal in the
+ *             next major.
+ *
  * @api
  */
 final class Router
