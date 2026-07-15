@@ -16,6 +16,7 @@ use Middag\Framework\Exception\MiddagAuthorizationException;
 use Middag\Framework\Http\Contract\ControllerInterface;
 use Middag\WordPress\Http\WpHttpKernel;
 use Middag\WordPress\Security\Attribute\Nonce;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -26,7 +27,6 @@ use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\RouteCollection;
-use Nyholm\Psr7\Factory\Psr17Factory;
 
 /**
  * @internal
@@ -151,7 +151,7 @@ class FixtureNonceController implements ControllerInterface
 
     public function setContainer(ContainerInterface $container): void {}
 
-    public function setRequest(\Symfony\Component\HttpFoundation\Request $request): void {}
+    public function setRequest(Request $request): void {}
 
     public function preHandle(): void {}
 
