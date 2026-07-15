@@ -382,6 +382,21 @@ if (!function_exists('wp_schedule_single_event')) {
     }
 }
 
+// Stubbed as_enqueue_async_action() (Action Scheduler) — records calls in
+// global $__wp_test_as_actions and returns an incrementing action id.
+if (!function_exists('as_enqueue_async_action')) {
+    function as_enqueue_async_action(string $hook, array $args = [], string $group = '', bool $unique = false, int $priority = 10): int
+    {
+        $GLOBALS['__wp_test_as_actions'][] = [
+            'hook' => $hook,
+            'args' => $args,
+            'group' => $group,
+        ];
+
+        return count($GLOBALS['__wp_test_as_actions']);
+    }
+}
+
 // Stubbed wp_enqueue_script() — records calls in global $__wp_test_enqueued_scripts.
 if (!function_exists('wp_enqueue_script')) {
     function wp_enqueue_script(string $handle, string $src = '', array $deps = [], bool|string|null $ver = false, array|bool $args = []): void

@@ -55,6 +55,25 @@ final class CronSupport
     }
 
     /**
+     * Schedule a one-off event. Returns false when scheduling fails or the
+     * cron API is unavailable.
+     *
+     * WP-Cron suppresses a duplicate single event when an identical hook+args
+     * pair is already scheduled within the next ten minutes; callers that need
+     * per-job identity must make $args distinct per job.
+     *
+     * @param array<int, mixed> $args
+     */
+    public static function scheduleSingleEvent(int $timestamp, string $hook, array $args = []): bool
+    {
+        if (!function_exists('wp_schedule_single_event')) {
+            return false;
+        }
+
+        return wp_schedule_single_event($timestamp, $hook, $args);
+    }
+
+    /**
      * Unschedule a single occurrence of an event. Returns false when the cron
      * API is unavailable.
      *
