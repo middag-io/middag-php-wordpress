@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.8.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.7.0...v1.8.0) (2026-07-15)
+
+
+### Features
+
+* **cron:** async job port with Action Scheduler and WP-Cron drivers ([8feca3a](https://github.com/middag-io/middag-php-wordpress/commit/8feca3a4dd2503fa3ce9db9d4414ccff5e0754e7))
+* **persistence:** options-backed schema version tracker ([5f2675c](https://github.com/middag-io/middag-php-wordpress/commit/5f2675c39a2860c72f1cf7e187efafec71c49413))
+
 ## [1.7.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.6.1...v1.7.0) (2026-07-15)
 
 
