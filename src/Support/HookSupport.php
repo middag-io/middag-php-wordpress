@@ -38,6 +38,18 @@ final class HookSupport
     }
 
     /**
+     * Broadcast an action to registered callbacks.
+     */
+    public static function doAction(string $hook, mixed ...$args): void
+    {
+        if (!function_exists('do_action')) {
+            return;
+        }
+
+        do_action($hook, ...$args);
+    }
+
+    /**
      * Remove a previously registered action callback.
      *
      * Returns false when the hooks API is unavailable or when WordPress did
