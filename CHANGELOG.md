@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.7.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.6.1...v1.7.0) (2026-07-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **http:** remove legacy array-based Router
+* **admin:** AdminRouteRegistrar now takes (HostComponentContextInterface, Http\Contract\RouterInterface, Framework HttpKernelInterface, ResponseEmitterInterface, callable fallback) — the array-based Router and the direct PSR-11 controller resolution are gone from the admin dispatch path. Kernel::routing() now returns the adapter Http\Contract\RouterInterface.
+
+### Features
+
+* **admin:** dispatch admin pages through the framework HTTP kernel ([a3e8ec1](https://github.com/middag-io/middag-php-wordpress/commit/a3e8ec1bb40272300761a33af180e8c3a215e43c))
+* **bus:** WordPress host event bridge over native action hooks ([789baff](https://github.com/middag-io/middag-php-wordpress/commit/789baff013d370e76c737dc1b9c5293489da99d3))
+* **http:** WpHttpKernel with WordPress #[Nonce] platform auth ([83cba16](https://github.com/middag-io/middag-php-wordpress/commit/83cba164c3ae624d93f2ada5d45e052bbd20ac2e))
+* **routing:** Symfony-backed WpRouter with framework #[Route] attribute discovery ([82ea804](https://github.com/middag-io/middag-php-wordpress/commit/82ea804303219aa2aec631dc27263351833b910b))
+* **runtime:** abstract WordPress kernel implementing the framework KernelInterface ([71fa365](https://github.com/middag-io/middag-php-wordpress/commit/71fa365dfd552ea30d8460da89f36d4a57b20922))
+* **runtime:** WordPress kernel + host event bridge ([7c41068](https://github.com/middag-io/middag-php-wordpress/commit/7c410686eacf088388b215ac49fe8bce1753f946))
+
+
+### Refactoring
+
+* **http:** remove legacy array-based Router ([0233d3a](https://github.com/middag-io/middag-php-wordpress/commit/0233d3a564eb82098df05aa47728c84477a86bf1))
+
+
+### Documentation
+
+* **readme:** drop stale LogSupport priming obligation, document the kernel ([b60ce73](https://github.com/middag-io/middag-php-wordpress/commit/b60ce7364561af6ca19b3ef7ac2c07d5ceb5fda1))
+
 ## [1.6.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.6.0...v1.6.1) (2026-07-14)
 
 
