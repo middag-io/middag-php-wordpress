@@ -338,6 +338,18 @@ if (!function_exists('get_option')) {
     }
 }
 
+// Stubbed update_option() — writes to global $__wp_test_options and records
+// the autoload flag in $__wp_test_option_autoload.
+if (!function_exists('update_option')) {
+    function update_option(string $option, mixed $value, bool|string|null $autoload = null): bool
+    {
+        $GLOBALS['__wp_test_options'][$option] = $value;
+        $GLOBALS['__wp_test_option_autoload'][$option] = $autoload;
+
+        return true;
+    }
+}
+
 // Stubbed get_transient() — reads from global $__wp_test_transients.
 if (!function_exists('get_transient')) {
     function get_transient(string $transient): mixed
@@ -367,6 +379,21 @@ if (!function_exists('wp_schedule_single_event')) {
         ];
 
         return true;
+    }
+}
+
+// Stubbed as_enqueue_async_action() (Action Scheduler) — records calls in
+// global $__wp_test_as_actions and returns an incrementing action id.
+if (!function_exists('as_enqueue_async_action')) {
+    function as_enqueue_async_action(string $hook, array $args = [], string $group = '', bool $unique = false, int $priority = 10): int
+    {
+        $GLOBALS['__wp_test_as_actions'][] = [
+            'hook' => $hook,
+            'args' => $args,
+            'group' => $group,
+        ];
+
+        return count($GLOBALS['__wp_test_as_actions']);
     }
 }
 
