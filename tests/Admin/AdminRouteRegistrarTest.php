@@ -12,15 +12,21 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Tests\Admin;
 
+use Middag\Framework\Http\Contract\HttpKernelInterface;
 use Middag\WordPress\Admin\AdminRouteRegistrar;
 use Middag\WordPress\Admin\MenuPage;
 use Middag\WordPress\Admin\SubMenuPage;
-use Middag\WordPress\Http\Routing\Router;
+use Middag\WordPress\Http\Contract\ResponseEmitterInterface;
+use Middag\WordPress\Http\Routing\WpRouter;
 use Middag\WordPress\Runtime\WpComponentContext;
+use Nyholm\Psr7\Response;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use RuntimeException;
+use Symfony\Component\Routing\Route;
 
 /**
  * @internal
@@ -28,13 +34,26 @@ use Psr\Container\ContainerInterface;
 #[CoversClass(AdminRouteRegistrar::class)]
 final class AdminRouteRegistrarTest extends TestCase
 {
+    private WpRouter $router;
+
+    private FakeHttpKernel $kernel;
+
+    private RecordingEmitter $emitter;
+
+    /** @var list<array{0: string, 1: string}> */
+    private array $fallbackCalls = [];
+
     protected function setUp(): void
     {
         $GLOBALS['__wp_test_admin_menus'] = [];
         $GLOBALS['__wp_test_admin_submenus'] = [];
         $GLOBALS['__wp_test_caps'] = [];
-        AdminRouteTestController::$calls = [];
-        AdminRouteTestController::$constructions = 0;
+
+        $this->router = new WpRouter();
+        $this->kernel = new FakeHttpKernel();
+        $this->emitter = new RecordingEmitter();
+        $this->fallbackCalls = [];
+
         unset($_GET['page'], $_GET['route'], $_SERVER['REQUEST_METHOD'], $_SERVER['HTTP_X_INERTIA']);
     }
 
@@ -54,7 +73,7 @@ final class AdminRouteRegistrarTest extends TestCase
     #[Test]
     public function slugsDeriveFromComponentName(): void
     {
-        $registrar = $this->makeRegistrar(new Router(), new AdminRouteTestContainer(), null, 'acme');
+        $registrar = $this->makeRegistrar();
 
         self::assertSame('acme', $registrar->menuSlug());
         self::assertSame('acme-things', $registrar->submenuSlug('things'));
@@ -63,7 +82,7 @@ final class AdminRouteRegistrarTest extends TestCase
     #[Test]
     public function registerBuildsTheMenuTreeThroughAdminSupport(): void
     {
-        $registrar = $this->makeRegistrar(new Router(), new AdminRouteTestContainer());
+        $registrar = $this->makeRegistrar();
         $registrar->register(
             new MenuPage('Acme', 'Acme', 'manage_options', 'dashicons-star', 3),
             [
@@ -84,7 +103,7 @@ final class AdminRouteRegistrarTest extends TestCase
     #[Test]
     public function submenuInheritsParentCapabilityWhenNoneGiven(): void
     {
-        $registrar = $this->makeRegistrar(new Router(), new AdminRouteTestContainer());
+        $registrar = $this->makeRegistrar();
         $registrar->register(
             new MenuPage('Acme', 'Acme', 'edit_posts'),
             [new SubMenuPage('things', 'Things', 'Things', '/things')],
@@ -94,250 +113,126 @@ final class AdminRouteRegistrarTest extends TestCase
     }
 
     #[Test]
-    public function dispatchResolvesTheControllerFromTheContainer(): void
+    public function dispatchExecutesAMatchedRouteThroughTheKernel(): void
     {
-        $controller = new AdminRouteTestController();
-        AdminRouteTestController::$constructions = 0;
+        $this->router->register('things_index', '/things', FixtureAdminController::class, 'index');
+        $registrar = $this->makeRegistrar();
 
-        $registrar = $this->makeRegistrar(
-            $this->routerWithThings(),
-            new AdminRouteTestContainer([AdminRouteTestController::class => $controller]),
-        );
+        $registrar->dispatch('acme-things', '/things', 'GET');
 
-        $registrar->dispatch('acme', '/things', 'GET');
-
-        self::assertSame([['method' => 'index', 'args' => []]], AdminRouteTestController::$calls);
-        self::assertSame(0, AdminRouteTestController::$constructions);
+        self::assertNotNull($this->kernel->handled);
+        self::assertSame('/things', $this->kernel->handled->getUri()->getPath());
+        self::assertSame('GET', $this->kernel->handled->getMethod());
+        self::assertSame([], $this->fallbackCalls);
     }
 
     #[Test]
-    public function dispatchPassesRouteParamsToTheControllerMethod(): void
+    public function dispatchEmitsTheKernelResponse(): void
     {
-        $registrar = $this->makeRegistrar(
-            $this->routerWithThings(),
-            new AdminRouteTestContainer([AdminRouteTestController::class => new AdminRouteTestController()]),
-        );
+        $this->router->register('things_index', '/things', FixtureAdminController::class, 'index');
+        $this->kernel->respondWith = new Response(201, ['X-Custom' => 'yes'], 'created');
+        $registrar = $this->makeRegistrar();
 
-        $registrar->dispatch('acme', '/things/42', 'GET');
+        $registrar->dispatch('acme-things', '/things', 'GET');
 
-        self::assertSame([['method' => 'show', 'args' => ['42']]], AdminRouteTestController::$calls);
-    }
-
-    #[Test]
-    public function dispatchInstantiatesTheControllerWhenItIsNotInTheContainer(): void
-    {
-        $registrar = $this->makeRegistrar($this->routerWithThings(), new AdminRouteTestContainer());
-
-        $registrar->dispatch('acme', '/things', 'GET');
-
-        self::assertSame(1, AdminRouteTestController::$constructions);
-        self::assertSame([['method' => 'index', 'args' => []]], AdminRouteTestController::$calls);
+        self::assertSame(201, $this->emitter->statuses[0]);
+        self::assertContains(['X-Custom', 'yes'], $this->emitter->headers);
+        self::assertSame('created', implode('', $this->emitter->written));
     }
 
     #[Test]
     public function dispatchInvokesTheFallbackWhenNoRouteMatches(): void
     {
-        $fallbackCalls = [];
-        $registrar = $this->makeRegistrar(
-            $this->routerWithThings(),
-            new AdminRouteTestContainer(),
-            static function (string $page, string $path) use (&$fallbackCalls): void {
-                $fallbackCalls[] = [$page, $path];
-            },
-        );
+        $registrar = $this->makeRegistrar();
 
-        $registrar->dispatch('acme', '/does-not-exist', 'GET');
+        $registrar->dispatch('acme-things', '/nowhere', 'GET');
 
-        self::assertSame([['acme', '/does-not-exist']], $fallbackCalls);
-        self::assertSame([], AdminRouteTestController::$calls);
-    }
-
-    #[Test]
-    public function dispatchUsesTheRegisteredRouteBaseWhenNoExplicitRouteIsGiven(): void
-    {
-        $registrar = $this->makeRegistrar(
-            $this->routerWithThings(),
-            new AdminRouteTestContainer([AdminRouteTestController::class => new AdminRouteTestController()]),
-        );
-        $registrar->register(
-            new MenuPage('Acme', 'Acme'),
-            [new SubMenuPage('things', 'Things', 'Things', '/things')],
-        );
-
-        // No explicit ?route → derived from the submenu's route base.
-        $registrar->dispatch('acme-things', '', 'GET');
-
-        self::assertSame([['method' => 'index', 'args' => []]], AdminRouteTestController::$calls);
-    }
-
-    #[Test]
-    public function renderAppReadsTheRequestAndDispatches(): void
-    {
-        $registrar = $this->makeRegistrar(
-            $this->routerWithThings(),
-            new AdminRouteTestContainer([AdminRouteTestController::class => new AdminRouteTestController()]),
-        );
-
-        $this->grantCapability();
-        $_GET['page'] = 'acme';
-        $_GET['route'] = '/things/7';
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-
-        $registrar->renderApp();
-
-        self::assertSame([['method' => 'show', 'args' => ['7']]], AdminRouteTestController::$calls);
-    }
-
-    #[Test]
-    public function handleInertiaRequestIgnoresNonInertiaRequests(): void
-    {
-        $registrar = $this->makeRegistrar(
-            $this->routerWithThings(),
-            new AdminRouteTestContainer([AdminRouteTestController::class => new AdminRouteTestController()]),
-        );
-        $registrar->register(new MenuPage('Acme', 'Acme'), [new SubMenuPage('things', 'Things', 'Things', '/things')]);
-
-        $_GET['page'] = 'acme-things';
-        // No HTTP_X_INERTIA header.
-        $registrar->handleInertiaRequest();
-
-        self::assertSame([], AdminRouteTestController::$calls);
-    }
-
-    #[Test]
-    public function handleInertiaRequestDispatchesForAnOwnedInertiaPage(): void
-    {
-        $registrar = $this->makeRegistrar(
-            $this->routerWithThings(),
-            new AdminRouteTestContainer([AdminRouteTestController::class => new AdminRouteTestController()]),
-        );
-        $registrar->register(new MenuPage('Acme', 'Acme'), [new SubMenuPage('things', 'Things', 'Things', '/things')]);
-
-        $this->grantCapability();
-        $_SERVER['HTTP_X_INERTIA'] = 'true';
-        $_GET['page'] = 'acme-things';
-        $registrar->handleInertiaRequest();
-
-        self::assertSame([['method' => 'index', 'args' => []]], AdminRouteTestController::$calls);
-    }
-
-    #[Test]
-    public function handleInertiaRequestIgnoresAnInertiaRequestForAnUnownedPage(): void
-    {
-        $registrar = $this->makeRegistrar(
-            $this->routerWithThings(),
-            new AdminRouteTestContainer([AdminRouteTestController::class => new AdminRouteTestController()]),
-        );
-        $registrar->register(new MenuPage('Acme', 'Acme'), [new SubMenuPage('things', 'Things', 'Things', '/things')]);
-
-        $_SERVER['HTTP_X_INERTIA'] = 'true';
-        $_GET['page'] = 'someone-else';
-        $registrar->handleInertiaRequest();
-
-        self::assertSame([], AdminRouteTestController::$calls);
-    }
-
-    #[Test]
-    public function renderAppDeniesDispatchWhenTheUserLacksThePageCapability(): void
-    {
-        $registrar = $this->makeRegistrar(
-            $this->routerWithThings(),
-            new AdminRouteTestContainer([AdminRouteTestController::class => new AdminRouteTestController()]),
-        );
-
-        // No capability granted → current_user_can() returns false.
-        $_GET['page'] = 'acme';
-        $_GET['route'] = '/things';
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-
-        $registrar->renderApp();
-
-        self::assertSame([], AdminRouteTestController::$calls);
-    }
-
-    #[Test]
-    public function handleInertiaRequestDeniesWhenTheUserLacksThePageCapability(): void
-    {
-        $registrar = $this->makeRegistrar(
-            $this->routerWithThings(),
-            new AdminRouteTestContainer([AdminRouteTestController::class => new AdminRouteTestController()]),
-        );
-        $registrar->register(new MenuPage('Acme', 'Acme'), [new SubMenuPage('things', 'Things', 'Things', '/things')]);
-
-        // Inertia request for an owned page, but no capability granted.
-        $_SERVER['HTTP_X_INERTIA'] = 'true';
-        $_GET['page'] = 'acme-things';
-        $registrar->handleInertiaRequest();
-
-        self::assertSame([], AdminRouteTestController::$calls);
-    }
-
-    #[Test]
-    public function dispatchUsesTheMainMenuRouteBaseForTheTopLevelSlug(): void
-    {
-        $router = new Router();
-        $router->get('/overview', [AdminRouteTestController::class, 'index']);
-
-        $registrar = $this->makeRegistrar(
-            $router,
-            new AdminRouteTestContainer([AdminRouteTestController::class => new AdminRouteTestController()]),
-        );
-        $registrar->register(
-            new MenuPage('Acme', 'Acme', 'manage_options', '', null, '/overview'),
-            [],
-        );
-
-        // Empty route on the main slug → derived from MenuPage::routeBase.
-        $registrar->dispatch('acme', '', 'GET');
-
-        self::assertSame([['method' => 'index', 'args' => []]], AdminRouteTestController::$calls);
-    }
-
-    #[Test]
-    public function dispatchIgnoresAResolvedRouteWhoseControllerLacksTheMethod(): void
-    {
-        $router = new Router();
-        $router->get('/gone', [AdminRouteTestController::class, 'doesNotExist']);
-
-        $registrar = $this->makeRegistrar(
-            $router,
-            new AdminRouteTestContainer([AdminRouteTestController::class => new AdminRouteTestController()]),
-        );
-
-        // Route matches, but the controller has no such method → silent no-op, no crash.
-        $registrar->dispatch('acme', '/gone', 'GET');
-
-        self::assertSame([], AdminRouteTestController::$calls);
+        self::assertNull($this->kernel->handled);
+        self::assertSame([['acme-things', '/nowhere']], $this->fallbackCalls);
     }
 
     #[Test]
     public function dispatchFallsBackToRootWhenThePageHasNoRegisteredRouteBase(): void
     {
-        $fallbackCalls = [];
-        $registrar = $this->makeRegistrar(
-            $this->routerWithThings(),
-            new AdminRouteTestContainer(),
-            static function (string $page, string $path) use (&$fallbackCalls): void {
-                $fallbackCalls[] = [$page, $path];
-            },
-        );
+        $registrar = $this->makeRegistrar();
 
         // Empty route + a page never registered → path defaults to '/', which
         // resolves to nothing, so the fallback fires with the '/' path.
         $registrar->dispatch('ghost-page', '', 'GET');
 
-        self::assertSame([['ghost-page', '/']], $fallbackCalls);
+        self::assertSame([['ghost-page', '/']], $this->fallbackCalls);
+    }
+
+    #[Test]
+    public function dispatchRespectsTheHttpMethodWhenMatching(): void
+    {
+        $this->router->getRoutes()->add('things_create', new Route(
+            '/things',
+            ['_controller' => [FixtureAdminController::class, 'create']],
+            [],
+            [],
+            '',
+            [],
+            ['POST'],
+        ));
+        $registrar = $this->makeRegistrar();
+
+        $registrar->dispatch('acme-things', '/things', 'GET');
+
+        // GET must not match the POST-only route: fallback runs.
+        self::assertNull($this->kernel->handled);
+        self::assertCount(1, $this->fallbackCalls);
+
+        $registrar->dispatch('acme-things', '/things', 'POST');
+
+        self::assertNotNull($this->kernel->handled);
+        self::assertSame('POST', $this->kernel->handled->getMethod());
+    }
+
+    #[Test]
+    public function dispatchUsesTheRegisteredRouteBaseWhenNoExplicitRouteIsGiven(): void
+    {
+        $this->router->register('things_index', '/things', FixtureAdminController::class, 'index');
+        $registrar = $this->makeRegistrar();
+        $registrar->register(
+            new MenuPage('Acme', 'Acme', 'manage_options'),
+            [new SubMenuPage('things', 'Things', 'Things', '/things')],
+        );
+
+        $registrar->dispatch('acme-things', '', 'GET');
+
+        self::assertNotNull($this->kernel->handled);
+        self::assertSame('/things', $this->kernel->handled->getUri()->getPath());
+    }
+
+    #[Test]
+    public function renderAppReadsTheRequestAndDispatches(): void
+    {
+        $GLOBALS['__wp_test_caps']['manage_options'] = true;
+        $this->router->register('things_index', '/things', FixtureAdminController::class, 'index');
+        $registrar = $this->makeRegistrar();
+        $registrar->register(
+            new MenuPage('Acme', 'Acme', 'manage_options'),
+            [new SubMenuPage('things', 'Things', 'Things', '/things')],
+        );
+
+        $_GET['page'] = 'acme-things';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+
+        $registrar->renderApp();
+
+        self::assertNotNull($this->kernel->handled);
+        self::assertSame('/things', $this->kernel->handled->getUri()->getPath());
+        self::assertFalse($this->emitter->terminated);
     }
 
     #[Test]
     public function renderAppTreatsAnArrayValuedPageParamAsAbsent(): void
     {
-        $registrar = $this->makeRegistrar(
-            $this->routerWithThings(),
-            new AdminRouteTestContainer([AdminRouteTestController::class => new AdminRouteTestController()]),
-        );
+        $GLOBALS['__wp_test_caps']['manage_options'] = true;
+        $this->router->register('things_index', '/things', FixtureAdminController::class, 'index');
+        $registrar = $this->makeRegistrar();
 
-        $this->grantCapability();
         // A crafted array-valued param must not crash requestString(); it falls
         // back to the default (the menu slug) instead of a TypeError.
         $_GET['page'] = ['injected'];
@@ -346,88 +241,171 @@ final class AdminRouteRegistrarTest extends TestCase
 
         $registrar->renderApp();
 
-        self::assertSame([['method' => 'index', 'args' => []]], AdminRouteTestController::$calls);
+        self::assertNotNull($this->kernel->handled);
+        self::assertSame('/things', $this->kernel->handled->getUri()->getPath());
     }
 
-    private function grantCapability(string $capability = 'manage_options'): void
+    #[Test]
+    public function renderAppDeniesDispatchWhenTheUserLacksThePageCapability(): void
     {
-        $GLOBALS['__wp_test_caps'][$capability] = true;
+        $GLOBALS['__wp_test_caps']['manage_options'] = false;
+        $this->router->register('things_index', '/things', FixtureAdminController::class, 'index');
+        $registrar = $this->makeRegistrar();
+        $registrar->register(
+            new MenuPage('Acme', 'Acme', 'manage_options'),
+            [new SubMenuPage('things', 'Things', 'Things', '/things')],
+        );
+
+        $_GET['page'] = 'acme-things';
+
+        $registrar->renderApp();
+
+        self::assertNull($this->kernel->handled);
+        self::assertSame([], $this->fallbackCalls);
     }
 
-    /**
-     * @param null|callable(string, string): void $fallback
-     */
-    private function makeRegistrar(
-        Router $router,
-        ContainerInterface $container,
-        ?callable $fallback = null,
-        string $component = 'acme',
-    ): AdminRouteRegistrar {
+    #[Test]
+    public function handleInertiaRequestIgnoresNonInertiaRequests(): void
+    {
+        $registrar = $this->makeRegistrar();
+        $registrar->register(new MenuPage('Acme', 'Acme', 'manage_options'), []);
+
+        $_GET['page'] = 'acme';
+
+        $registrar->handleInertiaRequest();
+
+        self::assertNull($this->kernel->handled);
+        self::assertFalse($this->emitter->terminated);
+    }
+
+    #[Test]
+    public function handleInertiaRequestDispatchesAndTerminatesForAnOwnedPage(): void
+    {
+        $GLOBALS['__wp_test_caps']['manage_options'] = true;
+        $this->router->register('things_index', '/things', FixtureAdminController::class, 'index');
+        $registrar = $this->makeRegistrar();
+        $registrar->register(
+            new MenuPage('Acme', 'Acme', 'manage_options'),
+            [new SubMenuPage('things', 'Things', 'Things', '/things')],
+        );
+
+        $_GET['page'] = 'acme-things';
+        $_SERVER['HTTP_X_INERTIA'] = 'true';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+
+        try {
+            $registrar->handleInertiaRequest();
+            self::fail('Expected the recording emitter to signal termination.');
+        } catch (EmitterTerminated) {
+            // expected: the Inertia XHR path pre-empts the admin shell.
+        }
+
+        self::assertNotNull($this->kernel->handled);
+        self::assertTrue($this->emitter->terminated);
+    }
+
+    #[Test]
+    public function handleInertiaRequestIgnoresAnInertiaRequestForAnUnownedPage(): void
+    {
+        $registrar = $this->makeRegistrar();
+        $registrar->register(new MenuPage('Acme', 'Acme', 'manage_options'), []);
+
+        $_GET['page'] = 'somebody-else';
+        $_SERVER['HTTP_X_INERTIA'] = 'true';
+
+        $registrar->handleInertiaRequest();
+
+        self::assertNull($this->kernel->handled);
+        self::assertFalse($this->emitter->terminated);
+    }
+
+    #[Test]
+    public function handleInertiaRequestDeniesWhenTheUserLacksThePageCapability(): void
+    {
+        $GLOBALS['__wp_test_caps']['manage_options'] = false;
+        $registrar = $this->makeRegistrar();
+        $registrar->register(new MenuPage('Acme', 'Acme', 'manage_options'), []);
+
+        $_GET['page'] = 'acme';
+        $_SERVER['HTTP_X_INERTIA'] = 'true';
+
+        $registrar->handleInertiaRequest();
+
+        self::assertNull($this->kernel->handled);
+        self::assertFalse($this->emitter->terminated);
+    }
+
+    private function makeRegistrar(string $component = 'acme'): AdminRouteRegistrar
+    {
         return new AdminRouteRegistrar(
-            new WpComponentContext($component, '5.0.0'),
-            $router,
-            $container,
-            $fallback ?? static fn (string $page, string $path): null => null,
+            new WpComponentContext($component, '1.0.0'),
+            $this->router,
+            $this->kernel,
+            $this->emitter,
+            function (string $page, string $path): void {
+                $this->fallbackCalls[] = [$page, $path];
+            },
         );
     }
+}
 
-    private function routerWithThings(): Router
+final class FixtureAdminController
+{
+    public function index(): void {}
+
+    public function create(): void {}
+}
+
+final class FakeHttpKernel implements HttpKernelInterface
+{
+    public ?ServerRequestInterface $handled = null;
+
+    public ?ResponseInterface $respondWith = null;
+
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        $router = new Router();
-        $router->get('/things', [AdminRouteTestController::class, 'index']);
-        $router->get('/things/{id}', [AdminRouteTestController::class, 'show']);
+        $this->handled = $request;
 
-        return $router;
+        return $this->respondWith ?? new Response(200, [], 'ok');
     }
 }
 
-/**
- * In-memory PSR-11 container double.
- *
- * @internal
- */
-final class AdminRouteTestContainer implements ContainerInterface
+final class EmitterTerminated extends RuntimeException {}
+
+final class RecordingEmitter implements ResponseEmitterInterface
 {
-    /**
-     * @param array<string, object> $services
-     */
-    public function __construct(private array $services = []) {}
+    /** @var list<int> */
+    public array $statuses = [];
 
-    public function get(string $id): object
+    /** @var list<array{0: string, 1: string}> */
+    public array $headers = [];
+
+    /** @var list<string> */
+    public array $written = [];
+
+    public bool $terminated = false;
+
+    public function status(int $code): void
     {
-        return $this->services[$id];
+        $this->statuses[] = $code;
     }
 
-    public function has(string $id): bool
+    public function header(string $name, string $value): void
     {
-        return isset($this->services[$id]);
-    }
-}
-
-/**
- * Controller double recording method invocations and constructions.
- *
- * @internal
- */
-final class AdminRouteTestController
-{
-    /** @var list<array{method: string, args: array<int, ?string>}> */
-    public static array $calls = [];
-
-    public static int $constructions = 0;
-
-    public function __construct()
-    {
-        ++self::$constructions;
+        $this->headers[] = [$name, $value];
     }
 
-    public function index(): void
+    public function redirect(string $url): void {}
+
+    public function write(string $body): void
     {
-        self::$calls[] = ['method' => 'index', 'args' => []];
+        $this->written[] = $body;
     }
 
-    public function show(?string $id = null): void
+    public function terminate(): never
     {
-        self::$calls[] = ['method' => 'show', 'args' => [$id]];
+        $this->terminated = true;
+
+        throw new EmitterTerminated('terminated');
     }
 }

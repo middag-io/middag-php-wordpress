@@ -16,8 +16,8 @@ use Middag\Framework\Kernel\Contract\KernelInterface;
 use Middag\WordPress\Admin\AdminRouteRegistrar;
 use Middag\WordPress\Cron\CronRegistrar;
 use Middag\WordPress\Hook\HookRegistrar;
+use Middag\WordPress\Http\Contract\RouterInterface;
 use Middag\WordPress\Http\Routing\RestRouteRegistrar;
-use Middag\WordPress\Http\Routing\Router;
 use Middag\WordPress\Support\HookSupport;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
@@ -187,16 +187,17 @@ abstract class Kernel implements KernelInterface
     }
 
     /**
-     * The admin Router bound by the product container.
+     * The adapter router bound by the product container.
      *
-     * @throws RuntimeException when the product container does not bind Router
+     * @throws RuntimeException when the product container does not bind
+     *                          RouterInterface
      */
-    public static function routing(): Router
+    public static function routing(): RouterInterface
     {
-        $router = static::get(Router::class);
+        $router = static::get(RouterInterface::class);
 
-        if (!$router instanceof Router) {
-            throw new RuntimeException('Router binding is not a Router instance.');
+        if (!$router instanceof RouterInterface) {
+            throw new RuntimeException('RouterInterface binding is not a router instance.');
         }
 
         return $router;
