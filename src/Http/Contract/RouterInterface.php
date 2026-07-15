@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Http\Contract;
 
-use Middag\WordPress\Http\Routing\Router;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RequestContext;
@@ -24,9 +23,7 @@ use Symfony\Component\Routing\RouteCollection;
  *
  * Wraps a Symfony {@see RouteCollection} and delegates attribute discovery to
  * the framework's `RouteLoaderInterface` (`#[Route]` reflection scan) so
- * controllers declare their own routes instead of a central array — see the
- * legacy array-based {@see Router}, which this
- * contract supersedes.
+ * controllers declare their own routes instead of a central array.
  *
  * @api
  */
