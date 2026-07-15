@@ -338,6 +338,18 @@ if (!function_exists('get_option')) {
     }
 }
 
+// Stubbed update_option() — writes to global $__wp_test_options and records
+// the autoload flag in $__wp_test_option_autoload.
+if (!function_exists('update_option')) {
+    function update_option(string $option, mixed $value, bool|string|null $autoload = null): bool
+    {
+        $GLOBALS['__wp_test_options'][$option] = $value;
+        $GLOBALS['__wp_test_option_autoload'][$option] = $autoload;
+
+        return true;
+    }
+}
+
 // Stubbed get_transient() — reads from global $__wp_test_transients.
 if (!function_exists('get_transient')) {
     function get_transient(string $transient): mixed
