@@ -466,6 +466,21 @@ if (!function_exists('add_action')) {
     }
 }
 
+// Stubbed do_action() — records dispatches in global $__wp_test_dispatched AND
+// invokes callbacks registered through the add_action() stub, mirroring real
+// WP semantics closely enough for bridge/dispatch tests.
+if (!function_exists('do_action')) {
+    function do_action(string $hook, mixed ...$args): void
+    {
+        $GLOBALS['__wp_test_dispatched'][] = ['hook' => $hook, 'args' => $args];
+
+        foreach ($GLOBALS['__wp_test_actions'][$hook] ?? [] as $registered) {
+            $accepted = $registered['accepted_args'];
+            ($registered['callback'])(...array_slice($args, 0, $accepted));
+        }
+    }
+}
+
 // Stubbed remove_action() — drops the matching callback/priority pair from
 // global $__wp_test_actions; returns whether a callback was removed (mirrors
 // real WP semantics).

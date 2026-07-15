@@ -49,19 +49,29 @@ frontend toolkit that backs this adapter's Inertia frontend glue.
 
 ## Host integration
 
-A WordPress plugin owns the composition root that wires the adapter in. Two
-obligations the host must satisfy at boot:
+A WordPress plugin owns the composition root that wires the adapter in. The
+adapter ships an abstract kernel that formalizes it: subclass
+`Middag\WordPress\Runtime\Kernel`, provide the singleton storage and the
+compiled container (see the class docblock for the two-method contract), and
+call `YourKernel::init()` on `plugins_loaded`. Boot wires `HookRegistrar` and
+`CronRegistrar` (`init`, priority 5) and `RestRouteRegistrar`
+(`rest_api_init`) whenever your container binds them — everything
+product-specific goes in your `onBoot()` override. The kernel holds no static
+state; the singleton lives on YOUR subclass, so two MIDDAG plugins in one
+request never share a kernel.
+
+One obligation the host must still satisfy at boot:
 
 - **Register the host context.** Call
   `HostContext::set(new WpComponentContext($componentName, $assetVersion, $basePath))`
   so the adapter can resolve the component name, asset version, and base path
   (used for Inertia cache-busting and email-template path resolution).
-- **Prime the logger.** Call
-  `Middag\WordPress\Support\LogSupport::primeFromContainer($container)` once the
-  DI container is built. The framework registers a channel-based `LoggerFactory`
-  but no shared `Psr\Log\LoggerInterface`, so this wires the adapter's
-  operational error sites (cron dispatch, email send/render) to the framework
-  PSR-3 logger. Without priming, those sites fall back to PHP's `error_log()`.
+
+Logging needs no priming: the adapter's operational sites (cron dispatch,
+email send/render) resolve their PSR-3 logger per call through
+`Middag\WordPress\Support\LogSupport::resolve($container)` — an explicit
+`Psr\Log\LoggerInterface` binding wins, then the framework's channel
+`LoggerFactory`, then the `error_log()` fallback.
 
 ## Development
 
