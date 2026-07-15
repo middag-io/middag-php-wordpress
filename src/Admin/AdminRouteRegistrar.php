@@ -13,27 +13,38 @@ declare(strict_types=1);
 namespace Middag\WordPress\Admin;
 
 use Closure;
+use Middag\Framework\Http\Contract\HttpKernelInterface;
 use Middag\Framework\Kernel\Contract\HostComponentContextInterface;
-use Middag\WordPress\Http\ControllerResolver;
+use Middag\WordPress\Http\Contract\ResponseEmitterInterface;
+use Middag\WordPress\Http\Contract\RouterInterface;
 use Middag\WordPress\Http\Inertia\InertiaAdapter;
-use Middag\WordPress\Http\Routing\Router;
 use Middag\WordPress\Support\AdminSupport;
 use Middag\WordPress\Support\SanitizeSupport;
 use Middag\WordPress\Support\UserSupport;
-use Psr\Container\ContainerInterface;
+use Nyholm\Psr7\Factory\Psr17Factory;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Routing\Exception\MethodNotAllowedException;
+use Symfony\Component\Routing\Exception\ResourceNotFoundException;
+use Symfony\Component\Routing\Matcher\UrlMatcher;
+use Symfony\Component\Routing\RequestContext;
 
 /**
  * Admin routing surface: registers a wp-admin menu tree whose pages all render
- * through one dispatch callback, resolving the current page/route to a
- * controller via the adapter {@see Router} and a PSR-11 container.
+ * through one dispatch pipeline — the current page/route resolves against the
+ * adapter {@see RouterInterface} route collection (controller-declared
+ * `#[Route]` attributes or imperative registrations) and executes through the
+ * framework HTTP kernel, inheriting its middleware pipeline and the
+ * `#[Auth]`/`#[Middleware]`/`#[Nonce]` attributes.
  *
- * Generalizes the pattern each MIDDAG plugin used to hand-roll: the menu slug is
- * derived from the host component name (no brand literal), page rendering flows
- * through the injected fallback for unmatched routes (so the lib forces neither
- * Inertia nor a "Dashboard" page), and controllers are resolved from the
- * plugin's own container so they inherit its injected identity. All wp-admin
- * calls go through {@see AdminSupport} so the registrar is unit-testable off a
- * WordPress runtime.
+ * Generalizes the pattern each MIDDAG plugin used to hand-roll: the menu slug
+ * derives from the host component name (no brand literal), unmatched routes
+ * flow through the injected fallback (so the lib forces neither Inertia nor a
+ * "Dashboard" page), and responses are emitted through the injected
+ * {@see ResponseEmitterInterface} so the previously untestable header/echo
+ * paths stay assertable. All wp-admin calls go through {@see AdminSupport}.
  *
  * @api
  */
@@ -74,8 +85,9 @@ final class AdminRouteRegistrar
      */
     public function __construct(
         private readonly HostComponentContextInterface $context,
-        private readonly Router $router,
-        private readonly ContainerInterface $container,
+        private readonly RouterInterface $router,
+        private readonly HttpKernelInterface $kernel,
+        private readonly ResponseEmitterInterface $emitter,
         callable $fallback,
     ) {
         $this->fallback = Closure::fromCallable($fallback);
@@ -143,56 +155,18 @@ final class AdminRouteRegistrar
 
     /**
      * wp-admin page render callback: reads the current page/route/method from
-     * the request at this boundary, then dispatches. Superglobals are read only
-     * here; {@see self::dispatch()} is pure.
+     * the request at this boundary, then dispatches. The response body is
+     * written inside the admin shell (no termination).
      */
     public function renderApp(): void
     {
-        $page = $this->requestString($_GET, 'page', $this->menuSlug());
-
-        // Capability gate at the WordPress boundary. WP enforces the page
-        // capability on the normal menu-render path, but renderApp() is also
-        // reachable through handleInertiaRequest() on admin_init (and via
-        // admin-ajax.php / admin-post.php), where that menu gate never runs.
-        // Fail-closed here so no admin controller is invoked for a user lacking
-        // the page's capability.
-        if (!$this->userCanAccess($page)) {
-            return;
-        }
-
-        $route = $this->requestString($_GET, 'route');
-        $method = $this->requestString($_SERVER, 'REQUEST_METHOD', 'GET');
-
-        $this->dispatch($page, $route, $method);
-    }
-
-    /**
-     * Resolve a page/route/method to a controller and invoke it, falling back to
-     * the injected callable when nothing matches. Pure — no superglobals.
-     */
-    public function dispatch(string $page, string $route, string $method): void
-    {
-        $path = $route !== '' ? '/' . trim($route, '/') : ($this->routeBases[$page] ?? '/');
-
-        $match = $this->router->resolve($method, $path);
-
-        if ($match === null) {
-            ($this->fallback)($page, $path);
-
-            return;
-        }
-
-        $controller = ControllerResolver::resolve($this->container, $match['controller']);
-
-        if (method_exists($controller, $match['method'])) {
-            $controller->{$match['method']}(...array_values($match['params']));
-        }
+        $this->respondToCurrentRequest(terminate: false);
     }
 
     /**
      * Early Inertia XHR interceptor (wire on `admin_init`): if this is an Inertia
-     * request for one of this registrar's pages, render before WordPress emits
-     * the admin HTML shell.
+     * request for one of this registrar's pages, render and terminate before
+     * WordPress emits the admin HTML shell.
      */
     public function handleInertiaRequest(): void
     {
@@ -205,7 +179,25 @@ final class AdminRouteRegistrar
             return;
         }
 
-        $this->renderApp();
+        $this->respondToCurrentRequest(terminate: true);
+    }
+
+    /**
+     * Resolve a page/route/method to a route and execute it through the HTTP
+     * kernel, falling back to the injected callable when nothing matches.
+     * Pure — no superglobals.
+     */
+    public function dispatch(string $page, string $route, string $method): void
+    {
+        $path = $route !== '' ? '/' . trim($route, '/') : ($this->routeBases[$page] ?? '/');
+
+        if (!$this->matches($path, $method)) {
+            ($this->fallback)($page, $path);
+
+            return;
+        }
+
+        $this->emit($this->kernel->handle($this->psrRequest($method, $path)));
     }
 
     /**
@@ -216,6 +208,94 @@ final class AdminRouteRegistrar
     public function pageHookSuffixes(): array
     {
         return $this->pageHookSuffixes;
+    }
+
+    /**
+     * Shared body of renderApp()/handleInertiaRequest(): capability gate at the
+     * WordPress boundary (renderApp() is also reachable through admin_init and
+     * admin-ajax.php, where WP's own menu gate never runs — fail-closed), then
+     * dispatch; optionally terminate (Inertia XHR path, which must pre-empt the
+     * admin shell).
+     */
+    private function respondToCurrentRequest(bool $terminate): void
+    {
+        $page = $this->requestString($_GET, 'page', $this->menuSlug());
+
+        if (!$this->userCanAccess($page)) {
+            return;
+        }
+
+        $route = $this->requestString($_GET, 'route');
+        $method = $this->requestString($_SERVER, 'REQUEST_METHOD', 'GET');
+
+        $this->dispatch($page, $route, $method);
+
+        if ($terminate) {
+            $this->emitter->terminate();
+        }
+    }
+
+    /**
+     * Whether the route collection has a route for this path/method. Matching
+     * runs here (and again inside the kernel) so the no-match case can flow to
+     * the fallback instead of a kernel 404.
+     */
+    private function matches(string $path, string $method): bool
+    {
+        $context = clone ($this->router->getContext() ?? new RequestContext());
+        $context->setMethod($method);
+
+        try {
+            (new UrlMatcher($this->router->getRoutes(), $context))->match($path);
+        } catch (MethodNotAllowedException|ResourceNotFoundException) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Build the PSR-7 request the kernel dispatches: the current request's
+     * query/body/cookies/files/server, re-targeted at the synthetic admin
+     * route path (the kernel matches paths, not `admin.php?page=...&route=...`).
+     */
+    private function psrRequest(string $method, string $path): ServerRequestInterface
+    {
+        $base = Request::createFromGlobals();
+
+        $request = Request::create(
+            $path,
+            $method,
+            strtoupper($method) === 'GET' ? $base->query->all() : $base->request->all(),
+            $base->cookies->all(),
+            $base->files->all(),
+            $base->server->all(),
+            $base->getContent(),
+        );
+
+        $psr17 = new Psr17Factory();
+
+        return (new PsrHttpFactory($psr17, $psr17, $psr17, $psr17))->createRequest($request);
+    }
+
+    /**
+     * Emit a PSR-7 response through the emitter seam (status, headers, body).
+     */
+    private function emit(ResponseInterface $response): void
+    {
+        $this->emitter->status($response->getStatusCode());
+
+        foreach ($response->getHeaders() as $name => $values) {
+            foreach ($values as $value) {
+                $this->emitter->header($name, $value);
+            }
+        }
+
+        $body = (string) $response->getBody();
+
+        if ($body !== '') {
+            $this->emitter->write($body);
+        }
     }
 
     /**
