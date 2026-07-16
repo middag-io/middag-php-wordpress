@@ -17,15 +17,14 @@ use Middag\WordPress\Runtime\WpComponentContext;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use ReflectionMethod;
 
 /**
- * Covers the non-terminating render path and request-detection/prop-resolution
- * helpers. The `sendJson()` and `location()` branches terminate with `exit`
- * and are intentionally left to the untested exit path (see the class docblock);
- * they are tracked in BACKLOG.md.
+ * Covers the non-terminating (first-visit) render path and the static request
+ * detection helper. Partial-reload / prop-resolution semantics now live in the
+ * framework wire the adapter delegates to and are exercised end-to-end through
+ * {@see InertiaAdapterEmitterTest} and {@see InertiaAdapterWireTest}.
  *
- * The adapter is instance-scoped now: each test builds one from a
+ * The adapter is instance-scoped: each test builds one from a
  * {@see WpComponentContext} (component `middag`, so the mount id resolves to
  * `middag-app`) instead of touching process-wide static state.
  *
@@ -130,31 +129,5 @@ final class InertiaAdapterCoverageTest extends TestCase
         self::assertTrue(InertiaAdapter::isInertiaRequest(['HTTP_X_INERTIA' => 'true']));
         self::assertFalse(InertiaAdapter::isInertiaRequest(['HTTP_X_INERTIA' => 'false']));
         self::assertFalse(InertiaAdapter::isInertiaRequest([]));
-    }
-
-    /**
-     * isPartialReload()/getPartialData() are pure instance helpers only called
-     * from sendJson() — which terminates with `exit` and is intentionally left
-     * untested (see the class docblock). Reflection drives them directly on the
-     * adapter instance so their own logic is covered without the exit path.
-     */
-    #[Test]
-    public function isPartialReloadMatchesOnlyTheRequestedComponent(): void
-    {
-        $method = new ReflectionMethod(InertiaAdapter::class, 'isPartialReload');
-
-        $server = ['HTTP_X_INERTIA_PARTIAL_COMPONENT' => 'Dashboard'];
-        self::assertTrue($method->invoke($this->adapter, $server, 'Dashboard'));
-        self::assertFalse($method->invoke($this->adapter, $server, 'Other'));
-        self::assertFalse($method->invoke($this->adapter, [], 'Dashboard'));
-    }
-
-    #[Test]
-    public function partialDataSplitsTheCommaSeparatedHeaderOrReturnsEmpty(): void
-    {
-        $method = new ReflectionMethod(InertiaAdapter::class, 'partialData');
-
-        self::assertSame(['user', 'stats'], $method->invoke($this->adapter, ['HTTP_X_INERTIA_PARTIAL_DATA' => 'user,stats']));
-        self::assertSame([], $method->invoke($this->adapter, []));
     }
 }

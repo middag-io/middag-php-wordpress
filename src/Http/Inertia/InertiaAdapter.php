@@ -12,7 +12,9 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Http\Inertia;
 
-use Closure;
+use Middag\Framework\Http\Inertia\InertiaFactory;
+use Middag\Framework\Http\Inertia\InertiaResponse;
+use Middag\Framework\Http\Inertia\InertiaVersionManager;
 use Middag\Framework\Kernel\Contract\HostComponentContextInterface;
 use Middag\WordPress\Http\Contract\ResponseEmitterInterface;
 use Middag\WordPress\Http\PhpSapiEmitter;
@@ -20,22 +22,35 @@ use Middag\WordPress\Http\Security\CsrfGuard;
 use Middag\WordPress\Support\AssetSupport;
 use Middag\WordPress\Support\EscapeSupport;
 use Middag\WordPress\Support\SecuritySupport;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Per-component Inertia adapter for the WordPress admin SPA pipeline.
  *
+ * Thin WordPress plumbing over the framework's Inertia v3 wire: the whole
+ * protocol — closure/`optional()`/`defer()`/`merge()` prop resolution, partial
+ * reloads (`only`/`except`), deferred/merge/match metadata, asset-version skew
+ * (409 + `X-Inertia-Location`), `X-Inertia-Reset` and entity normalization — is
+ * delegated to {@see InertiaResponse} through
+ * {@see InertiaFactory::render()}. This adapter contributes only the parts that
+ * are genuinely WordPress: the CSRF nonce shared as `csrfToken`, the
+ * component-namespaced mount node (`{component}-app`), the wp-admin HTML shell,
+ * the per-component asset version, the SPA asset enqueue, and the XHR detection
+ * helper the admin router intercepts on.
+ *
  * Instance-scoped: each host plugin builds one adapter from its own
  * {@see HostComponentContextInterface} (resolved through the plugin's own DI
  * container), so two plugins living in the same request never share shared-props,
- * mount id, CSRF nonce action, or asset version.
+ * mount id, CSRF nonce action, or asset version. The framework wire it delegates
+ * to is configured (version + HTML bootstrap) per render(), which is safe because
+ * wp-admin serves exactly one component per request — the framework statics are
+ * the documented adapter boot seam.
  *
- * Request/response boundaries follow the CsrfGuard split: the request superglobal
- * is read exactly once at the public entry points ({@see render()} / {@see
- * location()}) and threaded to pure helpers as an array, while every response
- * side-effect (headers, body, redirect, termination) goes through the injected
- * {@see ResponseEmitterInterface}. This keeps the whole class unit-testable —
- * including the JSON/redirect/exit paths that used to be untestable inline
- * `header`/`echo`/`exit`.
+ * Request/response boundaries follow the CsrfGuard split: the framework wire
+ * reads the request superglobals at its own boundary, while every response
+ * side-effect (status, headers, body, redirect, termination) goes through the
+ * injected {@see ResponseEmitterInterface}. This keeps the JSON/redirect/exit
+ * paths that used to be untestable inline `header`/`echo`/`exit` assertable.
  *
  * @api
  */
@@ -54,22 +69,29 @@ final class InertiaAdapter
         $this->sharedProps[$key] = $value;
     }
 
+    /**
+     * Render an Inertia page for this component, emitting the response through the
+     * injected emitter.
+     *
+     * Builds the props (shared + local + auto `csrfToken`) and hands them to the
+     * framework wire, which decides between the JSON (Inertia XHR) and HTML shell
+     * (first visit) branches and applies every v3 rule. The Inertia XHR branch
+     * pre-empts the wp-admin HTML shell and therefore terminates; a full visit
+     * writes the mount node and returns so WordPress finishes the admin page.
+     *
+     * @param array<string, mixed> $props
+     */
     public function render(string $component, array $props = []): void
     {
-        $server = $_SERVER;
+        $this->configureFrameworkWire();
 
-        $page = [
-            'component' => $component,
-            'props' => $this->resolveProps($props),
-            'url' => $this->currentUrl($server),
-            'version' => $this->getVersion(),
-        ];
+        $response = InertiaFactory::render($component, $this->resolveProps($props))->toResponse();
 
-        if (self::isInertiaRequest($server)) {
-            $this->sendJson($page, $server);
+        $this->emit($response);
+
+        if (self::isInertiaRequest($_SERVER)) {
+            $this->emitter->terminate();
         }
-
-        $this->renderHtml($page);
     }
 
     public function location(string $url): never
@@ -141,103 +163,93 @@ final class InertiaAdapter
         return CsrfGuard::nonceAction($this->context->componentName());
     }
 
+    /**
+     * Point the framework's Inertia wire at THIS component before delegating:
+     * its own asset version (each plugin cache-busts independently) and a
+     * wp-admin HTML bootstrap that mounts the SPA on the component-namespaced
+     * node with the page payload in `data-page`.
+     *
+     * Set per render because wp-admin serves one component per request, so there
+     * is never a second component's render in flight to clobber; the framework's
+     * static version manager and HTML bootstrap are the documented adapter boot
+     * seam for exactly this.
+     */
+    private function configureFrameworkWire(): void
+    {
+        InertiaVersionManager::setVersion($this->getVersion());
+
+        InertiaFactory::setHtmlBootstrap(
+            fn (array $page, string $json, string $attr): Response => new Response($this->htmlShell($json)),
+        );
+    }
+
+    /**
+     * Build the props handed to the framework wire: shared props overlaid by the
+     * per-render local props, plus the auto-shared WP nonce.
+     *
+     * The nonce is exposed as `csrfToken` so the SPA can echo it back via the
+     * `X-WP-Nonce` header that CsrfGuard verifies on mutating requests; an
+     * explicit share/prop of the same key wins. Everything else (closures,
+     * `optional()`/`defer()`/`merge()` wrappers, and any `contract` envelope) is
+     * forwarded verbatim — resolution, partial-reload filtering and normalization
+     * are the framework wire's responsibility, and a legacy contract is passed
+     * through unchanged so the frontend rejects it rather than being silently
+     * rewritten here.
+     *
+     * @param array<string, mixed> $props
+     *
+     * @return array<string, mixed>
+     */
     private function resolveProps(array $props): array
     {
         $merged = array_merge($this->sharedProps, $props);
 
-        // Auto-share the WP nonce as `csrfToken` so the SPA can echo it back via
-        // the `X-WP-Nonce` header that CsrfGuard verifies on mutating requests.
-        // An explicit share/prop of the same key wins (set before this point).
         if (!array_key_exists('csrfToken', $merged)) {
             $merged['csrfToken'] = SecuritySupport::createNonce($this->nonceAction());
         }
 
-        $resolved = [];
+        return $merged;
+    }
 
-        foreach ($merged as $key => $value) {
-            $resolved[$key] = $value instanceof Closure ? $value() : $value;
+    /**
+     * The wp-admin mount node the framework's HTML branch writes on a first
+     * visit: the component-namespaced div carrying the page payload in
+     * `data-page`.
+     *
+     * Escapes exactly once at this output boundary, through the Escape seam. The
+     * JSON is the framework's page payload — it is NOT pre-escaped, so this
+     * attr() call is the single (and only) HTML-attribute escaping layer over the
+     * data-page value. Do not add another.
+     */
+    private function htmlShell(string $json): string
+    {
+        return '<div id="' . EscapeSupport::attr($this->mountId()) . '" data-page="' . EscapeSupport::attr($json) . '"></div>';
+    }
+
+    /**
+     * Emit a framework HttpFoundation response through the WordPress emitter seam
+     * (status, headers preserving their original case, body). Headers keep their
+     * case so an Inertia client reads `X-Inertia`, `Vary`, etc. exactly.
+     */
+    private function emit(Response $response): void
+    {
+        $this->emitter->status($response->getStatusCode());
+
+        foreach ($response->headers->allPreserveCase() as $name => $values) {
+            foreach ($values as $value) {
+                $this->emitter->header($name, (string) $value);
+            }
         }
 
-        // Props (including any `contract`) pass through verbatim. The adapter
-        // accepts ONLY the canonical @middag-io/react PageContract and performs
-        // no schema migration: a legacy contract is forwarded unchanged so the
-        // frontend rejects it, rather than being silently rewritten here.
-        return $resolved;
-    }
+        $body = $response->getContent();
 
-    /**
-     * @param array<string, mixed> $server
-     */
-    private function isPartialReload(array $server, string $component): bool
-    {
-        return isset($server['HTTP_X_INERTIA_PARTIAL_COMPONENT'])
-            && $server['HTTP_X_INERTIA_PARTIAL_COMPONENT'] === $component;
-    }
-
-    /**
-     * @param array<string, mixed> $server
-     *
-     * @return list<string>
-     */
-    private function partialData(array $server): array
-    {
-        $header = (string) ($server['HTTP_X_INERTIA_PARTIAL_DATA'] ?? '');
-
-        return $header !== '' ? explode(',', $header) : [];
-    }
-
-    /**
-     * @param array<string, mixed> $server
-     */
-    private function currentUrl(array $server): string
-    {
-        $uri = $server['REQUEST_URI'] ?? '/wp-admin/admin.php?page=' . $this->context->componentName();
-
-        return (string) $uri;
+        if ($body !== false && $body !== '') {
+            $this->emitter->write($body);
+        }
     }
 
     private function getVersion(): string
     {
         return $this->context->assetVersion();
-    }
-
-    /**
-     * @param array<string, mixed> $page
-     * @param array<string, mixed> $server
-     */
-    private function sendJson(array $page, array $server): never
-    {
-        // Handle partial reloads
-        if ($this->isPartialReload($server, (string) $page['component'])) {
-            $only = $this->partialData($server);
-            if ($only !== []) {
-                $page['props'] = array_intersect_key($page['props'], array_flip($only));
-            }
-        }
-
-        $this->emitter->header('Content-Type', 'application/json');
-        $this->emitter->header('X-Inertia', 'true');
-        $this->emitter->header('Vary', 'X-Inertia');
-
-        $this->emitter->write((string) wp_json_encode($page, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR));
-
-        $this->emitter->terminate();
-    }
-
-    /**
-     * @param array<string, mixed> $page
-     */
-    private function renderHtml(array $page): void
-    {
-        $json = (string) wp_json_encode($page, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR);
-
-        // Escape exactly once at the output boundary, through the Escape seam.
-        // The JSON above is the framework's internal page payload — it is NOT
-        // pre-escaped, so this attr() call is the single (and only) HTML-attribute
-        // escaping layer over the data-page value. Do not add another.
-        $attr = EscapeSupport::attr($json);
-        $mountId = EscapeSupport::attr($this->mountId());
-
-        $this->emitter->write('<div id="' . $mountId . '" data-page="' . $attr . '"></div>');
     }
 }

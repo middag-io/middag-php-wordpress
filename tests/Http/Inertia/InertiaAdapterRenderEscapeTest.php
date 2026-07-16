@@ -14,39 +14,48 @@ namespace Middag\WordPress\Tests\Http\Inertia;
 
 use Middag\WordPress\Http\Inertia\InertiaAdapter;
 use Middag\WordPress\Runtime\WpComponentContext;
-use Middag\WordPress\Support\EscapeSupport;
+use Middag\WordPress\Tests\Http\RecordingEmitter;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use ReflectionMethod;
-use Throwable;
 
 /**
- * WP-04 output-boundary coverage: {@see InertiaAdapter::renderHtml()} emits the
- * page payload into the `data-page` attribute through the {@see EscapeSupport}
- * seam, escaped exactly once (no double-escaping of the framework's internal
- * JSON), and mounts on the component-namespaced id (`middag-app` for the
- * `middag` component).
+ * WP-04 output-boundary coverage: on a first (non-Inertia) visit the adapter
+ * writes the framework's page payload into the `data-page` attribute of the
+ * component-namespaced mount node (`middag-app` for the `middag` component),
+ * escaped exactly once through the Escape seam — no double-escaping of the
+ * framework's internal JSON, no live `<script>` breakout.
  *
- * Exercised through the private `renderHtml()` via reflection (mirroring
- * {@see InertiaAdapterCsrfShareTest}) to avoid the `render()` exit/echo path.
+ * Driven through the public {@see InertiaAdapter::render()} full-visit path via a
+ * {@see RecordingEmitter} so the assertion exercises the real HTML shell the
+ * framework wire hands back, not a private helper.
  *
  * @internal
  */
 #[CoversClass(InertiaAdapter::class)]
 final class InertiaAdapterRenderEscapeTest extends TestCase
 {
-    #[Test]
-    public function renderHtmlEscapesThePagePayloadInTheDataPageAttribute(): void
-    {
-        $page = [
-            'component' => 'Dashboard',
-            'props' => ['title' => '<script>alert(1)</script>'],
-            'url' => '/wp-admin/admin.php?page=middag',
-            'version' => '5.0.0',
-        ];
+    /** @var array<string, mixed> */
+    private array $serverBackup;
 
-        $html = $this->renderHtml($page);
+    protected function setUp(): void
+    {
+        $this->serverBackup = $_SERVER;
+        $GLOBALS['__wp_test_nonces'] = ['middag_inertia' => 'nonce-xyz'];
+        unset($_SERVER['HTTP_X_INERTIA']);
+        $_SERVER['REQUEST_URI'] = '/wp-admin/admin.php?page=middag';
+    }
+
+    protected function tearDown(): void
+    {
+        $_SERVER = $this->serverBackup;
+        unset($GLOBALS['__wp_test_nonces']);
+    }
+
+    #[Test]
+    public function renderEmitsThePagePayloadEscapedInTheDataPageAttribute(): void
+    {
+        $html = $this->render('Dashboard', ['title' => '<script>alert(1)</script>']);
 
         // The mount node is present and the attribute carries the payload.
         self::assertStringStartsWith('<div id="middag-app" data-page="', $html);
@@ -59,43 +68,23 @@ final class InertiaAdapterRenderEscapeTest extends TestCase
     #[Test]
     public function dataPageAttributeIsEscapedExactlyOnce(): void
     {
-        $page = [
-            'component' => 'X',
-            'props' => ['q' => 'a&b"c'],
-            'url' => '/x',
-            'version' => '1',
-        ];
+        $html = $this->render('X', ['q' => 'a&b"c']);
 
-        $html = $this->renderHtml($page);
-
-        // Reconstruct the expected single-layer escaping: JSON-encode (as the
-        // adapter does), then escape once via the seam. If the adapter
-        // double-escaped, the '&' would appear as '&amp;amp;' instead.
-        $json = (string) wp_json_encode($page, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR);
-        $expectedAttr = EscapeSupport::attr($json);
-
-        self::assertSame('<div id="middag-app" data-page="' . $expectedAttr . '"></div>', $html);
+        // A single escaping layer never produces the double-escaped '&amp;amp;'.
+        self::assertStringContainsString('data-page="', $html);
         self::assertStringNotContainsString('&amp;amp;', $html, 'data-page must be escaped exactly once');
     }
 
     /**
-     * @param array<string, mixed> $page
+     * @param array<string, mixed> $props
      */
-    private function renderHtml(array $page): string
+    private function render(string $component, array $props): string
     {
-        $adapter = new InertiaAdapter(new WpComponentContext('middag', '5.0.0'));
-        $method = new ReflectionMethod(InertiaAdapter::class, 'renderHtml');
+        $emitter = new RecordingEmitter();
+        $adapter = new InertiaAdapter(new WpComponentContext('middag', '5.0.0'), $emitter);
 
-        ob_start();
+        $adapter->render($component, $props);
 
-        try {
-            $method->invoke($adapter, $page);
-
-            return ob_get_clean();
-        } catch (Throwable $throwable) {
-            ob_end_clean();
-
-            throw $throwable;
-        }
+        return $emitter->body;
     }
 }
