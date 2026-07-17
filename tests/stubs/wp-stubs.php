@@ -383,7 +383,9 @@ if (!function_exists('wp_schedule_single_event')) {
 }
 
 // Stubbed as_enqueue_async_action() (Action Scheduler) — records calls in
-// global $__wp_test_as_actions and returns an incrementing action id.
+// global $__wp_test_as_actions and returns an incrementing action id, unless a
+// test forces a specific result via $__wp_test_as_action_id_override (e.g. 0,
+// mirroring Action Scheduler's own failure-to-enqueue return value).
 if (!function_exists('as_enqueue_async_action')) {
     function as_enqueue_async_action(string $hook, array $args = [], string $group = '', bool $unique = false, int $priority = 10): int
     {
@@ -393,7 +395,7 @@ if (!function_exists('as_enqueue_async_action')) {
             'group' => $group,
         ];
 
-        return count($GLOBALS['__wp_test_as_actions']);
+        return $GLOBALS['__wp_test_as_action_id_override'] ?? count($GLOBALS['__wp_test_as_actions']);
     }
 }
 
@@ -554,6 +556,21 @@ if (!function_exists('wp_mail')) {
         ];
 
         return (bool) ($GLOBALS['__wp_test_mail_result'] ?? true);
+    }
+}
+
+// Stubbed wp_redirect() — records calls in global $__wp_test_redirects; result
+// configurable via $__wp_test_redirect_result (defaults to true, mirroring a
+// successful redirect header being sent).
+if (!function_exists('wp_redirect')) {
+    function wp_redirect(string $location, int $status = 302): bool
+    {
+        $GLOBALS['__wp_test_redirects'][] = [
+            'location' => $location,
+            'status' => $status,
+        ];
+
+        return (bool) ($GLOBALS['__wp_test_redirect_result'] ?? true);
     }
 }
 
