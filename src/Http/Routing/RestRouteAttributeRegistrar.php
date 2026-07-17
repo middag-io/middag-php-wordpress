@@ -12,15 +12,11 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Http\Routing;
 
-use Middag\Framework\Http\Attribute\Middleware;
 use Middag\Framework\Http\Contract\RouteLoaderInterface;
 use Middag\Framework\Http\Routing\RouteLoader;
 use Middag\Framework\Kernel\Contract\HostComponentContextInterface;
 use Middag\WordPress\Http\WpRestKernel;
 use Psr\Container\ContainerInterface;
-use ReflectionClass;
-use ReflectionMethod;
-use RuntimeException;
 use Symfony\Component\Routing\RouteCollection;
 use WP_Error;
 use WP_REST_Request;
@@ -94,8 +90,6 @@ final class RestRouteAttributeRegistrar
                 $controllerRef = $route->getDefault('_controller');
                 [$class, $action] = $controllerRef;
 
-                $this->guardNoMiddleware($class, $action);
-
                 $methods = $route->getMethods();
 
                 $specs[] = [
@@ -125,29 +119,6 @@ final class RestRouteAttributeRegistrar
                 'callback' => fn (WP_REST_Request $request): WP_REST_Response => $this->kernel->handle($class, $action, $request),
                 'permission_callback' => fn (WP_REST_Request $request): true|WP_Error => $this->kernel->authorize($class, $action, $request),
             ]);
-        }
-    }
-
-    /**
-     * Fail loudly at registration if a controller declares `#[Middleware]`: the
-     * REST kernel does not run route middleware yet, so registering a
-     * scope-guarded controller would silently drop its RBAC gate (fail-open).
-     *
-     * @param class-string $controllerClass
-     */
-    private function guardNoMiddleware(string $controllerClass, string $action): void
-    {
-        $hasMiddleware = (new ReflectionMethod($controllerClass, $action))->getAttributes(Middleware::class) !== []
-            || (new ReflectionClass($controllerClass))->getAttributes(Middleware::class) !== [];
-
-        if ($hasMiddleware) {
-            throw new RuntimeException(sprintf(
-                '%s::%s declares #[Middleware], but WpRestKernel does not run route middleware yet. '
-                . 'Migrating a scope-guarded controller now would drop its RBAC gate (fail-open). '
-                . 'Add REST middleware support before migrating this controller.',
-                $controllerClass,
-                $action,
-            ));
         }
     }
 }

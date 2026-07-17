@@ -21,7 +21,6 @@ use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
-use RuntimeException;
 use Symfony\Component\Routing\Attribute\Route;
 
 /**
@@ -93,15 +92,19 @@ final class RestRouteAttributeRegistrarTest extends TestCase
     }
 
     #[Test]
-    public function buildRoutesRefusesAControllerThatDeclaresMiddleware(): void
+    public function buildRoutesAcceptsAControllerThatDeclaresMiddleware(): void
     {
+        // The kernel now runs the #[Middleware] chain, so the registrar no longer
+        // refuses a scope-guarded controller — it builds the spec like any other.
         $registrar = $this->registrar();
-        $registrar->addController(MiddlewareGuardedTestController::class);
+        $registrar->addController(MiddlewareDeclaringTestController::class);
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionMessageMatches('/does not run route middleware/');
+        $specs = $registrar->buildRoutes();
 
-        $registrar->buildRoutes();
+        self::assertCount(1, $specs);
+        self::assertSame('/guarded', $specs[0]['path']);
+        self::assertSame(MiddlewareDeclaringTestController::class, $specs[0]['controller']);
+        self::assertSame('index', $specs[0]['action']);
     }
 
     private function registrar(): RestRouteAttributeRegistrar
@@ -133,11 +136,12 @@ final class AttributeRoutedTestController
 }
 
 /**
- * Controller double declaring #[Middleware] to exercise the fail-closed guard.
+ * Controller double declaring #[Middleware]: the registrar builds it like any
+ * other route now that the kernel runs the chain at dispatch.
  *
  * @internal
  */
-final class MiddlewareGuardedTestController
+final class MiddlewareDeclaringTestController
 {
     #[Route('/guarded', methods: ['GET'])]
     #[Middleware('SomeScopeMiddleware')]

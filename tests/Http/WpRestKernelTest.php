@@ -13,7 +13,9 @@ declare(strict_types=1);
 namespace Middag\WordPress\Tests\Http;
 
 use Middag\Framework\Http\Attribute\Auth;
+use Middag\Framework\Http\Attribute\Middleware;
 use Middag\WordPress\Http\Contract\RequestAuthenticatorInterface;
+use Middag\WordPress\Http\Contract\RestRouteMiddlewareInterface;
 use Middag\WordPress\Http\Response\RestResponse;
 use Middag\WordPress\Http\WpRestKernel;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -32,6 +34,12 @@ use WP_User;
 #[CoversClass(WpRestKernel::class)]
 final class WpRestKernelTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        RestKernelMiddlewareRecorder::$calls = [];
+    }
+
     #[Test]
     public function authorizeAllowsOptionsPreflightWithoutResolvingAUser(): void
     {
@@ -145,6 +153,67 @@ final class WpRestKernelTest extends TestCase
         self::assertFalse($response->get_data()['success']);
     }
 
+    #[Test]
+    public function handleRunsWithoutMiddlewareWhenNoneIsDeclared(): void
+    {
+        $kernel = new WpRestKernel($this->container(), $this->createStub(RequestAuthenticatorInterface::class));
+        $kernel->handle(MiddlewarePipelineTestController::class, 'plainAction', $this->request());
+
+        self::assertSame(['action'], RestKernelMiddlewareRecorder::$calls);
+    }
+
+    #[Test]
+    public function handleLetsAMiddlewareShortCircuitBeforeTheAction(): void
+    {
+        $kernel = new WpRestKernel($this->container(), $this->createStub(RequestAuthenticatorInterface::class));
+        $response = $kernel->handle(MiddlewarePipelineTestController::class, 'shortCircuited', $this->request());
+
+        self::assertSame(403, $response->get_status());
+        // The short-circuit ran; the action never did.
+        self::assertSame(['short-circuit'], RestKernelMiddlewareRecorder::$calls);
+    }
+
+    #[Test]
+    public function handleComposesClassMiddlewareOutsideMethodMiddleware(): void
+    {
+        $kernel = new WpRestKernel($this->container(), $this->createStub(RequestAuthenticatorInterface::class));
+        $kernel->handle(ClassMiddlewareTestController::class, 'ordered', $this->request());
+
+        self::assertSame(
+            ['outer:before', 'inner:before', 'action', 'inner:after', 'outer:after'],
+            RestKernelMiddlewareRecorder::$calls,
+        );
+    }
+
+    #[Test]
+    public function handleResolvesMiddlewareFromTheContainerWhenRegistered(): void
+    {
+        $container = $this->createMock(ContainerInterface::class);
+        $container->method('has')->willReturnCallback(
+            static fn (string $id): bool => $id === ConstructorRestMiddleware::class,
+        );
+        $container->method('get')->willReturnCallback(
+            static fn (string $id): object => new ConstructorRestMiddleware('X'),
+        );
+
+        $kernel = new WpRestKernel($container, $this->createStub(RequestAuthenticatorInterface::class));
+        $kernel->handle(MiddlewarePipelineTestController::class, 'containerResolved', $this->request());
+
+        // Constructor-arg middleware cannot be `new`'d — proves the container path.
+        self::assertSame(['ctor:X', 'action'], RestKernelMiddlewareRecorder::$calls);
+    }
+
+    #[Test]
+    public function handleFailsLoudWhenAMiddlewareViolatesTheContract(): void
+    {
+        $kernel = new WpRestKernel($this->container(), $this->createStub(RequestAuthenticatorInterface::class));
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessageMatches('/must implement/');
+
+        $kernel->handle(MiddlewarePipelineTestController::class, 'misconfigured', $this->request());
+    }
+
     private function request(string $method = 'GET'): WP_REST_Request
     {
         $request = new WP_REST_Request();
@@ -202,5 +271,144 @@ final class WpRestKernelTestController
     public function boomAction(): WP_REST_Response
     {
         throw new RuntimeException('boom');
+    }
+}
+
+/**
+ * Ordered record of what ran during a dispatch, so the middleware pipeline tests
+ * can assert both that a link ran and where in the chain it sat.
+ *
+ * @internal
+ */
+final class RestKernelMiddlewareRecorder
+{
+    /** @var list<string> */
+    public static array $calls = [];
+}
+
+/**
+ * Denies before the action, recording that it ran (the action must not).
+ *
+ * @internal
+ */
+final class ShortCircuitRestMiddleware implements RestRouteMiddlewareInterface
+{
+    public function process(WP_REST_Request $request, callable $next): WP_REST_Response
+    {
+        RestKernelMiddlewareRecorder::$calls[] = 'short-circuit';
+
+        return RestResponse::forbidden('Denied.');
+    }
+}
+
+/**
+ * Wraps the chain, recording before/after so ordering is observable.
+ *
+ * @internal
+ */
+final class OuterRestMiddleware implements RestRouteMiddlewareInterface
+{
+    public function process(WP_REST_Request $request, callable $next): WP_REST_Response
+    {
+        RestKernelMiddlewareRecorder::$calls[] = 'outer:before';
+        $response = $next($request);
+        RestKernelMiddlewareRecorder::$calls[] = 'outer:after';
+
+        return $response;
+    }
+}
+
+/**
+ * @internal
+ */
+final class InnerRestMiddleware implements RestRouteMiddlewareInterface
+{
+    public function process(WP_REST_Request $request, callable $next): WP_REST_Response
+    {
+        RestKernelMiddlewareRecorder::$calls[] = 'inner:before';
+        $response = $next($request);
+        RestKernelMiddlewareRecorder::$calls[] = 'inner:after';
+
+        return $response;
+    }
+}
+
+/**
+ * Requires a constructor argument, so a zero-argument `new` cannot build it —
+ * only the container can, which is exactly what the resolution test asserts.
+ *
+ * @internal
+ */
+final readonly class ConstructorRestMiddleware implements RestRouteMiddlewareInterface
+{
+    public function __construct(private string $tag) {}
+
+    public function process(WP_REST_Request $request, callable $next): WP_REST_Response
+    {
+        RestKernelMiddlewareRecorder::$calls[] = 'ctor:' . $this->tag;
+
+        return $next($request);
+    }
+}
+
+/**
+ * Does NOT implement {@see RestRouteMiddlewareInterface} — the fail-loud case.
+ *
+ * @internal
+ */
+final class NotARestMiddleware {}
+
+/**
+ * Controller double exercising the `#[Middleware]` pipeline.
+ *
+ * @internal
+ */
+final class MiddlewarePipelineTestController
+{
+    public function plainAction(): WP_REST_Response
+    {
+        RestKernelMiddlewareRecorder::$calls[] = 'action';
+
+        return RestResponse::success(['plain' => true]);
+    }
+
+    #[Middleware(ShortCircuitRestMiddleware::class)]
+    public function shortCircuited(): WP_REST_Response
+    {
+        RestKernelMiddlewareRecorder::$calls[] = 'action';
+
+        return RestResponse::success(['reached' => true]);
+    }
+
+    #[Middleware(ConstructorRestMiddleware::class)]
+    public function containerResolved(): WP_REST_Response
+    {
+        RestKernelMiddlewareRecorder::$calls[] = 'action';
+
+        return RestResponse::success();
+    }
+
+    #[Middleware(NotARestMiddleware::class)]
+    public function misconfigured(): WP_REST_Response
+    {
+        return RestResponse::success();
+    }
+}
+
+/**
+ * Class-level middleware wraps method-level middleware: proves both attribute
+ * levels run and that the class level sits outermost.
+ *
+ * @internal
+ */
+#[Middleware(OuterRestMiddleware::class)]
+final class ClassMiddlewareTestController
+{
+    #[Middleware(InnerRestMiddleware::class)]
+    public function ordered(): WP_REST_Response
+    {
+        RestKernelMiddlewareRecorder::$calls[] = 'action';
+
+        return RestResponse::success();
     }
 }
