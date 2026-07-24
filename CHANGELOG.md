@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.9.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.8.0...v1.9.0) (2026-07-24)
+
+
+### Features
+
+* **persistence:** add wpdb condition compiler for the query-engine port ([940f6f1](https://github.com/middag-io/middag-php-wordpress/commit/940f6f13ad8894adabeb0c8816b779c5f979aa23))
+* **rest:** add attribute-driven REST routing kernel + registrar ([1048a48](https://github.com/middag-io/middag-php-wordpress/commit/1048a4854d6634a99941342d06e7b03f21ba288d))
+* **rest:** run #[Middleware] chain in WpRestKernel; drop fail-closed guard ([2099604](https://github.com/middag-io/middag-php-wordpress/commit/209960419ad6a6d5e9ddce4fc8a35648d070f9a5))
+* **support:** add CacheSupportPsr16, a PSR-16 adapter over the WP object cache ([6af7c14](https://github.com/middag-io/middag-php-wordpress/commit/6af7c14991ba90910a18f633ba58dfd431fd469e))
+
+
+### Bug Fixes
+
+* **support:** drop typed class constants for PHP 8.2 compatibility ([b8b1527](https://github.com/middag-io/middag-php-wordpress/commit/b8b15276875de092041dc2e05c059e6e104359d6))
+
+
+### Refactoring
+
+* **inertia:** delegate the Inertia v3 wire to the framework ([0348fd1](https://github.com/middag-io/middag-php-wordpress/commit/0348fd1ade41074d7db9ed9d57b4b47ff66d8997))
+
 ## [1.8.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.7.0...v1.8.0) (2026-07-15)
 
 
