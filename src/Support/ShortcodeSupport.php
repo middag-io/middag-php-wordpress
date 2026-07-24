@@ -22,7 +22,9 @@ final class ShortcodeSupport
     public static function add(string $tag, callable $callback): void
     {
         if (!\function_exists('add_shortcode')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         add_shortcode($tag, $callback);
@@ -31,7 +33,9 @@ final class ShortcodeSupport
     public static function remove(string $tag): void
     {
         if (!\function_exists('remove_shortcode')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         remove_shortcode($tag);
@@ -40,7 +44,9 @@ final class ShortcodeSupport
     public static function render(string $content): string
     {
         if (!\function_exists('do_shortcode')) {
+            // @codeCoverageIgnoreStart
             return $content;
+            // @codeCoverageIgnoreEnd
         }
 
         return do_shortcode($content);

@@ -102,6 +102,19 @@ final class CapabilitySupportTest extends TestCase
     }
 
     #[Test]
+    public function addRoleNormalizesAPositionalCapabilityList(): void
+    {
+        $role = CapabilitySupport::addRole('middag_operator', 'Operator', [
+            'read',
+            'middag_manage_things',
+        ]);
+
+        self::assertInstanceOf(WP_Role::class, $role);
+        self::assertTrue($role->capabilities['read']);
+        self::assertTrue($role->capabilities['middag_manage_things']);
+    }
+
+    #[Test]
     public function addRoleReturnsNullWhenTheRoleAlreadyExists(): void
     {
         self::assertNull(CapabilitySupport::addRole('editor', 'Editor'));

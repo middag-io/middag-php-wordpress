@@ -36,7 +36,9 @@ final class PrivacySupport
     public static function registerExporters(callable $callback, int $priority = 10): void
     {
         if (!function_exists('add_filter')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         add_filter('wp_privacy_personal_data_exporters', $callback, $priority, 1);
@@ -51,7 +53,9 @@ final class PrivacySupport
     public static function registerErasers(callable $callback, int $priority = 10): void
     {
         if (!function_exists('add_filter')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         add_filter('wp_privacy_personal_data_erasers', $callback, $priority, 1);
@@ -65,7 +69,9 @@ final class PrivacySupport
     public static function addPrivacyPolicyContent(string $pluginName, string $policyText): void
     {
         if (!function_exists('wp_add_privacy_policy_content')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         wp_add_privacy_policy_content($pluginName, $policyText);

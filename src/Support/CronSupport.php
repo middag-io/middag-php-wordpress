@@ -33,7 +33,9 @@ final class CronSupport
     public static function nextScheduled(string $hook, array $args = []): false|int
     {
         if (!function_exists('wp_next_scheduled')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         return wp_next_scheduled($hook, $args);
@@ -48,7 +50,9 @@ final class CronSupport
     public static function scheduleEvent(int $timestamp, string $recurrence, string $hook, array $args = []): bool
     {
         if (!function_exists('wp_schedule_event')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         return wp_schedule_event($timestamp, $recurrence, $hook, $args);
@@ -67,7 +71,9 @@ final class CronSupport
     public static function scheduleSingleEvent(int $timestamp, string $hook, array $args = []): bool
     {
         if (!function_exists('wp_schedule_single_event')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         return wp_schedule_single_event($timestamp, $hook, $args);
@@ -82,7 +88,9 @@ final class CronSupport
     public static function unscheduleEvent(int $timestamp, string $hook, array $args = []): bool
     {
         if (!function_exists('wp_unschedule_event')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         return wp_unschedule_event($timestamp, $hook, $args);

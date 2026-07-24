@@ -31,7 +31,9 @@ final class HookSupport
     public static function addAction(string $hook, callable $callback, int $priority = 10, int $acceptedArgs = 1): void
     {
         if (!function_exists('add_action')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         add_action($hook, $callback, $priority, $acceptedArgs);
@@ -43,7 +45,9 @@ final class HookSupport
     public static function doAction(string $hook, mixed ...$args): void
     {
         if (!function_exists('do_action')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         do_action($hook, ...$args);
@@ -58,7 +62,9 @@ final class HookSupport
     public static function removeAction(string $hook, callable $callback, int $priority = 10): bool
     {
         if (!function_exists('remove_action')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         return remove_action($hook, $callback, $priority);
@@ -70,7 +76,9 @@ final class HookSupport
     public static function addFilter(string $hook, callable $callback, int $priority = 10, int $acceptedArgs = 1): void
     {
         if (!function_exists('add_filter')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         add_filter($hook, $callback, $priority, $acceptedArgs);
@@ -83,7 +91,9 @@ final class HookSupport
     public static function applyFilters(string $hook, mixed $value, mixed ...$args): mixed
     {
         if (!function_exists('apply_filters')) {
+            // @codeCoverageIgnoreStart
             return $value;
+            // @codeCoverageIgnoreEnd
         }
 
         return apply_filters($hook, $value, ...$args);

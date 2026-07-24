@@ -30,7 +30,9 @@ final class AdminSupport
         ?int $position = null,
     ): string {
         if (!\function_exists('add_menu_page')) {
+            // @codeCoverageIgnoreStart
             return '';
+            // @codeCoverageIgnoreEnd
         }
 
         return add_menu_page($pageTitle, $menuTitle, $capability, $slug, $render, $icon, $position);
@@ -45,7 +47,9 @@ final class AdminSupport
         callable $render,
     ): false|string {
         if (!\function_exists('add_submenu_page')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         return add_submenu_page($parentSlug, $pageTitle, $menuTitle, $capability, $slug, $render);

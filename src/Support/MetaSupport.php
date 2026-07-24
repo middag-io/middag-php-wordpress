@@ -28,7 +28,9 @@ final class MetaSupport
     public static function get(string $type, int $objectId, string $key, bool $single = true): mixed
     {
         if (!\function_exists('get_metadata')) {
+            // @codeCoverageIgnoreStart
             return $single ? '' : [];
+            // @codeCoverageIgnoreEnd
         }
 
         return get_metadata($type, $objectId, $key, $single);
@@ -40,7 +42,9 @@ final class MetaSupport
     public static function update(string $type, int $objectId, string $key, mixed $value): bool
     {
         if (!\function_exists('update_metadata')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         return update_metadata($type, $objectId, $key, $value);
@@ -52,7 +56,9 @@ final class MetaSupport
     public static function delete(string $type, int $objectId, string $key, mixed $value = ''): bool
     {
         if (!\function_exists('delete_metadata')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         return delete_metadata($type, $objectId, $key, $value);

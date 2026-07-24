@@ -30,7 +30,9 @@ final class PathSupport
     public static function stylesheetDirectory(): string
     {
         if (!function_exists('get_stylesheet_directory')) {
+            // @codeCoverageIgnoreStart
             return '';
+            // @codeCoverageIgnoreEnd
         }
 
         return get_stylesheet_directory();

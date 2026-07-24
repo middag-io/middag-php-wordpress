@@ -38,7 +38,9 @@ final class UserSupport
     public static function currentUserId(): int
     {
         if (!function_exists('get_current_user_id')) {
+            // @codeCoverageIgnoreStart
             return 0;
+            // @codeCoverageIgnoreEnd
         }
 
         return get_current_user_id();
@@ -53,7 +55,9 @@ final class UserSupport
     public static function currentUserCan(CapabilityInterface|string $capability, mixed ...$args): bool
     {
         if (!function_exists('current_user_can')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         return current_user_can(self::capabilityString($capability), ...$args);
@@ -65,7 +69,9 @@ final class UserSupport
     public static function currentUser(): ?WP_User
     {
         if (!function_exists('wp_get_current_user')) {
+            // @codeCoverageIgnoreStart
             return null;
+            // @codeCoverageIgnoreEnd
         }
 
         $user = wp_get_current_user();

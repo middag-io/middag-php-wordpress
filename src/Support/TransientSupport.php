@@ -27,7 +27,9 @@ final class TransientSupport
     public static function get(string $key): mixed
     {
         if (!\function_exists('get_transient')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         return get_transient($key);
@@ -39,7 +41,9 @@ final class TransientSupport
     public static function set(string $key, mixed $value, int $expirationSeconds = 0): bool
     {
         if (!\function_exists('set_transient')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         return set_transient($key, $value, $expirationSeconds);
@@ -48,7 +52,9 @@ final class TransientSupport
     public static function delete(string $key): bool
     {
         if (!\function_exists('delete_transient')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         return delete_transient($key);

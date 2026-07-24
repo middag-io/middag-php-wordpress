@@ -40,7 +40,9 @@ final class RewriteSupport
     public static function addRule(string $regex, string $query, string $after = 'top'): void
     {
         if (!function_exists('add_rewrite_rule')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         add_rewrite_rule($regex, $query, $after);
@@ -54,7 +56,9 @@ final class RewriteSupport
     public static function flush(bool $hard = true): void
     {
         if (!function_exists('flush_rewrite_rules')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         flush_rewrite_rules($hard);
@@ -67,7 +71,9 @@ final class RewriteSupport
     public static function queryVar(string $var, mixed $default = ''): mixed
     {
         if (!function_exists('get_query_var')) {
+            // @codeCoverageIgnoreStart
             return $default;
+            // @codeCoverageIgnoreEnd
         }
 
         return get_query_var($var, $default);
