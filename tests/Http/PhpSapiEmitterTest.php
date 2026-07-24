@@ -127,6 +127,7 @@ final class PhpSapiEmitterTest extends TestCase
         ob_start();
         $emitter->write('first-');
         $emitter->write('second');
+
         $output = ob_get_clean();
 
         self::assertSame('first-second', $output);
