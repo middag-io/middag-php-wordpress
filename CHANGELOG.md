@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.10.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.9.0...v1.10.0) (2026-07-24)
+
+
+### Features
+
+* **http:** AbstractWpController page base + Support coverage + first ADR ([53f810d](https://github.com/middag-io/middag-php-wordpress/commit/53f810da474292397bb6093edccd4757b8e11b39))
+* **http:** add AbstractWpController page-controller base ([07e6c03](https://github.com/middag-io/middag-php-wordpress/commit/07e6c03955593a5629f11d29e4d4c9870731d0d2))
+
+
+### Documentation
+
+* **decisions:** bootstrap docs/decisions with WP-001 ([cbdbcb5](https://github.com/middag-io/middag-php-wordpress/commit/cbdbcb528a8c1e7c18f821ea4efda71b4463e16c))
+
 ## [1.9.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.8.0...v1.9.0) (2026-07-24)
 
 
