@@ -36,7 +36,9 @@ final class AssetSupport
         bool $inFooter = true,
     ): void {
         if (!function_exists('wp_enqueue_script')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         wp_enqueue_script($handle, $src, $deps, $version, $inFooter);
@@ -55,7 +57,9 @@ final class AssetSupport
         string $media = 'all',
     ): void {
         if (!function_exists('wp_enqueue_style')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         wp_enqueue_style($handle, $src, $deps, $version, $media);

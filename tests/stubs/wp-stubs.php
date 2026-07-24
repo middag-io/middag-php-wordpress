@@ -615,6 +615,11 @@ if (!function_exists('wp_unschedule_event')) {
 if (!function_exists('current_user_can')) {
     function current_user_can(string $capability, mixed ...$args): bool
     {
+        // Record each call (capability + extra args) so tests can assert a
+        // meta-capability object id was forwarded. Additive; does not change
+        // the map-driven return value.
+        $GLOBALS['__wp_test_cap_calls'][] = ['capability' => $capability, 'args' => $args];
+
         return (bool) ($GLOBALS['__wp_test_caps'][$capability] ?? false);
     }
 }
@@ -1293,5 +1298,44 @@ if (!function_exists('maybe_unserialize')) {
         }
 
         return $data;
+    }
+}
+
+// Stubbed is_user_logged_in() — reads global $__wp_test_logged_in (default false).
+if (!function_exists('is_user_logged_in')) {
+    function is_user_logged_in(): bool
+    {
+        return (bool) ($GLOBALS['__wp_test_logged_in'] ?? false);
+    }
+}
+
+// Stubbed auth_redirect() — real WP redirects to wp-login and exits; here it
+// records the redirect in global $__wp_test_auth_redirected so a test can assert
+// the login gate fired, without terminating the process.
+if (!function_exists('auth_redirect')) {
+    function auth_redirect(): void
+    {
+        $GLOBALS['__wp_test_auth_redirected'] = true;
+    }
+}
+
+// Stubbed wp_die() — real WP halts the request; here it throws WpDieSignal so a
+// test can assert a capability denial (the message/args are carried on the
+// exception for inspection).
+if (!class_exists('WpDieSignal')) {
+    class WpDieSignal extends RuntimeException
+    {
+        /** @param array<string, mixed> $args */
+        public function __construct(public readonly string $wpMessage = '', public readonly array $wpArgs = [])
+        {
+            parent::__construct($wpMessage);
+        }
+    }
+}
+if (!function_exists('wp_die')) {
+    /** @param array<string, mixed> $args */
+    function wp_die(string $message = '', string $title = '', array $args = []): never
+    {
+        throw new WpDieSignal($message, $args);
     }
 }

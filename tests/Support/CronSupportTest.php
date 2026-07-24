@@ -28,6 +28,7 @@ final class CronSupportTest extends TestCase
         $GLOBALS['__wp_test_next_scheduled'] = [];
         $GLOBALS['__wp_test_recurring_events'] = [];
         $GLOBALS['__wp_test_unscheduled_events'] = [];
+        $GLOBALS['__wp_test_scheduled_events'] = [];
     }
 
     protected function tearDown(): void
@@ -36,6 +37,7 @@ final class CronSupportTest extends TestCase
             $GLOBALS['__wp_test_next_scheduled'],
             $GLOBALS['__wp_test_recurring_events'],
             $GLOBALS['__wp_test_unscheduled_events'],
+            $GLOBALS['__wp_test_scheduled_events'],
         );
     }
 
@@ -64,6 +66,19 @@ final class CronSupportTest extends TestCase
         self::assertSame(1_700_000_000, $recorded['timestamp']);
         self::assertSame('middag_hourly', $recorded['recurrence']);
         self::assertSame('middag_cron', $recorded['hook']);
+    }
+
+    #[Test]
+    public function scheduleSingleEventDelegatesToWordPress(): void
+    {
+        $result = CronSupport::scheduleSingleEvent(1_700_000_000, 'middag_once', ['job' => 7]);
+
+        self::assertTrue($result);
+        $recorded = $GLOBALS['__wp_test_scheduled_events'][0] ?? null;
+        self::assertNotNull($recorded, 'the single event was not scheduled');
+        self::assertSame(1_700_000_000, $recorded['timestamp']);
+        self::assertSame('middag_once', $recorded['hook']);
+        self::assertSame(['job' => 7], $recorded['args']);
     }
 
     #[Test]

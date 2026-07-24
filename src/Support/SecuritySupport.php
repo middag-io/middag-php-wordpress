@@ -36,7 +36,9 @@ final class SecuritySupport
     public static function createNonce(string $action): string
     {
         if (!function_exists('wp_create_nonce')) {
+            // @codeCoverageIgnoreStart
             return '';
+            // @codeCoverageIgnoreEnd
         }
 
         return wp_create_nonce($action);
@@ -56,7 +58,9 @@ final class SecuritySupport
         }
 
         if (!function_exists('wp_verify_nonce')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         return wp_verify_nonce($nonce, $action) !== false;

@@ -62,7 +62,9 @@ final class EscapeSupport
             return $protocols === [] ? esc_url($value) : esc_url($value, $protocols);
         }
 
+        // @codeCoverageIgnoreStart
         return self::urlFallback($value, $protocols);
+        // @codeCoverageIgnoreEnd
     }
 
     /**

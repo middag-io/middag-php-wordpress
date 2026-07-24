@@ -50,7 +50,9 @@ final readonly class CacheSupportPsr16 implements CacheInterface
     public function get(string $key, mixed $default = null): mixed
     {
         if (!\function_exists('wp_cache_get')) {
+            // @codeCoverageIgnoreStart
             return $default;
+            // @codeCoverageIgnoreEnd
         }
 
         $found = false;
@@ -62,7 +64,9 @@ final readonly class CacheSupportPsr16 implements CacheInterface
     public function set(string $key, mixed $value, DateInterval|int|null $ttl = null): bool
     {
         if (!\function_exists('wp_cache_set')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         return wp_cache_set($this->scopedKey($key), $value, $this->group, $this->ttlSeconds($ttl));
@@ -71,7 +75,9 @@ final readonly class CacheSupportPsr16 implements CacheInterface
     public function delete(string $key): bool
     {
         if (!\function_exists('wp_cache_delete')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         return wp_cache_delete($this->scopedKey($key), $this->group);
@@ -84,7 +90,9 @@ final readonly class CacheSupportPsr16 implements CacheInterface
     public function clear(): bool
     {
         if (!\function_exists('wp_cache_set')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         return wp_cache_set(self::GENERATION_KEY, $this->generation() + 1, $this->group, 0);
@@ -137,7 +145,9 @@ final readonly class CacheSupportPsr16 implements CacheInterface
     public function has(string $key): bool
     {
         if (!\function_exists('wp_cache_get')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         $found = false;
@@ -160,7 +170,9 @@ final readonly class CacheSupportPsr16 implements CacheInterface
     private function generation(): int
     {
         if (!\function_exists('wp_cache_get')) {
+            // @codeCoverageIgnoreStart
             return 1;
+            // @codeCoverageIgnoreEnd
         }
 
         $found = false;

@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace Middag\WordPress\Tests\Support;
 
+use DateInterval;
 use Middag\WordPress\Support\CacheSupportPsr16;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -124,6 +125,15 @@ final class CacheSupportPsr16Test extends TestCase
         self::assertNull($cache->get('x'));
         self::assertNull($cache->get('y'));
         self::assertSame(3, $cache->get('z'));
+    }
+
+    #[Test]
+    public function dateIntervalTtlIsAcceptedAndValuePersistsWithinRequest(): void
+    {
+        $cache = new CacheSupportPsr16('item');
+
+        self::assertTrue($cache->set('interval_key', 'v', new DateInterval('PT1H')));
+        self::assertSame('v', $cache->get('interval_key'));
     }
 
     #[Test]

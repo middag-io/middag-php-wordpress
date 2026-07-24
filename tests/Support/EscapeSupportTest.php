@@ -115,6 +115,12 @@ final class EscapeSupportTest extends TestCase
     }
 
     #[Test]
+    public function urlFallbackReturnsEmptyForAnEmptyValue(): void
+    {
+        self::assertSame('', $this->urlFallback(''));
+    }
+
+    #[Test]
     public function urlFallbackHonorsACustomProtocolAllowlist(): void
     {
         self::assertSame('ftp://host/file', $this->urlFallback('ftp://host/file', ['ftp']));

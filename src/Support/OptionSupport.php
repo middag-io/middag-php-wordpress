@@ -36,7 +36,9 @@ final class OptionSupport
     public static function get(string $name, mixed $default = false): mixed
     {
         if (!function_exists('get_option')) {
+            // @codeCoverageIgnoreStart
             return $default;
+            // @codeCoverageIgnoreEnd
         }
 
         return get_option($name, $default);

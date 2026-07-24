@@ -96,7 +96,9 @@ final class CapabilitySupport
     public static function addRole(string $role, string $displayName, array $capabilities = []): ?WP_Role
     {
         if (!function_exists('add_role')) {
+            // @codeCoverageIgnoreStart
             return null;
+            // @codeCoverageIgnoreEnd
         }
 
         if (self::roleExists($role)) {
@@ -115,7 +117,9 @@ final class CapabilitySupport
     public static function removeRole(string $role): void
     {
         if (!function_exists('remove_role')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         remove_role($role);
@@ -175,7 +179,9 @@ final class CapabilitySupport
     private static function role(string $role): ?WP_Role
     {
         if (!function_exists('get_role')) {
+            // @codeCoverageIgnoreStart
             return null;
+            // @codeCoverageIgnoreEnd
         }
 
         $resolved = get_role($role);

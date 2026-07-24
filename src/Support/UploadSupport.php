@@ -41,7 +41,9 @@ final class UploadSupport
     private static function info(): array
     {
         if (!\function_exists('wp_upload_dir')) {
+            // @codeCoverageIgnoreStart
             return [];
+            // @codeCoverageIgnoreEnd
         }
 
         return wp_upload_dir();

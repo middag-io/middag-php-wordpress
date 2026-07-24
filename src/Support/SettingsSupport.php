@@ -38,7 +38,9 @@ final class SettingsSupport
     public static function registerSetting(string $optionGroup, string $optionName, array $args = []): void
     {
         if (!function_exists('register_setting')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         register_setting($optionGroup, $optionName, $args);
@@ -53,7 +55,9 @@ final class SettingsSupport
     public static function addSection(string $id, string $title, callable $callback, string $page, array $args = []): void
     {
         if (!function_exists('add_settings_section')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         add_settings_section($id, $title, $callback, $page, $args);
@@ -68,7 +72,9 @@ final class SettingsSupport
     public static function addField(string $id, string $title, callable $callback, string $page, string $section = 'default', array $args = []): void
     {
         if (!function_exists('add_settings_field')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         add_settings_field($id, $title, $callback, $page, $section, $args);

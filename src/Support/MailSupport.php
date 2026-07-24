@@ -38,7 +38,9 @@ final class MailSupport
         array $attachments = [],
     ): bool {
         if (!function_exists('wp_mail')) {
+            // @codeCoverageIgnoreStart
             return false;
+            // @codeCoverageIgnoreEnd
         }
 
         return wp_mail($to, $subject, $message, $headers, $attachments);

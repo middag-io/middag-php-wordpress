@@ -27,7 +27,9 @@ final class PostTypeSupport
     public static function registerPostType(string $slug, array $args = []): void
     {
         if (!\function_exists('register_post_type')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         register_post_type($slug, $args);
@@ -40,7 +42,9 @@ final class PostTypeSupport
     public static function registerTaxonomy(string $slug, array|string $objectTypes, array $args = []): void
     {
         if (!\function_exists('register_taxonomy')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         register_taxonomy($slug, $objectTypes, $args);

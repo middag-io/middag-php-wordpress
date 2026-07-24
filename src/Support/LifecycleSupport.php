@@ -32,7 +32,9 @@ final class LifecycleSupport
     public static function registerActivation(string $pluginFile, callable $callback): void
     {
         if (!function_exists('register_activation_hook')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         register_activation_hook($pluginFile, $callback);
@@ -45,7 +47,9 @@ final class LifecycleSupport
     public static function registerDeactivation(string $pluginFile, callable $callback): void
     {
         if (!function_exists('register_deactivation_hook')) {
+            // @codeCoverageIgnoreStart
             return;
+            // @codeCoverageIgnoreEnd
         }
 
         register_deactivation_hook($pluginFile, $callback);

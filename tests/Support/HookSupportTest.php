@@ -28,6 +28,7 @@ final class HookSupportTest extends TestCase
         $GLOBALS['__wp_test_actions'] = [];
         $GLOBALS['__wp_test_filters'] = [];
         $GLOBALS['__middag_test_wp_filters'] = [];
+        $GLOBALS['__wp_test_dispatched'] = [];
     }
 
     protected function tearDown(): void
@@ -36,6 +37,7 @@ final class HookSupportTest extends TestCase
             $GLOBALS['__wp_test_actions'],
             $GLOBALS['__wp_test_filters'],
             $GLOBALS['__middag_test_wp_filters'],
+            $GLOBALS['__wp_test_dispatched'],
         );
     }
 
@@ -64,6 +66,30 @@ final class HookSupportTest extends TestCase
         self::assertNotNull($registered, 'the filter was not registered');
         self::assertSame(10, $registered['priority']);
         self::assertSame(1, $registered['accepted_args']);
+    }
+
+    #[Test]
+    public function doActionDispatchesToRegisteredCallbacks(): void
+    {
+        $received = null;
+        HookSupport::addAction('middag_event', static function (int $value) use (&$received): void {
+            $received = $value;
+        });
+
+        HookSupport::doAction('middag_event', 99);
+
+        self::assertSame(99, $received, 'the action callback was not invoked');
+        self::assertSame('middag_event', $GLOBALS['__wp_test_dispatched'][0]['hook'] ?? null);
+    }
+
+    #[Test]
+    public function removeActionDropsARegisteredCallback(): void
+    {
+        $callback = static fn (): null => null;
+        HookSupport::addAction('init', $callback, 20);
+
+        self::assertTrue(HookSupport::removeAction('init', $callback, 20));
+        self::assertFalse(HookSupport::removeAction('init', $callback, 20), 'a second removal finds nothing');
     }
 
     #[Test]
