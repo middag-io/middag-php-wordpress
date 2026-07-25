@@ -31,12 +31,20 @@ the `Domain\Post` / `Domain\User` repositories and meta helpers, the
 the `Persistence` query builder, the `Settings` and `Definition` builders, the
 `Support` façade helpers, the mail helpers, the cron registrar/handler, the hook
 registrar and `Hook\Contract\HookInterface`, and the plugin-lifecycle registrar.
-The concrete implementations of the framework's host-bridge contracts (the
-`$wpdb` connection adapter and SQL dialect, the translator, config resolver,
-user-context resolver, maintenance gate and platform bootstrap) are `@internal`
-wiring: consumers depend on the **framework** contract these fulfil, and the DI
-container binds the WordPress implementation — the concrete adapter is not part
-of the supported surface.
+
+**Composition-root concretes are public too.** This adapter ships no container
+builder: the consumer's composition root binds the framework contracts itself, so
+it *has* to name the host-bridge concretes it registers or instantiates at boot.
+Those are `@api` — `Database\WpdbConnectionAdapter`, `Database\WpdbSqlDialect`,
+`Config\WpConfigResolver`, `Bus\WpUserContext`,
+`Persistence\Query\WpdbConditionCompiler` — alongside the host-context,
+event-bridge and component-name seams. Type-hint the **framework** contract in
+your own code: the concrete is public because you must *name* it when wiring, not
+because you should depend on its shape.
+
+The concretes a consumer never names stay `@internal` wiring:
+`Translation\WpTranslator`, `Runtime\WpMaintenanceGate` and
+`Runtime\WpBootstrap`.
 
 ## How releases are cut
 
@@ -79,19 +87,22 @@ The adapter does not define the host-bridge contracts — it implements the ones
 declared (and frozen) in `middag-io/framework`. Depend on the **framework**
 `@api` interface, not on the WordPress concrete:
 
-| Framework contract (`@api` in framework) | WordPress implementation (`@internal` here) |
-|---|---|
-| `ConnectionAdapterInterface` | `Middag\WordPress\Database\WpdbConnectionAdapter` |
-| `SqlDialectInterface` | `Middag\WordPress\Database\WpdbSqlDialect` |
-| `TranslatorInterface` | `Middag\WordPress\Translation\WpTranslator` |
-| `ConfigResolverInterface` | `Middag\WordPress\Config\WpConfigResolver` |
-| `UserContextResolverInterface` | `Middag\WordPress\Bus\WpUserContext` |
-| `MaintenanceGateInterface` | `Middag\WordPress\Runtime\WpMaintenanceGate` |
-| `BootstrapInterface` | `Middag\WordPress\Runtime\WpBootstrap` |
+| Framework contract (`@api` in framework) | WordPress implementation | Stability here |
+|---|---|---|
+| `ConnectionAdapterInterface` | `Middag\WordPress\Database\WpdbConnectionAdapter` | `@api` |
+| `SqlDialectInterface` | `Middag\WordPress\Database\WpdbSqlDialect` | `@api` |
+| `ConfigResolverInterface` | `Middag\WordPress\Config\WpConfigResolver` | `@api` |
+| `UserContextResolverInterface` | `Middag\WordPress\Bus\WpUserContext` | `@api` |
+| `ConditionCompilerInterface` | `Middag\WordPress\Persistence\Query\WpdbConditionCompiler` | `@api` |
+| `TranslatorInterface` | `Middag\WordPress\Translation\WpTranslator` | `@internal` |
+| `MaintenanceGateInterface` | `Middag\WordPress\Runtime\WpMaintenanceGate` | `@internal` |
+| `BootstrapInterface` | `Middag\WordPress\Runtime\WpBootstrap` | `@internal` |
 
 The adapter also implements the framework's host-context, event-bridge and
 component-name seams (`WpComponentContext`, `WpHookfileLoader`, …). Those are
-`@api` here because a consumer instantiates and registers them at boot.
+`@api` here because a consumer instantiates and registers them at boot — the same
+rule that makes the `@api` rows above public. It does not license depending on
+their shape: type-hint the framework contract, name the concrete only to wire it.
 
 ## Depending on `middag-io/wordpress` safely
 

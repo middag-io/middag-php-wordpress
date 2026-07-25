@@ -21,7 +21,11 @@ use Middag\WordPress\Support\UserSupport;
  * Resolves the current user ID via {@see UserSupport::currentUserId()}.
  * Returns null when no user is authenticated (e.g. WP-CLI, cron).
  *
- * @internal
+ * Public surface: the consumer's composition root registers this concrete for
+ * the framework `UserContextResolverInterface` — this adapter ships no container
+ * builder, so whoever boots the plugin names the class.
+ *
+ * @api
  */
 final class WpUserContext implements UserContextResolverInterface
 {
