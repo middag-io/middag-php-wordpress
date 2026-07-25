@@ -31,7 +31,10 @@ use Middag\WordPress\Database\WpdbSqlDialect;
  * are delegated to the injected {@see WpdbSqlDialect} so the SQL stays MySQL-
  * correct; everything else follows MySQL syntax (`LIKE`, `BETWEEN`, `IS TRUE`).
  *
- * @internal
+ * Public surface: the consumer's composition root registers it and aliases the
+ * framework {@see ConditionCompilerInterface} onto it.
+ *
+ * @api
  */
 final readonly class WpdbConditionCompiler implements ConditionCompilerInterface
 {

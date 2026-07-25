@@ -22,7 +22,10 @@ use Middag\Framework\Database\Contract\SqlDialectInterface;
  * physical names, so {@see table()} prepends the configured prefix and returns
  * the name as-is for raw SQL. Everything else follows MySQL idioms.
  *
- * @internal
+ * Public surface: consumers instantiate it with `$wpdb->prefix` and register it
+ * for the framework {@see SqlDialectInterface}.
+ *
+ * @api
  */
 final readonly class WpdbSqlDialect implements SqlDialectInterface
 {

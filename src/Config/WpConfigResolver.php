@@ -24,7 +24,10 @@ use Middag\WordPress\Support\OptionSupport;
  * putenv(), a .env file (phpdotenv), Docker ENV, or server configuration
  * (Apache/Nginx SetEnv).
  *
- * @internal
+ * Public surface: the consumer's composition root registers it for the framework
+ * `ConfigResolverInterface`, passing its own env/option prefixes.
+ *
+ * @api
  */
 final readonly class WpConfigResolver implements ConfigResolverInterface
 {

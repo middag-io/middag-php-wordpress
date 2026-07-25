@@ -36,7 +36,11 @@ use wpdb;
  * dialect is a near-passthrough and does not brace table names, so callers that
  * use the record helpers must pass the prefixed name (see {@see WpdbSqlDialect}).
  *
- * @internal
+ * Public surface: the consumer's composition root registers it for the framework
+ * {@see ConnectionAdapterInterface} and references it when wiring the
+ * `$wpdb`-backed services above it.
+ *
+ * @api
  */
 final readonly class WpdbConnectionAdapter implements ConnectionAdapterInterface
 {

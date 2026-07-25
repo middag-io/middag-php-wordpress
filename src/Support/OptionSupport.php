@@ -25,7 +25,11 @@ use Middag\WordPress\Settings\SettingsRegistrar;
  * Degrades to the supplied default when `get_option` is unavailable (WP-CLI /
  * cron / boot before WordPress is loaded).
  *
- * @internal
+ * Public surface: consumers read their own plugin options through it, like the
+ * other public `Support\*` wrappers (`MetaSupport`, `TransientSupport`,
+ * `CacheSupport`).
+ *
+ * @api
  */
 final class OptionSupport
 {
