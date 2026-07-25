@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.10.0...v1.11.0) (2026-07-25)
+
+
+### Features
+
+* **api:** promote the composition-root symbols core consumes to [@api](https://github.com/api) ([7e3385d](https://github.com/middag-io/middag-php-wordpress/commit/7e3385ddd6f79469f619f615da159ebf920827cc)), closes [#45](https://github.com/middag-io/middag-php-wordpress/issues/45)
+
 ## [1.10.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.9.0...v1.10.0) (2026-07-24)
 
 
