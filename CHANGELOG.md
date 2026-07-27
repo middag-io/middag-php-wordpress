@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.11.0...v1.11.1) (2026-07-27)
+
+
+### Refactoring
+
+* aplica as regras novas do rector 2.5.8 ([#49](https://github.com/middag-io/middag-php-wordpress/issues/49)) ([1052eb7](https://github.com/middag-io/middag-php-wordpress/commit/1052eb7c6ff3c53c1e09724d46503eef591f681a))
+
 ## [1.11.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.10.0...v1.11.0) (2026-07-25)
 
 
