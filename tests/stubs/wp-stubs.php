@@ -683,7 +683,7 @@ if (!class_exists('WP_Role', false)) {
     class WP_Role
     {
         /** @var array<string, bool> capability name => granted */
-        public array $capabilities = [];
+        public array $capabilities;
 
         /**
          * @param array<int, string>|array<string, bool> $capabilities
