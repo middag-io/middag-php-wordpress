@@ -75,7 +75,6 @@ final readonly class WpdbConditionCompiler implements ConditionCompilerInterface
             Operator::In, Operator::NotIn => $this->compileInList($column, $op, $value, $paramPrefix),
             Operator::Between => $this->compileBetween($column, $value, $value2, $paramPrefix),
             Operator::Is, Operator::IsNot => $this->compileNullOrBool($column, $op, $value),
-            Operator::Raw => [(string) $value, []],
         };
     }
 

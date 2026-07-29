@@ -153,17 +153,45 @@ final class WpdbConditionCompilerTest extends TestCase
         $this->compiler()->compileCondition('item.active', Operator::Is, 'yes', null, 'w1');
     }
 
+    /**
+     * The verbatim operator is gone from the enum, so this compiler has no arm for it
+     * and the match stays exhaustive (core#132).
+     *
+     * Asserted as an ABSENCE because that is all there is left to assert: a test calling
+     * `compileCondition(..., Operator::Raw, ...)` would not compile.
+     */
     #[Test]
-    public function rawPassesTheValueThroughUnescaped(): void
+    public function thereIsNoVerbatimOperatorToCompile(): void
     {
-        [$sql, $params] = $this->compiler()->compileCondition('ignored', Operator::Raw, 'item.a = item.b', null, 'w1');
+        self::assertNull(Operator::tryFrom('RAW'));
 
-        self::assertSame('item.a = item.b', $sql);
-        self::assertSame([], $params);
+        foreach (Operator::cases() as $case) {
+            [$sql] = $this->compiler()->compileCondition(
+                'item.a',
+                $case,
+                $case === Operator::Between ? 1 : ($this->needsNullOrBool($case) ? null : 'v'),
+                $case === Operator::Between ? 2 : null,
+                'w1',
+            );
+
+            self::assertNotSame('v', $sql, sprintf(
+                'operator %s returned the bound value as SQL, which is what Raw did',
+                $case->value,
+            ));
+        }
     }
 
     private function compiler(): WpdbConditionCompiler
     {
         return new WpdbConditionCompiler(new WpdbSqlDialect());
+    }
+
+    /**
+     * `IS` and `IS NOT` refuse anything that is not NULL or a boolean, so the sweep above
+     * has to hand them one — otherwise the loop fails on an unrelated guard.
+     */
+    private function needsNullOrBool(Operator $case): bool
+    {
+        return $case === Operator::Is || $case === Operator::IsNot;
     }
 }
