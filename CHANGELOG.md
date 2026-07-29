@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.12.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.11.1...v1.12.0) (2026-07-29)
+
+
+### Features
+
+* **persistence:** WpdbConditionCompiler perde o braco do operador verbatim ([09d5603](https://github.com/middag-io/middag-php-wordpress/commit/09d5603a2e84a1d1663ee1cb024270fd6a83eb4d))
+* **persistence:** WpdbConditionCompiler perde o braço do operador verbatim (core[#132](https://github.com/middag-io/middag-php-wordpress/issues/132)) — PASSO 2 ([5d8ce8a](https://github.com/middag-io/middag-php-wordpress/commit/5d8ce8af1ad7410a947fab3ae4b0dbebef85fd7c))
+
+
+### Miscellaneous
+
+* **build:** cache do phpstan por repo, em vez do diretorio global da maquina ([c0b1954](https://github.com/middag-io/middag-php-wordpress/commit/c0b195474bed5e8c88df2947863f65b9f0769516))
+
 ## [1.11.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.11.0...v1.11.1) (2026-07-27)
 
 
