@@ -43,8 +43,8 @@ final class WpConfigResolverTest extends TestCase
     #[Test]
     public function envVarWinsOverOptionAndDefault(): void
     {
-        $this->setEnv('MIDDAG_SMTP_HOST', 'env.example.test');
-        $GLOBALS['__wp_test_options']['middag_smtp_host'] = 'option.example.test';
+        $this->setEnv('MIDDAGLIB_SMTP_HOST', 'env.example.test');
+        $GLOBALS['__wp_test_options']['middaglib_smtp_host'] = 'option.example.test';
 
         $resolver = new WpConfigResolver();
 
@@ -54,7 +54,7 @@ final class WpConfigResolverTest extends TestCase
     #[Test]
     public function optionIsUsedWhenNoEnvVarExists(): void
     {
-        $GLOBALS['__wp_test_options']['middag_smtp_host'] = 'option.example.test';
+        $GLOBALS['__wp_test_options']['middaglib_smtp_host'] = 'option.example.test';
 
         $resolver = new WpConfigResolver();
 
@@ -73,8 +73,8 @@ final class WpConfigResolverTest extends TestCase
     #[Test]
     public function perEntityKeyWinsOverTheGlobalKey(): void
     {
-        $this->setEnv('MIDDAG_PROVIDER_KEY', 'global-secret');
-        $this->setEnv('MIDDAG_PROVIDER_KEY_ACME', 'acme-secret');
+        $this->setEnv('MIDDAGLIB_PROVIDER_KEY', 'global-secret');
+        $this->setEnv('MIDDAGLIB_PROVIDER_KEY_ACME', 'acme-secret');
 
         $resolver = new WpConfigResolver();
 
@@ -84,7 +84,7 @@ final class WpConfigResolverTest extends TestCase
     #[Test]
     public function globalKeyIsTheFallbackForAnUnknownEntitySlug(): void
     {
-        $this->setEnv('MIDDAG_PROVIDER_KEY', 'global-secret');
+        $this->setEnv('MIDDAGLIB_PROVIDER_KEY', 'global-secret');
 
         $resolver = new WpConfigResolver();
 
@@ -106,7 +106,7 @@ final class WpConfigResolverTest extends TestCase
     #[Test]
     public function hasReflectsResolvability(): void
     {
-        $this->setEnv('MIDDAG_PRESENT', 'yes');
+        $this->setEnv('MIDDAGLIB_PRESENT', 'yes');
 
         $resolver = new WpConfigResolver();
 
