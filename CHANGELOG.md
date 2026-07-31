@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.0.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.12.0...v2.0.0) (2026-07-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* **config:** default neutro de prefixo em WpConfigResolver, marca real fica a cargo do consumidor
+
+### Bug Fixes
+
+* **config:** default neutro de prefixo em WpConfigResolver, marca real fica a cargo do consumidor ([2a36b9c](https://github.com/middag-io/middag-php-wordpress/commit/2a36b9c35d6e9aec51842d37c04532b5bc21340e))
+
+
+### Documentation
+
+* canonical AGENTS.md, CLAUDE.md symlink (ADR-017) ([7113f37](https://github.com/middag-io/middag-php-wordpress/commit/7113f37337555e3636d06e4baee4d3e330807041))
+
 ## [1.12.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.11.1...v1.12.0) (2026-07-29)
 
 
