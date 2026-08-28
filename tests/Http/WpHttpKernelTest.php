@@ -18,6 +18,7 @@ use Middag\WordPress\Http\WpHttpKernel;
 use Middag\WordPress\Security\Attribute\Nonce;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DoesNotPerformAssertions;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -48,13 +49,12 @@ final class WpHttpKernelTest extends TestCase
     }
 
     #[Test]
+    #[DoesNotPerformAssertions]
     public function aValidNoncePassesTheGate(): void
     {
         $_REQUEST['_wpnonce'] = 'nonce-do-thing';
 
         $this->applyPlatformAuth(new FixtureNonceController(), 'guarded');
-
-        $this->addToAssertionCount(1); // no exception
     }
 
     #[Test]
@@ -76,39 +76,35 @@ final class WpHttpKernelTest extends TestCase
     }
 
     #[Test]
+    #[DoesNotPerformAssertions]
     public function theHeaderFallbackIsAccepted(): void
     {
         $_SERVER['HTTP_X_WP_NONCE'] = 'nonce-do-thing';
 
         $this->applyPlatformAuth(new FixtureNonceController(), 'guarded');
-
-        $this->addToAssertionCount(1);
     }
 
     #[Test]
+    #[DoesNotPerformAssertions]
     public function aCustomParamNameIsResolved(): void
     {
         $_REQUEST['custom_nonce'] = 'nonce-custom-action';
 
         $this->applyPlatformAuth(new FixtureNonceController(), 'customParam');
-
-        $this->addToAssertionCount(1);
     }
 
     #[Test]
+    #[DoesNotPerformAssertions]
     public function anUnguardedActionIsANoOp(): void
     {
         $this->applyPlatformAuth(new FixtureNonceController(), 'open');
-
-        $this->addToAssertionCount(1);
     }
 
     #[Test]
+    #[DoesNotPerformAssertions]
     public function aNonRequiredNonceIsANoOp(): void
     {
         $this->applyPlatformAuth(new FixtureNonceController(), 'optional');
-
-        $this->addToAssertionCount(1);
     }
 
     #[Test]
