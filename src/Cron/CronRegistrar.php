@@ -90,12 +90,10 @@ final class CronRegistrar
 
         foreach (CronInterval::cases() as $interval) {
             $key = $interval->scheduleKey($component);
-            if (!isset($schedules[$key])) {
-                $schedules[$key] = [
-                    'interval' => $interval->seconds(),
-                    'display' => $interval->label($this->translator),
-                ];
-            }
+            $schedules[$key] ??= [
+                'interval' => $interval->seconds(),
+                'display' => $interval->label($this->translator),
+            ];
         }
 
         return $schedules;
