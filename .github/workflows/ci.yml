@@ -29,11 +29,35 @@ jobs:
       - name: Validate composer.json
         run: composer validate --no-check-publish --no-check-lock
 
+      - name: Cache vendor
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php8.2-vendor-${{ hashFiles('composer.json', 'composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php8.2-vendor-
+
       - name: Install dependencies
         uses: ramsey/composer-install@v3
 
       - name: Test namespaces follow PSR-4 (autoload + autoload-dev)
         run: composer dump-autoload --optimize --strict-psr
+
+      - name: Cache Rector (incremental)
+        uses: actions/cache@v4
+        with:
+          path: .cache/rector
+          key: ${{ runner.os }}-rector-${{ hashFiles('.php-rector.php', 'composer.json', 'composer.lock') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-rector-${{ hashFiles('.php-rector.php', 'composer.json', 'composer.lock') }}-
+
+      - name: Cache PHPStan (incremental)
+        uses: actions/cache@v4
+        with:
+          path: .cache/phpstan
+          key: ${{ runner.os }}-phpstan-${{ hashFiles('.phpstan.neon', 'composer.json', 'composer.lock') }}-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-phpstan-${{ hashFiles('.phpstan.neon', 'composer.json', 'composer.lock') }}-
 
       - name: PHPStan + PHP-CS-Fixer + Rector (dry-run)
         run: composer check
