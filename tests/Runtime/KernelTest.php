@@ -162,7 +162,7 @@ final class KernelTest extends TestCase
 
         try {
             $container = new FixtureContainer([
-                HookRegistrar::class => new HookRegistrar(null, 'Middag\\', $hookDir),
+                HookRegistrar::class => new HookRegistrar(null, ['Middag\\' => $hookDir]),
             ]);
             FixtureKernel::$containerToBuild = $container;
 
