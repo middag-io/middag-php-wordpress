@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.14.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.13.0...v1.14.0) (2026-09-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* **hook:** HookRegistrar::__construct no longer takes $hookNamespace and $hookDir. Pass $hookPaths as ['Acme\\Plugin\\Hook\\' => '/abs/path'].
+
+### Bug Fixes
+
+* **hook:** discover hooks by interface across multiple roots ([017d6a5](https://github.com/middag-io/middag-php-wordpress/commit/017d6a566b7a99d0cfc747a06ed44ac51c2ada97))
+
 ## [1.13.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.12.0...v1.13.0) (2026-08-28)
 
 
