@@ -1,4 +1,6 @@
-# CLAUDE.md — middag-io/wordpress
+# AGENTS.md — middag-io/wordpress
+
+Claude Code and Codex read this file; there is no `CLAUDE.md` in this repository.
 
 ## What this package is
 
