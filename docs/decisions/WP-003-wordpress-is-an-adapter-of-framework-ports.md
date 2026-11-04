@@ -40,7 +40,7 @@ The framework reaches a host only through ports, each with an OSS default (FW-01
 - (−) Host events do not pass through the framework hook manager, so the WordPress and Moodle adapters deliver them differently.
 - (−) Without Action Scheduler, jobs run on WP-Cron: traffic-driven, with no retry and no claiming.
 - (−) A token-authenticated API needs a consumer-supplied authenticator.
-- (−) `composer.json` still requires `firebase/php-jwt`, although no file under `src/` may use it.
+- (−) `composer.json` still requires `firebase/php-jwt`, although no file under `src/` uses it (and `NoBundledTokenAuthTest` forbids it).
 
 ## Enforcement
 

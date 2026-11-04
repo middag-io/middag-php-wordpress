@@ -19,7 +19,7 @@ enforced_by:
 
 ## Context
 
-Several WordPress plugins built on this adapter can run in one PHP process and one request, and some of them are not MIDDAG products. Anything process-wide in the adapter (a static property, the framework's single host-identity slot, a default prefix) is then shared by all of them and the last writer wins. A default that carries a product name also hands that name to every consumer that configures nothing: before this decision the config resolver read `MIDDAG_*` environment variables and `middag_*` options by default.
+Several WordPress plugins built on this adapter can run in one PHP process and one request, and some of them are not MIDDAG products. Anything process-wide in the adapter (a static property, the framework's single host-identity slot, a default prefix) is then shared by all of them and the last writer wins. A default that carries a product name also hands that name to every consumer that configures nothing.
 
 ## Considered Options
 
