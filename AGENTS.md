@@ -6,7 +6,7 @@ OSS WordPress adapter (Apache-2.0) for the MIDDAG framework. It carries only bas
 
 Governed MIDDAG capabilities (Item/EAV, QueryEngine, `middag_*` schema, Audit/ActivityFeed/ItemRevision/Job, outbox, tenant/organization, rate limit, scopes, Payment/Webhook/WooCommerce/CRM) are **not part of this OSS adapter** — they belong to non-OSS MIDDAG layers.
 
-Future governed WordPress code may live in `middag-io/core` under `src/WordPress/`.
+Governed WordPress code lives in the proprietary `middag-io/core` under `src/Adapter/WordPress/`.
 That does not change this adapter's boundary: the OSS adapter stays generic and
 never imports `Middag\Core\`. If core/framework binds the neutral `async`
 transport on WordPress, name it as a WP-Cron binding owned by the consumer/core
@@ -38,14 +38,14 @@ Some WordPress host surfaces are **intentionally not targeted** by this adapter:
 | `src/Exception/` | Adapter-specific exception hierarchy for hooks, settings rendering, database failures |
 | `src/Filesystem/` | WpUploadsFilesystem (framework FilesystemInterface → uploads dir, via LocalFilesystem) |
 | `src/Hook/` | HookRegistrar + `Contract/HookInterface` (requires an explicit, existing hook directory) |
-| `src/Http/` | `Client/{HttpClient,HttpResponse}` (wp_remote_* with optional mTLS — see below), `Contract/{RestControllerInterface, RequestAuthenticatorInterface}`, `Auth/WpSessionAuthenticator` (default request authenticator — WP-session only; bearer-token auth is product code, composed and injected), `Controller/AbstractWpRestController` (instance-based; `RequestAuthenticatorInterface` injected for permission callbacks), `Response/RestResponse`, `Routing/{Router, RestRouteRegistrar (REST surface), AdminRouteRegistrar (admin surface), PublicRouteRegistrar (public rewrite surface)}`, `ControllerResolver`, `Inertia/InertiaAdapter`, `Security/CsrfGuard` |
+| `src/Http/` | `Client/{HttpClient,HttpResponse}` (wp_remote_* with optional mTLS — see below), `Contract/{RestControllerInterface, RequestAuthenticatorInterface}`, `Auth/WpSessionAuthenticator` (default request authenticator — WP-session only; bearer-token auth is product code, composed and injected), `Controller/AbstractWpController` (Inertia page base, extends the framework `AbstractController`), `Controller/AbstractWpRestController` (instance-based; `RequestAuthenticatorInterface` injected for permission callbacks), `Response/RestResponse`, `Routing/{WpRouter, RestRouteRegistrar + RestRouteAttributeRegistrar (REST surface), PublicRouteRegistrar (public rewrite surface)}` (the admin surface is `src/Admin/AdminRouteRegistrar`), `WpHttpKernel` (admin, `#[Nonce]`), `WpRestKernel` (attribute-routed REST), `ControllerResolver`, `Inertia/InertiaAdapter`, `Security/CsrfGuard` |
 | `src/Runtime/` | WpBootstrap (BootstrapInterface), WpComponentContext (HostComponentContextInterface), WpMaintenanceGate, PluginLifecycle, Loader/WpHookfileLoader |
 | `src/Mail/` | WpMailer (framework MailerInterface → wp_mail), EmailSender, EmailTemplate |
 | `src/Persistence/` | QueryBuilder (WP_Query/wp_posts) |
 | `src/Privacy/` | PrivacyRegistrar + `Contract/PersonalDataProviderInterface` (WordPress personal-data export/erasure glue) |
 | `src/Security/` | CapabilityRegistrar (declarative caps per role); `Enum/{WpCapability, WooCommerceCapability}` (typed capability catalogs) + `CapabilityInterface`/`NormalizesCapability` |
 | `src/Settings/` | Declarative settings framework: Tab→Section→Field (FieldType with default sanitizer), FieldRenderer (escaped), SettingsPageRegistrar over SettingDefinition/SettingsRegistrar |
-| `src/Support/` | 24 `*Support` static seams over WordPress functions (hooks, options, meta, cache, transients, uploads, sanitize/escape, logging, rewrite, ...) |
+| `src/Support/` | 25 `*Support` static seams over WordPress functions (hooks, options, meta, cache, transients, uploads, sanitize/escape, logging, rewrite, ...) |
 | `src/Translation/` | WpTranslator (framework TranslatorInterface) |
 
 ## Capability catalogs (typed authorization vocabulary)
@@ -101,6 +101,19 @@ Enforced policies (all run under `composer test`):
 - **No bundled token auth** (`NoBundledTokenAuthTest`) — no `src/` file references `Firebase\JWT`. App-token/JWT logic (issue/verify/refresh) is product code and lives in the proprietary core (`WordPressTokenService`); the library exposes only the `RequestAuthenticatorInterface` seam (default `WpSessionAuthenticator`, WP-session only).
 - **No routing brand literal** (`RoutingBrandLiteralTest`) — routing sources never hard-code the lowercase `middag` literal; namespaces/slugs derive from `componentName()`.
 - **Enum case PascalCase** (`EnumCasePascalCaseTest`).
+
+## Decision records
+
+Architecture decisions live in [`docs/decisions/`](docs/decisions/) as `WP-NNN` records in the
+MIDDAG-MADR compact format (`docs-middag-ops` ADR-014): frontmatter, then Context → Considered Options
+→ Decision → Consequences → Enforcement. A record states **why** (the choice, the alternatives, the
+consequences); specification (class lists, catalogs, pipelines, naming tables) lives in the reference
+its Enforcement table points to, at docs.middag.dev (`docs-middag-dev`,
+`docs/framework/reference/adapters/wordpress/`). Ids are never reused. OSS records never cite
+proprietary record ids. `deciders` is a role id (`leadership`), never a person.
+
+**`domains` vocabulary** (a record uses only these): `wordpress`, `adapters`, `portability`, `http`,
+`config`, `kernel`, `persistence`, `bus`.
 
 ## Composer scripts
 
