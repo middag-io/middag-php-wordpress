@@ -138,6 +138,13 @@ Types: feat, fix, chore, docs, style, refactor, perf, test, build, ci, revert
 Releases are managed by [release-please](https://github.com/googleapis/release-please).
 Conventional commits merged to `main` open a Release PR automatically.
 
+The package is on `1.x`. From `2.0.0` it shares MAJOR.MINOR with the other
+`middag-php-*` libraries, as one version family: a patch carries only fixes,
+and a family minor or major is decided by the product owner. A consumer then
+declares one `^2.N` range for every sibling. Every PR runs the family-window
+check (`php-version-family-check / check`). See
+[`API-STABILITY.md`](API-STABILITY.md) for the policy and the check.
+
 ## License
 
 Licensed under the [Apache License 2.0](LICENSE). See [`NOTICE`](NOTICE) for
