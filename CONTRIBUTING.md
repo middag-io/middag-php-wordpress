@@ -66,16 +66,30 @@ the adapter must remain consumable on its own.
 ### Versioning
 
 Releases are cut **exclusively** by release-please — never by a manual tag.
-The package is on the **`1.x`** line; its public surface and policy are
-documented in this package's own [`API-STABILITY.md`](API-STABILITY.md), which
-follows the family policy defined in
-the framework's [`API-STABILITY.md`](https://github.com/middag-io/middag-php-framework/blob/main/API-STABILITY.md):
-during `1.x` a breaking change may ship in a minor — always explicitly marked
-(`!` / `BREAKING CHANGE:`) and cut deliberately by a maintainer with a
-`Release-As:` footer, never in a patch. A major release is never cut
-automatically: it happens only by explicit maintainer decision, when the break
-genuinely impacts Composer consumers — a release PR proposing a major bump is
-not merged without that sign-off.
+The full policy is in [`API-STABILITY.md`](API-STABILITY.md), which follows
+ADR-032 of `docs-middag-ops` (the version family of the `middag-php-*`
+libraries; it amends ADR-003 for them). In short:
+
+- **On `1.x`:** `fix:` cuts a patch and `feat:` cuts a minor. Until 2026-11-30 a
+  minor may carry a breaking change, under a recorded exception that is not
+  renewed. Ship it as `feat:` (never `fix:`, so it never lands in a patch) and
+  describe the break and its migration in the commit body. Never use `!` or a
+  `BREAKING CHANGE:` footer: release-please would cut `2.0.0` in this lib alone.
+  From 2026-12-01 no break lands on `1.x`.
+- **From `2.0.0`:** this lib shares MAJOR.MINOR with the other seven
+  `middag-php-*` libraries. A patch carries only fixes. A `feat:` waits for a
+  family minor window. A break waits for a family major window, after a
+  deprecation, with a runtime notice, in an earlier minor. The product owner
+  decides every family minor and major. Each one is a coordinated
+  `Release-As: X.Y.0` in every lib.
+- **The check.** Every PR runs `php-version-family-check / check`. It checks
+  the PR title and every non-merge commit against the organization variable
+  `PHP_LIBS_OPEN_RELEASE`, set and cleared on the order of the product owner. The rules are in
+  [`API-STABILITY.md`](API-STABILITY.md#the-family-window-check). If your
+  `feat:` PR is waiting for a window, keep it current by merging `main` into it
+  (never rebase or force-push). Re-run the check once the window opens. A
+  window counts as open only when it is ahead of this lib's version, and while
+  one is open the Release PR is merged only at the coordinated `X.Y.0`.
 
 > Historical note: `1.1.1` shipped the audit-consolidation breaking changes
 > (the `WpBootstrap`/`WpHookfileLoader` renames and the removal of the dead
