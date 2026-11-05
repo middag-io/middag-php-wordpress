@@ -2,92 +2,25 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
 
-permissions:
-  contents: read
+permissions: {}
 
-# CI uses no private infrastructure and no credentials. This adapter builds on
-# the OSS middag-io/framework package (which transitively brings in middag-io/ui),
-# resolved from Packagist (the default public Composer registry); no manual
-# repositories entry is required.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  quality:
-    name: Static analysis & style
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.2'
-          coverage: none
-          tools: composer:v2
-
-      - name: Validate composer.json
-        run: composer validate --no-check-publish --no-check-lock
-
-      - name: Cache vendor
-        uses: actions/cache@v4
-        with:
-          path: vendor
-          key: ${{ runner.os }}-php8.2-vendor-${{ hashFiles('composer.json', 'composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-php8.2-vendor-
-
-      - name: Install dependencies
-        uses: ramsey/composer-install@v3
-
-      - name: Test namespaces follow PSR-4 (autoload + autoload-dev)
-        run: composer dump-autoload --optimize --strict-psr
-
-      - name: Cache PHP-CS-Fixer (incremental)
-        uses: actions/cache@v4
-        with:
-          path: .cache/php-cs-fixer.cache
-          key: ${{ runner.os }}-php-cs-fixer-${{ hashFiles('.php-cs-fixer.dist.php', 'composer.json', 'composer.lock') }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-php-cs-fixer-${{ hashFiles('.php-cs-fixer.dist.php', 'composer.json', 'composer.lock') }}-
-
-      - name: Cache Rector (incremental)
-        uses: actions/cache@v4
-        with:
-          path: .cache/rector
-          key: ${{ runner.os }}-rector-${{ hashFiles('.php-rector.php', 'composer.json', 'composer.lock') }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-rector-${{ hashFiles('.php-rector.php', 'composer.json', 'composer.lock') }}-
-
-      - name: Cache PHPStan (incremental)
-        uses: actions/cache@v4
-        with:
-          path: .cache/phpstan
-          key: ${{ runner.os }}-phpstan-${{ hashFiles('.phpstan.neon', 'composer.json', 'composer.lock') }}-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-phpstan-${{ hashFiles('.phpstan.neon', 'composer.json', 'composer.lock') }}-
-
-      - name: PHPStan + PHP-CS-Fixer + Rector (dry-run)
-        run: composer check
-
-  tests:
-    name: Tests (PHP ${{ matrix.php }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        php: ['8.2', '8.3', '8.4']
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-          coverage: none
-          tools: composer:v2
-
-      - name: Install dependencies
-        uses: ramsey/composer-install@v3
-
-      - name: PHPUnit
-        run: composer test
+  # Released php-library-check component of middag-io/actions, pinned by
+  # commit SHA with the tag in a comment. One job per PHP version: the static
+  # checks (composer validate, strict PSR-4, PHPStan, PHP-CS-Fixer and Rector)
+  # run on 8.2, the audit and PHPUnit on every version. This adapter builds on
+  # the OSS middag-io/framework from Packagist; no credentials.
+  php-library-check:
+    uses: middag-io/actions/.github/workflows/php-library-check.yml@5e6dc3d595edc2bf6134043a2b17067af5f64c25 # php-library-check-v1.0.0
+    permissions:
+      contents: read
+    with:
+      php-versions: '["8.2", "8.3", "8.4"]'
+      audit-blocking-severities: critical, high
