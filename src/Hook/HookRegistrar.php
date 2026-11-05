@@ -18,6 +18,7 @@ use Psr\Container\ContainerInterface;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use ReflectionClass;
+use ReflectionMethod;
 
 /**
  * Discovers every {@see HookInterface} implementation under the configured
@@ -79,7 +80,7 @@ final readonly class HookRegistrar
                 // class and the fix instead.
                 $constructor = (new ReflectionClass($className))->getConstructor();
 
-                if ($constructor !== null && $constructor->getNumberOfRequiredParameters() > 0) {
+                if ($constructor instanceof ReflectionMethod && $constructor->getNumberOfRequiredParameters() > 0) {
                     throw new HookRegistrationException(sprintf(
                         '%s requires constructor arguments but is not registered in the container. '
                         . 'Register it as a service, or give it a parameterless constructor.',

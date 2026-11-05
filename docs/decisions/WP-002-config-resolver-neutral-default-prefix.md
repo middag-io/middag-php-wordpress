@@ -1,54 +1,56 @@
 ---
-id: WP-002
-title: 'WpConfigResolver: default neutro de lib, prefixo real do produto injetado pelo consumidor'
+title: 'Injected per-plugin identity, neutral defaults, no mutable static state'
 status: accepted
 date: 2026-07-31
-lang: pt-BR
-domains: [wordpress, config]
-deciders: ['Michael Meneses']
-related: []
+last-updated: 2026-11-04
+lang: en
+domains: [wordpress, config, kernel]
+deciders: [leadership]
+decision: 'Each plugin injects its own identity and prefixes; adapter defaults stay neutral; no static property in the adapter.'
+related: [WP-001, WP-003, middag-php-framework:FW-015, middag-php-framework:FW-016, middag-php-moodle:MDL-001]
 supersedes: []
 superseded_by: null
 enforced_by:
   mdgstan: []
   docs: []
-decision: 'Os defaults do construtor de `WpConfigResolver` deixam de ser a marca MIDDAG (`MIDDAG_`/`middag_`) e passam a ser um valor neutro de lib (`MIDDAGLIB_`/`middaglib_`), que não identifica nenhum consumidor específico — só sinaliza "veio desta lib sem prefixo configurado". O par real da MIDDAG não desaparece: passa a ser injetado explicitamente pelos composition roots que a MIDDAG controla (hoje: `middag-php-core::WordPressContainerFactory::registerExtensions()`, e os bootstraps dos produtos WordPress que não passam pelo core), em vez de vir de silêncio do default da lib. O construtor continua aceitando um par de prefixos opcional para qualquer outro consumidor.'
 ---
 
-# WP-002: WpConfigResolver — default neutro de lib, prefixo real do produto injetado pelo consumidor
+# WP-002: Injected per-plugin identity, neutral defaults, no mutable static state
 
 ## Context
 
-`middag-io/wordpress` é uma lib OSS Apache-2.0, destinada a qualquer consumidor WordPress terceiro, não só a produtos MIDDAG — mesma natureza de `middag-io/moodle`. Apesar disso, `WpConfigResolver::__construct()` tinha os prefixos da MIDDAG hardcoded como default (`$envPrefix = 'MIDDAG_'`, `$optionPrefix = 'middag_'`). Consequência prática: um terceiro que instancia `new WpConfigResolver()` sem argumentos — o caminho mais óbvio ao ler a assinatura — herda silenciosamente a marca MIDDAG nas chaves de config que resolve (`MIDDAG_*` no ambiente, `middag_*` em `wp_options`), e dois terceiros diferentes que não configuram nada colidem exatamente no mesmo par de prefixos. Isso é o inverso do que uma lib genérica deveria fazer: o namespace de configuração de um consumidor não deveria depender de MIDDAG só porque ele não passou nada.
-
-O mesmo problema, com a mesma forma, foi identificado e corrigido no adaptador irmão Moodle (`SettingsNamingPolicy::DEFAULT_PREFIX`). Esta decisão aplica o mesmo raciocínio aqui, para manter o ecossistema consistente.
-
-Levantamento feito antes desta mudança (grep contra os composition roots reais que instanciam `WpConfigResolver` sem argumentos, portanto dependentes do default):
-
-| Local | Situação no momento desta ADR |
-|---|---|
-| `middag-php-core` — `WordPressContainerFactory::registerExtensions()` | Já em correção concorrente (working tree modificado, não commitado): passou a chamar `->addArgument('MIDDAG_')->addArgument('middag_')` explicitamente |
-| `wp-plugin-middag` — `MiddagBootstrap::bindPlatformAdapters()` | **Ainda registra `WpConfigResolver::class` sem argumentos** — depende do default da lib |
-| `wp-plugin-middag-account` — `AccountBootstrap::bindPlatformAdapters()` | **Ainda registra `WpConfigResolver::class` sem argumentos** para o par `MIDDAG_`/`middag_` (o mesmo arquivo já injeta explicitamente um par *diferente*, `MDGA_`/`mdga_`, só para o stack JWT — isso não muda) |
-| `middag-php-wordpress` (este repo) — `WpBootstrap::configure()`, `@internal` | Registra sem argumentos **de propósito** — é o baseline genérico da própria lib, não um produto; um composition root real deve sobrescrever antes de compilar |
+Several WordPress plugins built on this adapter can run in one PHP process and one request, and some of them are not MIDDAG products. Anything process-wide in the adapter (a static property, the framework's single host-identity slot, a default prefix) is then shared by all of them and the last writer wins. A default that carries a product name also hands that name to every consumer that configures nothing.
 
 ## Considered Options
 
-A decisão de produto (trocar o default por um valor neutro e mover a marca real para injeção explícita) já foi tomada pelo dono do projeto, com o mesmo racional aplicado ao adaptador Moodle irmão — não é uma escolha de design feita nesta ADR. O que ficou em aberto para esta implementação foi só a forma:
-
-1. **Remover o default por completo** (parâmetro obrigatório). Rejeitada: quebra a ergonomia de "novo consumidor sobe rápido sem decorar nada"; a lib ainda precisa de *algum* comportamento sensato sem configuração, só não pode ser o de uma marca alheia.
-2. **Manter `MIDDAG_`/`middag_` como default e documentar "troque em produção"**. Rejeitada: é exatamente o estado atual, e depende de disciplina de quem nunca vai ler o docblock; o próprio consumidor MIDDAG só não colide consigo mesmo por coincidência de ser o autor do default.
-3. **Default neutro (`MIDDAGLIB_`/`middaglib_`), valor real injetado explicitamente pelo composition root de cada produto** ← escolhida. Nenhum terceiro herda marca alheia por omissão; dois terceiros que não configuram nada colidem só entre "vieram de lib sem configurar", nunca com MIDDAG; e o valor real da MIDDAG continua existindo, só que dito em voz alta no lugar certo.
+1. A static kernel singleton and the framework's process-wide host-identity slot, as in the Moodle adapter.
+2. Product-named defaults (`MIDDAG_` / `middag_`), documented as "override in production".
+3. No defaults at all: every identity and prefix argument is required.
+4. Identity, prefixes and the kernel singleton belong to each consumer: the singleton lives on the consumer's kernel subclass, identity is an instance injected through the consumer's container, and the adapter's defaults are neutral library markers. ← chosen
 
 ## Decision
 
-`WpConfigResolver::__construct()` passa a ter `$envPrefix = 'MIDDAGLIB_'` e `$optionPrefix = 'middaglib_'` como default. O docblock da classe deixa de descrever isso como "the defaults" sem qualificação e passa a nomear explicitamente que é o default neutro da lib, e que um produto real (MIDDAG incluída) injeta seu próprio par no composition root.
+The adapter holds no static properties. The kernel is abstract and the consumer's subclass owns the singleton, so each plugin has its own kernel under its own namespace. Component identity (name, asset version, base path) is a value the consumer builds and injects through its own container into every service that needs it; WordPress consumers never use the framework's process-wide host-identity slot. Every adapter default is neutral: the config resolver defaults to `MIDDAGLIB_` / `middaglib_`, a marker meaning "this library, not configured", and every per-plugin namespace derives from the injected component name. Each product, MIDDAG's included, passes its real prefixes in its own composition root.
 
-Isso é **extensível por construção**: o construtor continua recebendo `$envPrefix`/`$optionPrefix` como parâmetros normais (não `final` nem sealed), então qualquer consumidor — MIDDAG ou terceiro — passa seu próprio par sem precisar de nenhuma mudança nesta lib. Nenhum ponto de extensão foi removido; só o que caía em silêncio no default passou a precisar de uma linha explícita.
+This is the deliberate opposite of the Moodle adapter, whose kernel keeps a static singleton (MDL-001): Moodle loads one component per request and its `lib.php` callbacks, hooks and scheduled tasks cannot receive injected services, while WordPress hosts many plugins per request and each one boots its own container.
 
 ## Consequences
 
-- Todo teste de `WpConfigResolverTest` que chamava `new WpConfigResolver()` sem argumentos e esperava ler `MIDDAG_*`/`middag_*` foi atualizado para `MIDDAGLIB_*`/`middaglib_*` — o teste continua cobrindo a mesma regra de precedência (env > option > default), só que contra o valor de default correto agora. `customPrefixesAreHonoured` (já passava prefixos explícitos) não mudou.
-- **Item crítico, fora do escopo deste commit mas registrado aqui para rastreio**: enquanto os dois composition roots de produto listados na tabela acima (`wp-plugin-middag` e `wp-plugin-middag-account`) não passarem a injetar `'MIDDAG_', 'middag_'` explicitamente, atualizar a dependência de `middag-io/wordpress` neles fará toda chave de config em produção mudar de nome em silêncio (ex.: env `MIDDAG_SMTP_HOST` deixa de ser lida, o resolver passa a procurar `MIDDAGLIB_SMTP_HOST`) — sem exceção, sem log, sem erro. Esta versão da lib **não deve ser consumida** por esses dois produtos até essa injeção existir nos dois. A correção do lado `middag-php-core` já está em andamento (não commitada) numa sessão concorrente.
-- `WpBootstrap::configure()` (deste repo, `@internal`) continua registrando sem argumentos — é o comportamento correto sob esta decisão, não uma lacuna: é o baseline genérico da própria lib, e um composition root real já sobrescreve `ConfigResolverInterface` antes de compilar.
-- Mudança de comportamento real (o valor lido por um consumidor não configurado muda), sem mudança de assinatura pública — tratada como `fix(config)!` com `Release-As` explícito, não como bump automático de major.
+- (+) Plugins in one request never share a kernel, identity, prefix, schedule or nonce action.
+- (+) A third-party consumer that configures nothing inherits no product's names, and an unconfigured key is recognisable as such.
+- (+) Per-plugin state is visible in constructors and containers instead of hidden in globals.
+- (−) Every consumer writes a kernel subclass with its own singleton storage and registers its own config prefixes.
+- (−) A consumer that forgets to register its prefixes reads library-marked keys, with no error or log.
+- (−) Some defaults still carry the `middag` name: the translator's default text domain (`src/Translation/WpTranslator.php:32`), the host event hook prefix (`src/Bus/WpHostEventBridge.php:44`), and the hookfile filter and file name (`src/Runtime/Loader/WpHookfileLoader.php:40,53`). The file name has no override.
+- (−) The Inertia adapter still writes the framework's static Inertia configuration on each render, which is safe only because wp-admin serves one component per request.
+
+## Enforcement
+
+| Decision clause | Verification | State |
+|---|---|---|
+| No static property under `src/` | test `tests/Architecture/NoStaticMutableStateTest.php` | coded |
+| The kernel holds no singleton; the consumer subclass owns it and boot is per kernel | test `tests/Runtime/KernelTest.php` | coded |
+| Config prefixes default to the neutral marker and are injectable | test `tests/Config/WpConfigResolverTest.php` | coded |
+| Routing namespaces derive from the injected component name | test `tests/Architecture/RoutingBrandLiteralTest.php` | coded |
+| No product-named default anywhere in `src/` | guard test | planned |
+| Kernel, identity injection, config resolution and defaults | doc `docs-middag-dev:docs/framework/reference/adapters/wordpress/configuration.md` | coded |

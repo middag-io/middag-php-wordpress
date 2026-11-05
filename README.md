@@ -60,12 +60,23 @@ product-specific goes in your `onBoot()` override. The kernel holds no static
 state; the singleton lives on YOUR subclass, so two MIDDAG plugins in one
 request never share a kernel.
 
-One obligation the host must still satisfy at boot:
+Two obligations the host must still satisfy at boot:
 
-- **Register the host context.** Call
-  `HostContext::set(new WpComponentContext($componentName, $assetVersion, $basePath))`
-  so the adapter can resolve the component name, asset version, and base path
-  (used for Inertia cache-busting and email-template path resolution).
+- **Inject the component identity.** Build
+  `new WpComponentContext($componentName, $assetVersion, $basePath)` once and
+  bind it in your own container as the framework
+  `HostComponentContextInterface`, so the services that need it (the REST,
+  admin and public routing registrars, `CronRegistrar`, `InertiaAdapter`,
+  `EmailSender`) receive it by injection. Do **not** register it with the
+  framework's `HostContext::set()`: that slot is one per PHP process, and with
+  several plugins in one request the last plugin to boot would win.
+- **Register your config prefixes.** `WpConfigResolver` defaults to the neutral
+  `MIDDAGLIB_` / `middaglib_` prefixes; bind it with your own pair.
+
+See [WP-002](docs/decisions/WP-002-config-resolver-neutral-default-prefix.md)
+for the decision and the
+[WordPress adapter reference](https://docs.middag.dev/framework/reference/adapters/wordpress/)
+for the details.
 
 Logging needs no priming: the adapter's operational sites (cron dispatch,
 email send/render) resolve their PSR-3 logger per call through

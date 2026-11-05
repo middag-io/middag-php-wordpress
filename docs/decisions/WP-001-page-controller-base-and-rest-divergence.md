@@ -1,58 +1,55 @@
 ---
-id: WP-001
-title: 'Page-Controller Base and REST Divergence'
+title: 'WordPress HTTP integration'
 status: accepted
 date: 2026-07-24
+last-updated: 2026-11-04
 lang: en
 domains: [wordpress, http]
-deciders: ['Michael Meneses']
-related: []
+deciders: [leadership]
+decision: 'Three per-component routing surfaces; page controllers follow the framework lifecycle; REST keeps a WP-native kernel.'
+related: [WP-002, WP-003, middag-php-framework:FW-002, middag-php-framework:FW-014, middag-php-framework:FW-015]
 supersedes: []
 superseded_by: null
 enforced_by:
   mdgstan: []
   docs: []
-decision: 'The WordPress adapter provides a page-controller base, `Http\Controller\AbstractWpController`, that extends the framework `AbstractController` and adds Inertia rendering plus a WordPress login/capability gate (with the instance id mapped onto the meta-capability object id). The REST base, `AbstractWpRestController`, stays on its own `RestControllerInterface` and does NOT share an inheritance chain with the page base, because the WordPress REST lifecycle does not match the kernel request → handle() cycle.'
 ---
 
-# WP-001: Page-Controller Base and REST Divergence
+# WP-001: WordPress HTTP integration
 
 ## Context
 
-The adapter shipped only the REST controller stack (`RestControllerInterface` + `AbstractWpRestController`) and had no page-controller base, unlike the framework and the Moodle adapter. A consumer rendering Inertia pages had nothing to extend and had to call `InertiaAdapter` by hand and wire container/auth/render itself (wordpress#39). `AbstractWpController` has never existed in this repository — this is a gap to fill, not a regression.
-
-The framework contract `Middag\Framework\Http\Contract\ControllerInterface` is host-neutral (no Moodle/WordPress types); host-specific concerns live only inside each adapter's own base. So a WordPress page base can implement it cleanly. This ADR also records the question wordpress#39 raised: should the REST base relate to the shared contract too, for parity with framework/Moodle (`AbstractApiController extends AbstractController` in both)?
-
-De/para of controller bases across the ecosystem at the time of this decision:
-
-| Layer | Page-controller base | REST/API base | REST ↔ Page |
-|---|---|---|---|
-| Framework | `AbstractController implements ControllerInterface` | `AbstractApiController extends AbstractController` | REST extends page |
-| Moodle adapter | `AbstractController implements MoodleControllerInterface` (extends `ControllerInterface` + `CapabilityRequirementAwareInterface`) | `AbstractApiController extends AbstractController` | REST extends page |
-| WordPress adapter | **absent → this decision adds `AbstractWpController`** | `AbstractWpRestController implements RestControllerInterface` (standalone) | REST isolated |
-| Core | N/A (domain lib, no HTTP) | N/A | — |
+WordPress reaches plugin code through three request paths with different lifecycles: the REST API (route registration with a permission callback, over `WP_REST_Request`), wp-admin menu pages, and public pretty URLs through the rewrite system. Several plugins built on this adapter can share one request, so they must not collide on a route namespace, a menu slug or a query var. The framework offers one HTTP lifecycle (PSR-15 kernel, controller base, declarative attributes), and the adapter has to decide how much of it each WordPress path adopts.
 
 ## Considered Options
 
-1. **No page base; consumers keep calling `InertiaAdapter` statically.** Rejected: that is the gap — no parity, no auth/render wiring, every consumer reinvents it.
-2. **One base for both page and REST** (force `AbstractWpRestController` to relate to `ControllerInterface`, mirroring framework/Moodle). Rejected: the WordPress REST lifecycle is a registration model (`register_rest_route` + a `permission_callback` per route, dispatched over `WP_REST_Request`, returning `WP_Error`). There is no single `handle()` / `setRequest(Request)` cycle, and a permission failure must be a `WP_Error`, not a halt. A shared base would inherit dead lifecycle methods and a page-shaped `setRequireCapabilities()` whose enforcement is wrong for REST.
-3. **Page base extending the framework `AbstractController`; REST stays isolated** ← chosen. `AbstractWpController extends Framework\AbstractController` and adds `render()` (via the container-bound `InertiaAdapter`) plus the WordPress auth gate. `AbstractWpRestController` keeps its own `RestControllerInterface`.
+1. Route every path, REST included, through the framework HTTP kernel and its PSR-15 pipeline.
+2. One controller base for pages and REST, with REST extending the page base as in the framework and the Moodle adapter.
+3. REST only; consumers hand-roll admin pages and the Inertia wiring.
+4. Three surfaces (REST, admin, public rewrite), each namespaced by the injected component name. Page controllers extend the framework controller base and run through the framework kernel. REST keeps WordPress's registration model with its own WP-native kernel and shares only the framework's declarative attributes. ← chosen
 
 ## Decision
 
-`AbstractWpController` (option 3) is the Inertia page base. It inherits the full `ControllerInterface` surface and the framework helpers (`redirect`/`redirectToRoute`/`redirectBack`/`flash`/`response`/`getService`) and adds:
-
-- `render(string $component, array $props)` — delegates to the per-request `InertiaAdapter` from the container.
-- `setRequireLogin()` — `is_user_logged_in()` / `auth_redirect()`.
-- `setRequireCapabilities($capabilities, $context, $instanceId)` — `current_user_can()` per capability. WordPress has no Moodle-style context/instance model, so: `$instanceId > 0` is passed as the meta-capability object id (`current_user_can($cap, $instanceId)`, resolved by `map_meta_cap`); `$instanceId === 0` is a global check; `$context` (string) has no native equivalent and is advisory only, accepted for cross-adapter signature parity. A denial halts with `wp_die(403)`.
-
-It carries no Moodle-only concerns (sesskey, `context` objects, page layout/heading/navbar).
-
-The REST base stays independent (option 2 rejected). The framework separately segregated its monolithic `ControllerInterface` into role interfaces (framework FW-014: `ContainerAwareInterface` / `RequestHandlingInterface` / `AuthorizationAwareInterface`), which makes it *possible* for `AbstractWpRestController` to later compose a single role (e.g. `ContainerAwareInterface`) without faking the lifecycle. That retrofit is **deferred**: WP REST controllers receive their dependencies by constructor injection today, no consumer needs `setContainer`, and this adapter does not add seams without a real consumer.
+The adapter exposes three routing surfaces and derives every namespace, slug and query var from the component name the consumer injects, never from a literal. Admin pages run through the framework HTTP kernel, so page controllers extend the framework controller base and inherit its middleware pipeline, `#[Auth]` and helpers; the adapter adds only the WordPress login, capability and nonce gates. REST stays on WordPress's own model: a REST controller does not extend the page base, and attribute-routed REST actions are dispatched by a WP-native kernel that reads the same `#[Route]`, `#[Auth]` and `#[Middleware]` attributes but answers with WordPress REST responses and errors. The public surface hands a matched route to the consumer's handler.
 
 ## Consequences
 
-- A page controller `extends AbstractWpController` and calls `$this->render('Component', $props)` instead of static `InertiaAdapter::render(...)`.
-- Surface parity with Moodle's `AbstractController` holds minus the Moodle-only methods; the auth gate is mapped onto native WordPress functions.
-- No static mutable state is introduced (the adapter's `NoStaticMutableStateTest` guard holds), and no non-OSS namespace is imported (Article-I boundary holds).
-- If a future consumer needs a container-aware REST base, the framework role interfaces are already in place to compose against — a non-breaking retrofit.
+- (+) Two plugins in one request expose disjoint REST roots, menus and query vars.
+- (+) Controllers declare routes, auth and middleware with one attribute vocabulary on every surface.
+- (+) A REST denial or failure stays inside the WordPress REST envelope instead of halting the request.
+- (+) Page controllers keep parity with the framework and Moodle bases, minus Moodle-only concerns.
+- (−) One `#[Middleware]` attribute maps to two middleware contracts: the framework's on admin pages and a WP-REST-native one on REST.
+- (−) The REST base is not container-aware. Composing a framework controller role into it is possible but deferred until a consumer needs it.
+- (−) Two REST registrars, imperative and attribute-driven, coexist while consumers migrate.
+- (−) On the REST surface a capability list in `#[Auth]` is enforced as an administrator check, not capability by capability (`src/Http/WpRestKernel.php:88`).
+
+## Enforcement
+
+| Decision clause | Verification | State |
+|---|---|---|
+| Every surface is namespaced by the component name, with no brand literal | test `tests/Architecture/RoutingBrandLiteralTest.php` | coded |
+| Page controllers extend the framework controller base and map the WordPress capability gate | test `tests/Http/Controller/AbstractWpControllerTest.php` | coded |
+| Admin pages run through the framework kernel with the WordPress nonce gate | test `tests/Http/WpHttpKernelTest.php` | coded |
+| REST keeps a WP-native kernel that reads the shared attributes | test `tests/Http/WpRestKernelTest.php` | coded |
+| Surfaces, registrars and dispatch | doc `docs-middag-dev:docs/framework/reference/adapters/wordpress/routing-surfaces.md` | coded |
+| Controller bases and why they do not share a parent | doc `docs-middag-dev:docs/framework/reference/adapters/wordpress/controller-bases.md` | coded |
