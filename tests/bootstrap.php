@@ -14,7 +14,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/stubs/wp-stubs.php';
 
 // Composer autoloader — try local vendor first, then root project vendor (path repo symlink setup)
-$localAutoloader = dirname(__DIR__) . '/vendor/autoload.php';
+$localAutoloader = __DIR__ . '/../vendor/autoload.php';
 $rootAutoloader = dirname(__DIR__, 3) . '/vendor/autoload.php';
 
 if (file_exists($localAutoloader)) {
