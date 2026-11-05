@@ -122,8 +122,9 @@ Releases come only from release-please. This lib follows ADR-032 of
 policy is in [`API-STABILITY.md`](API-STABILITY.md).
 
 - **`1.x` (now).** `fix:` cuts a patch and `feat:` cuts a minor. A break is
-  allowed in a minor only until 2026-11-30 (exception to `MSR-015.R1(b)`). It
-  ships as `feat:`/`fix:` with the break described in the body. Never use `!`
+  allowed in a minor only until 2026-11-30 (a recorded exception). It ships as
+  `feat:` (never `fix:`, so never in a patch) with the break described in the
+  body. Never use `!`
   or `BREAKING CHANGE:`, which would cut `2.0.0` in this lib alone. From
   2026-12-01 no break lands on `1.x`.
 - **From `2.0.0`.** The eight libs share MAJOR.MINOR. A patch carries fixes
@@ -135,10 +136,12 @@ policy is in [`API-STABILITY.md`](API-STABILITY.md).
 - **Check.** `.github/workflows/family-window.yml` runs
   `php-version-family-check / check` on every PR. It checks the title and every
   non-merge commit against the organization variable `PHP_LIBS_OPEN_RELEASE`
-  (empty = closed, `X.Y` = minor window, `X.0` = major window). The product
-  owner sets it, never a workflow. Keep a waiting `feat:` PR current by merging
-  `main` into it (no rebase or force-push), and re-run the check when the window
-  opens.
+  (empty = closed, `X.Y` = minor window, `X.0` = major window), set and cleared
+  on the order of the product owner; no workflow writes it. A window counts as
+  open only when it is ahead of this lib's version. Keep a waiting `feat:` PR
+  current by merging `main` into it (no rebase or force-push), and re-run the
+  check when the window opens. While a window is open, merge the Release PR
+  only at the coordinated `X.Y.0`.
 - **Do not** change `release-please-config.json` versioning or the sibling
   ranges in `composer.json` outside the coordinated `2.0.0` cut.
 

@@ -71,9 +71,9 @@ ADR-032 of `docs-middag-ops` (the version family of the `middag-php-*`
 libraries; it amends ADR-003 for them). In short:
 
 - **On `1.x`:** `fix:` cuts a patch and `feat:` cuts a minor. Until 2026-11-30 a
-  minor may carry a breaking change, under the exception to `MSR-015.R1(b)` in
-  `org-middag` `adoption.yaml`. Ship it as `feat:` or `fix:` and describe the
-  break and its migration in the commit body. Never use `!` or a
+  minor may carry a breaking change, under a recorded exception that is not
+  renewed. Ship it as `feat:` (never `fix:`, so it never lands in a patch) and
+  describe the break and its migration in the commit body. Never use `!` or a
   `BREAKING CHANGE:` footer: release-please would cut `2.0.0` in this lib alone.
   From 2026-12-01 no break lands on `1.x`.
 - **From `2.0.0`:** this lib shares MAJOR.MINOR with the other seven
@@ -84,10 +84,12 @@ libraries; it amends ADR-003 for them). In short:
   `Release-As: X.Y.0` in every lib.
 - **The check.** Every PR runs `php-version-family-check / check`. It checks
   the PR title and every non-merge commit against the organization variable
-  `PHP_LIBS_OPEN_RELEASE`, which only the product owner sets. The rules are in
+  `PHP_LIBS_OPEN_RELEASE`, set and cleared on the order of the product owner. The rules are in
   [`API-STABILITY.md`](API-STABILITY.md#the-family-window-check). If your
   `feat:` PR is waiting for a window, keep it current by merging `main` into it
-  (never rebase or force-push). Re-run the check once the window opens.
+  (never rebase or force-push). Re-run the check once the window opens. A
+  window counts as open only when it is ahead of this lib's version, and while
+  one is open the Release PR is merged only at the coordinated `X.Y.0`.
 
 > Historical note: `1.1.1` shipped the audit-consolidation breaking changes
 > (the `WpBootstrap`/`WpHookfileLoader` renames and the removal of the dead

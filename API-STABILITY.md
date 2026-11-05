@@ -74,11 +74,11 @@ During the `1.x` line the API is **still consolidating**:
   `@api` change.
 - **Minor** (`1.Y.0`) — additive `@api` changes (new helpers, new optional
   parameters, promoting an `@internal` symbol to `@api`). **Until 2026-11-30** a
-  minor may also carry a breaking `@api` change. This is allowed only under the
-  exception to `MSR-015.R1(b)` recorded in `org-middag` `adoption.yaml`, which
-  ends on that date and is not renewed.
-- A break on `1.x` ships as `feat:` or `fix:`, with the break and the migration
-  described in the commit body, so the CHANGELOG still lists it. Never mark it
+  minor may also carry a breaking `@api` change, under a recorded exception
+  that ends on that date and is not renewed.
+- A break on `1.x` ships as `feat:`, so it cuts a minor and never a patch, with
+  the break and the migration described in the commit body, so the CHANGELOG
+  still lists it. It never ships as `fix:`, `refactor:` or `chore:`. Never mark it
   with `!` or a `BREAKING CHANGE:` footer. release-please would cut `2.0.0` in
   this lib alone, and the family-window check (below) refuses both markers.
 - **From 2026-12-01 no break lands on `1.x`.** The family is planned to ship
@@ -112,8 +112,8 @@ Every pull request runs the check `php-version-family-check / check`
 (`.github/workflows/family-window.yml`). It reads the PR title and every
 non-merge commit of the PR: the header type, `!`, and any
 `BREAKING CHANGE:` / `BREAKING-CHANGE:` footer. It compares them with the
-**family window**, the organization variable `PHP_LIBS_OPEN_RELEASE`. Only the
-product owner sets or clears that variable:
+**family window**, the organization variable `PHP_LIBS_OPEN_RELEASE`, set and
+cleared on the order of the product owner; no workflow writes it:
 
 - empty — no window is open;
 - `X.Y` with `Y > 0` — a family minor window;
@@ -122,7 +122,7 @@ product owner sets or clears that variable:
 | Change | Passes when |
 |---|---|
 | `!` or a `BREAKING CHANGE:` footer | a family major window is open |
-| `feat:` | this lib is below `2.0.0` (per `.release-please-manifest.json` on the base branch), or any window is open |
+| `feat:` | this lib is below `2.0.0` (per `.release-please-manifest.json` on the base branch), or a window is open |
 | `Release-As:` footer | a window is open and the footer names its `X.Y.0` |
 | any other type (`fix:`, `docs:`, `chore:`, …) | always |
 
@@ -130,6 +130,14 @@ On `2.x`, a feature PR waits open until its window. Keep it current by
 merging `main` into it, never by rebase or force-push. Merge commits are not
 checked. Re-run the check once the window opens. A PR into a branch other than
 `main` (such as a `release/X.Y` maintenance branch) sees the window as closed.
+
+- A window counts as open only when it is ahead of this lib's current version;
+  a value left set after its family release reads as closed.
+- While a window is open, this lib's Release PR is merged only at the
+  coordinated `X.Y.0`.
+- A re-run reads the base of the original event. After the `2.0.0` cut, a PR
+  opened before the cut must merge `main` into it so that the check reads the
+  new version.
 
 > Historical note: `1.1.1` shipped the audit-consolidation breaking changes (the
 > `WpBootstrap` / `WpHookfileLoader` renames and the removal of the dead
