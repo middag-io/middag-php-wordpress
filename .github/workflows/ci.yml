@@ -38,7 +38,7 @@ jobs:
             ${{ runner.os }}-php8.2-vendor-
 
       - name: Install dependencies
-        uses: ramsey/composer-install@v3
+        uses: ramsey/composer-install@v4
 
       - name: Test namespaces follow PSR-4 (autoload + autoload-dev)
         run: composer dump-autoload --optimize --strict-psr
@@ -87,7 +87,7 @@ jobs:
           tools: composer:v2
 
       - name: Install dependencies
-        uses: ramsey/composer-install@v3
+        uses: ramsey/composer-install@v4
 
       - name: PHPUnit
         run: composer test
