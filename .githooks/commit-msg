@@ -13,10 +13,13 @@
 #   * an OPTIONAL "!" breaking-change marker before the colon,
 #   * ": " then a description of at least 3 chars.
 #
-# Breaking changes: the "!" marker and a "BREAKING CHANGE:" footer are valid
-# syntax, but on 1.x they would make release-please cut 2.0.0 in this lib alone,
-# and the family-window PR check refuses them unless a family major window is
-# open. See API-STABILITY.md ("The 1.x policy", "The family-window check").
+# Breaking changes: "!" before the colon or a "BREAKING CHANGE:" footer only
+# in a family MAJOR window (version family, ADR-032 of docs-middag-ops); the
+# PR check php-version-family-check refuses both otherwise. On 1.x a break
+# ships as feat: (a MINOR, never a PATCH) with the break and the migration
+# described in the body; never fix:, refactor: or chore:. See
+# API-STABILITY.md. release-please derives versions from these messages; NEVER
+# create tags manually.
 
 MSG=$(head -1 "$1")
 
@@ -28,7 +31,8 @@ if ! echo "$MSG" | grep -qE "$PATTERN"; then
     echo ""
     echo "  Format: type(scope): description     (scope optional, single + lowercase)"
     echo "  Types:  feat, fix, chore, docs, style, refactor, perf, test, build, ci, revert"
-    echo "  Breaking: '!' or 'BREAKING CHANGE:' only in a family major window (API-STABILITY.md)."
+    echo "  Breaking: '!' or a 'BREAKING CHANGE:' footer only in a family MAJOR window;"
+    echo "            on 1.x a break is a feat: (never fix:) described in the body."
     echo ""
     echo "  Examples:"
     echo "    feat(runtime): add service auto-discovery"
