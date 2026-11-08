@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.14.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.14.0...v1.14.1) (2026-11-08)
+
+
+### Documentation
+
+* align versioning docs with the version family (ADR-032) ([2da256b](https://github.com/middag-io/middag-php-wordpress/commit/2da256b5be9d9db2961a2ace855bb9ccbf759e78))
+* align versioning docs with the version family (ADR-032) ([13b8992](https://github.com/middag-io/middag-php-wordpress/commit/13b89928529fe6489a123c41d6dade07f836f72f))
+* **decisions:** rewrite WP-001/WP-002 as architecture decisions; add WP-003 ([95a6594](https://github.com/middag-io/middag-php-wordpress/commit/95a6594db092b43c000bb7eb9799e60f1f7b8179))
+* **decisions:** rewrite WP-001/WP-002 as architecture decisions; add WP-003 ([d3f396e](https://github.com/middag-io/middag-php-wordpress/commit/d3f396eb2cc60e58ad7fcca1ac217b6ab7c42bdb))
+* tighten the 1.x break rule and the window notes ([3eeea5e](https://github.com/middag-io/middag-php-wordpress/commit/3eeea5e00d9c8899f30256b8c2cf14b55caab2c4))
+
 ## [1.14.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.13.0...v1.14.0) (2026-09-01)
 
 
