@@ -45,7 +45,8 @@ The framework reaches a host only through ports, each with an OSS default (FW-01
 
 | Decision clause | Verification | State |
 |---|---|---|
-| No proprietary MIDDAG or consumer-plugin namespace and no product table in `src/` | test `tests/AdapterPluginIsolationTest.php` | coded |
+| `src/` names only the OSS MIDDAG namespaces (`Middag\WordPress`, `Middag\Framework`, `Middag\Ui`), an allowlist that names no other package | test `tests/AdapterPluginIsolationTest.php` | coded |
+| No product name in a string literal of `src/`, table names included | test `tests/Architecture/NoProductNamedDefaultTest.php` | coded |
 | No bundled token authentication | test `tests/Architecture/NoBundledTokenAuthTest.php` | coded |
 | The baseline bootstrap binds the framework ports to WordPress implementations | test `tests/Runtime/WpBootstrapTest.php` | coded |
 | Host events are native WordPress actions | test `tests/Bus/WpHostEventBridgeTest.php` | coded |

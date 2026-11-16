@@ -20,15 +20,16 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
 /**
- * Adapter-wide product-coupling guard (Article-I boundary).
+ * Adapter-wide namespace boundary.
  *
- * The middag-io/wordpress adapter is a generic, reusable Apache-2.0 WordPress
- * package. It must never reference a consumer plugin's namespace
- * ({@code Middag\Account\...}), the proprietary CORE/Licensing/DevTools
- * namespaces, or hard-code product gold tables. This test source-scans every
- * adapter `src/` file so any regression fails loudly — it materialises the
- * `check:boundaries` gate promised in the package docs. Uses source inspection
- * rather than class loading to avoid pulling in a full WordPress runtime.
+ * The adapter is an Apache-2.0 OSS package that builds only on the OSS MIDDAG
+ * libraries. Every `Middag\` namespace that a `src/` file names, in code,
+ * strings, comments or docblocks, in the single- or the double-backslash form,
+ * must be one of the OSS namespaces below. Any other `Middag\` namespace fails
+ * the build. The rule is an allowlist: it names no other package.
+ *
+ * Product names in string literals (table names, hooks, defaults) are guarded
+ * by {@see Architecture\NoProductNamedDefaultTest}.
  *
  * @internal
  */
@@ -37,62 +38,40 @@ final class AdapterPluginIsolationTest extends TestCase
 {
     private const string SRC_DIR = __DIR__ . '/../src';
 
-    /**
-     * Namespace prefixes the OSS adapter must never reference.
-     *
-     * These literals are intentional enforcement targets — the non-OSS MIDDAG
-     * and consumer-plugin namespaces this guard source-scans for. They are NOT
-     * dependencies of the adapter and exist only so a regression fails loudly;
-     * they are deliberately kept here (and out of the public docs) per the OSS
-     * boundary policy.
-     */
-    private const array FORBIDDEN_NAMESPACES = [
-        'Middag\Account\\',
-        'Middag\Core\\',
-        'Middag\Licensing\\',
-        'Middag\DevTools\\',
-    ];
+    /** The first segment after `Middag\` of every namespace `src/` may name. */
+    private const array OSS_NAMESPACES = ['WordPress', 'Framework', 'Ui'];
 
-    /** Gold-table string literals the adapter must not hard-code. */
-    private const array FORBIDDEN_TABLE_LITERALS = [
-        "'middag_items'",
-        "'middag_itemmeta'",
-        "'middag_item_revision'",
-        "'middag_activity_feed'",
-        "'middag_audit_log'",
-        "'middag_job'",
-    ];
+    private const string NAMESPACE_PATTERN = '/\bMiddag\\\+([A-Za-z_][A-Za-z0-9_]*)/i';
 
     #[Test]
-    #[DataProvider('sourceFileProvider')]
-    public function fileDoesNotReferencePluginOrProprietaryNamespaces(string $path): void
+    public function sourceTreeIsNotEmpty(): void
     {
-        $source = file_get_contents($path);
-        self::assertIsString($source);
-
-        foreach (self::FORBIDDEN_NAMESPACES as $namespace) {
-            self::assertStringNotContainsString(
-                $namespace,
-                $source,
-                sprintf('Adapter file must not reference %s — keep the adapter product-agnostic.', $namespace),
-            );
-        }
+        self::assertNotSame([], iterator_to_array(self::sourceFileProvider()), 'src/ has no PHP file to scan.');
     }
 
     #[Test]
     #[DataProvider('sourceFileProvider')]
-    public function fileDoesNotHardcodeGoldTables(string $path): void
+    public function fileNamesOnlyOssMiddagNamespaces(string $path): void
     {
         $source = file_get_contents($path);
         self::assertIsString($source);
 
-        foreach (self::FORBIDDEN_TABLE_LITERALS as $literal) {
-            self::assertStringNotContainsString(
-                $literal,
-                $source,
-                sprintf('Adapter file must not hard-code gold table literal %s — accept it as input.', $literal),
-            );
-        }
+        preg_match_all(self::NAMESPACE_PATTERN, $source, $matches);
+
+        $allowed = array_map(strtolower(...), self::OSS_NAMESPACES);
+        $foreign = array_values(array_unique(array_filter(
+            $matches[1],
+            static fn (string $segment): bool => !in_array(strtolower($segment), $allowed, true),
+        )));
+
+        self::assertSame(
+            [],
+            $foreign,
+            sprintf(
+                'Adapter file names a Middag namespace outside %s: keep the adapter on the OSS libraries.',
+                implode(', ', self::OSS_NAMESPACES),
+            ),
+        );
     }
 
     /**
@@ -104,8 +83,6 @@ final class AdapterPluginIsolationTest extends TestCase
             new RecursiveDirectoryIterator(self::SRC_DIR, RecursiveDirectoryIterator::SKIP_DOTS),
         );
 
-        $base = realpath(self::SRC_DIR) ?: self::SRC_DIR;
-
         foreach ($iterator as $file) {
             if (!$file->isFile()) {
                 continue;
@@ -114,9 +91,25 @@ final class AdapterPluginIsolationTest extends TestCase
                 continue;
             }
             $path = $file->getPathname();
-            $label = substr($path, strlen($base) + 1);
+            $label = substr($path, strlen(self::SRC_DIR) + 1);
 
             yield $label => [$path];
+        }
+    }
+
+    #[Test]
+    public function patternCatchesEveryNamespaceForm(): void
+    {
+        $samples = [
+            'use Middag\Other\Thing;' => 'Other',
+            '"Middag\\\Other\\\Thing"' => 'Other',
+            'new \middag\other\Thing()' => 'other',
+            'use Middag\Framework\Kernel;' => 'Framework',
+        ];
+
+        foreach ($samples as $source => $segment) {
+            self::assertSame(1, preg_match(self::NAMESPACE_PATTERN, $source, $match), $source);
+            self::assertSame($segment, $match[1], $source);
         }
     }
 }
