@@ -29,7 +29,11 @@ the `Domain\Post` / `Domain\User` repositories and meta helpers, the
 `Domain\WooCommerce` value objects, the adapter-specific `Exception\*` types,
 the `Persistence` query builder, the `Settings` and `Definition` builders, the
 `Support` façade helpers, the mail helpers, the cron registrar/handler, the hook
-registrar and `Hook\Contract\HookInterface`, and the plugin-lifecycle registrar.
+registrar and `Hook\Contract\HookInterface`, the plugin-lifecycle registrar, and
+the `Diagnostics` boot report: `BootReport`, `PackageReport`, `PackageProbe`,
+`CheckResult`, `CallbackCheck`, `DiagnosticsRegistry`, `DoctorCommand`,
+`DoctorCommandRegistrar`, `Contract\DiagnosticCheckInterface` and the
+`Enum\CheckStatus` / `Enum\CheckScope` enums.
 
 **Composition-root concretes are public too.** This adapter ships no container
 builder: the consumer's composition root binds the framework contracts itself, so
@@ -43,7 +47,8 @@ because you should depend on its shape.
 
 The concretes a consumer never names stay `@internal` wiring:
 `Translation\WpTranslator`, `Runtime\WpMaintenanceGate` and
-`Runtime\WpBootstrap`.
+`Runtime\WpBootstrap`. The diagnostics helpers `Diagnostics\PackageInspector`
+and `Diagnostics\BootReportRenderer` are `@internal` too.
 
 ## Versioning
 
