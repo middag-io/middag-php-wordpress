@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.15.0...v1.15.1) (2026-11-16)
+
+
+### Documentation
+
+* add help and status to the README and align API-STABILITY wording ([875df58](https://github.com/middag-io/middag-php-wordpress/commit/875df580ffce95e43506c93a4f9411e50c6da72a))
+
 ## [1.15.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.14.0...v1.15.0) (2026-11-16)
 
 
