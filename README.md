@@ -139,6 +139,18 @@ The package is on `1.x`, which is pre-stable and unsupported; from `2.0.0` it
 joins the `middag-php-*` version family. See [`API-STABILITY.md`](API-STABILITY.md)
 and [Versioning and compatibility](https://docs.middag.dev/libraries/reference/versioning-and-compatibility).
 
+## Help and status
+
+- **Status:** the `1.x` line is pre-stable and unsupported; support starts at
+  `2.0.0`. See
+  [Versioning and compatibility](https://docs.middag.dev/libraries/reference/versioning-and-compatibility).
+- **Documentation:** [Reference — WordPress Adapter](https://docs.middag.dev/framework/reference/adapters/wordpress/)
+  on docs.middag.dev.
+- **Questions and bugs:** [GitHub issues](https://github.com/middag-io/middag-php-wordpress/issues).
+- **Security reports:** see [`SECURITY.md`](SECURITY.md). Do not open a public
+  issue.
+- **Changes:** [`CHANGELOG.md`](CHANGELOG.md).
+
 ## License
 
 Licensed under the [Apache License 2.0](LICENSE). See [`NOTICE`](NOTICE) for

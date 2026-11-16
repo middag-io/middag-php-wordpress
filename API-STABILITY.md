@@ -72,7 +72,7 @@ What applies in this repository:
 ## The contracts this adapter fulfils
 
 The adapter does not define the host-bridge contracts — it implements the ones
-declared (and frozen) in `middag-io/framework`. Depend on the **framework**
+declared in `middag-io/framework`. Depend on the **framework**
 `@api` interface, not on the WordPress concrete:
 
 | Framework contract (`@api` in framework) | WordPress implementation | Stability here |
@@ -96,9 +96,10 @@ their shape: type-hint the framework contract, name the concrete only to wire it
 
 - Depend only on `@api` types. If you need behaviour exposed only by an
   `@internal` symbol, open an issue to have it promoted rather than reaching in.
-- **On `1.x`:** read the CHANGELOG before crossing a minor, because a `1.x`
-  minor may carry a break (see [Versioning](#versioning)). Pin a tilde range
-  (for example `~1.15.0`) to receive only patches.
+- **On `1.x`:** the line is pre-stable and unsupported. It carries no
+  compatibility promise, and a `1.x` minor may carry a break (see
+  [Versioning](#versioning)). Support starts at `2.0.0`, and the move from
+  `1.x` is a clean cut.
 - **From `2.0.0`:** declare one `^2.N` range, with the same `N`, for this
   adapter and every other `middag-php-*` library you depend on.
 - The dependency direction only points downward: the adapter depends on the OSS
