@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.15.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.14.0...v1.15.0) (2026-11-16)
+
+
+### Features
+
+* **config:** give every adapter default the neutral middaglib marker ([1dcbae6](https://github.com/middag-io/middag-php-wordpress/commit/1dcbae6d1c03cc67d04c9cb74339567f9bf1ac92)), closes [#68](https://github.com/middag-io/middag-php-wordpress/issues/68)
+* **deps:** drop the unused firebase/php-jwt requirement ([efafbee](https://github.com/middag-io/middag-php-wordpress/commit/efafbee35fe4b96fdec8b3f5a1e0c6fd5030d39a)), closes [#67](https://github.com/middag-io/middag-php-wordpress/issues/67)
+* **http:** enforce every #[Auth] capability on the REST surface ([daf31c8](https://github.com/middag-io/middag-php-wordpress/commit/daf31c81aa5077ca4108579d1d1e15b5a63a9bc1)), closes [#69](https://github.com/middag-io/middag-php-wordpress/issues/69)
+* PHP 8.3 platform, neutral defaults and the REST capability rule ([f468a5b](https://github.com/middag-io/middag-php-wordpress/commit/f468a5bb3c4b23a04e3b5f25ecdbc206a59ea670))
+* raise the platform to PHP 8.3, 8.4 and 8.5 ([bbbee73](https://github.com/middag-io/middag-php-wordpress/commit/bbbee73726fa2c82378e7267921b085cc7b70b4e)), closes [#83](https://github.com/middag-io/middag-php-wordpress/issues/83)
+* **support:** take the CacheSupportPsr16 group prefix as an argument ([ce9cf15](https://github.com/middag-io/middag-php-wordpress/commit/ce9cf15b6c86b9d74049e00f344d88319c542601))
+
+
+### Refactoring
+
+* apply the PHP 8.3 Rector set ([5dc4f31](https://github.com/middag-io/middag-php-wordpress/commit/5dc4f314a9061c275c00ba3a2b41915fa009edb2))
+
+
+### Documentation
+
+* align versioning docs with the version family ([13b8992](https://github.com/middag-io/middag-php-wordpress/commit/13b89928529fe6489a123c41d6dade07f836f72f))
+* **decisions:** rewrite WP-001/WP-002 as architecture decisions; add WP-003 ([d3f396e](https://github.com/middag-io/middag-php-wordpress/commit/d3f396eb2cc60e58ad7fcca1ac217b6ab7c42bdb))
+* drop internal record ids from the repo text ([878a17b](https://github.com/middag-io/middag-php-wordpress/commit/878a17b21e4eb0ce320e97f931fa8cbc37242714))
+* drop pre-v2 deadline text ([0b5e5d0](https://github.com/middag-io/middag-php-wordpress/commit/0b5e5d002a79d3296210a13595bb3ba8c71acf88))
+* **http:** drop the stale Router and adminUrl() references ([d5eeb5f](https://github.com/middag-io/middag-php-wordpress/commit/d5eeb5f5b755d6ffc8408a0f05c5288abac2eb14)), closes [#70](https://github.com/middag-io/middag-php-wordpress/issues/70)
+* point the architecture copies to docs.middag.dev ([a48cb09](https://github.com/middag-io/middag-php-wordpress/commit/a48cb09dbd0ee6e2d35000bd2632dbed6b82a2a2))
+* tighten the 1.x break rule and the window notes ([3eeea5e](https://github.com/middag-io/middag-php-wordpress/commit/3eeea5e00d9c8899f30256b8c2cf14b55caab2c4))
+
 ## [1.14.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.13.0...v1.14.0) (2026-09-01)
 
 
