@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.16.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.15.1...v1.16.0) (2026-11-16)
+
+
+### Features
+
+* add a boot report and a WP-CLI doctor command ([270ac24](https://github.com/middag-io/middag-php-wordpress/commit/270ac244bbc7d4830c3a7b239c0a664c896bdfe1))
+* report the autoloader a package bootstrap chose ([bc9f8f5](https://github.com/middag-io/middag-php-wordpress/commit/bc9f8f5a98b12b08f62426d57cf489931773abff))
+
+
+### Bug Fixes
+
+* fail closed on the REST #[Auth] permission edge cases ([54aaa6d](https://github.com/middag-io/middag-php-wordpress/commit/54aaa6d993489bbb1b14e237bfc92f07f028acba))
+* reject the logged-out user in the REST controller permission callbacks ([e91939b](https://github.com/middag-io/middag-php-wordpress/commit/e91939b8a9ce76e691c7a6096c25d83153d9d921))
+
+
+### Documentation
+
+* align the README framework range with composer.json ([0e7ba73](https://github.com/middag-io/middag-php-wordpress/commit/0e7ba73285b83da05c3c4e20c7b9828fcd33b48a))
+* list the Diagnostics types in the API-STABILITY public surface ([a0c6b7b](https://github.com/middag-io/middag-php-wordpress/commit/a0c6b7b191b758fbde12f48b8a882f54a2530848))
+* state the fail-closed rules of the REST #[Auth] check ([354cd5f](https://github.com/middag-io/middag-php-wordpress/commit/354cd5f9cea7a39740ef478c733f30463b7d64d8))
+* write API-STABILITY for 2.0.0 and list the public surface ([8f51bcd](https://github.com/middag-io/middag-php-wordpress/commit/8f51bcd222246cc76af9b9fa0f52ef0f241ef6ad))
+
 ## [1.15.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.15.0...v1.15.1) (2026-11-16)
 
 
