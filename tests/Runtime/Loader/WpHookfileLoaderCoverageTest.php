@@ -52,7 +52,7 @@ final class WpHookfileLoaderCoverageTest extends TestCase
 
         // A real hookfile at the content root so maybeAdd() keeps a path,
         // proving the WP_CONTENT_DIR branch actually fed discovery.
-        file_put_contents($contentDir . '/middag_hooks.php', "<?php\n");
+        file_put_contents($contentDir . '/middaglib_hooks.php', "<?php\n");
 
         define('WP_CONTENT_DIR', $contentDir);
         $GLOBALS['__middag_test_wp_stylesheet'] = $themeSlug;
@@ -60,10 +60,10 @@ final class WpHookfileLoaderCoverageTest extends TestCase
         $loader = new WpHookfileLoader();
         $paths = $loader->discover();
 
-        self::assertContains($contentDir . '/middag_hooks.php', $paths);
+        self::assertContains($contentDir . '/middaglib_hooks.php', $paths);
 
         // cleanup
-        unlink($contentDir . '/middag_hooks.php');
+        unlink($contentDir . '/middaglib_hooks.php');
         rmdir($contentDir . '/themes/' . $themeSlug);
         rmdir($contentDir . '/themes');
         rmdir($contentDir);

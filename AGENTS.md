@@ -102,6 +102,7 @@ Enforced policies (all run under `composer test`):
 - **No static mutable state** (`NoStaticMutableStateTest`) — no `src/` class declares a static property. PHP has no readonly static, so a static property is process-wide state that collides between two plugins in one request. Per-request state is an injected instance dependency. Constants and static methods are fine.
 - **No bundled token auth** (`NoBundledTokenAuthTest`) — no `src/` file references `Firebase\JWT`. App-token/JWT logic (issue/verify/refresh) is product code and lives in the proprietary core (`WordPressTokenService`); the library exposes only the `RequestAuthenticatorInterface` seam (default `WpSessionAuthenticator`, WP-session only).
 - **No unused runtime dependency** (`NoUnusedRuntimeDependencyTest`) — every package in `require` is used by `src/` (one of its PSR-4 namespaces appears there). A package only the tests need goes to `require-dev`.
+- **No product-named default** (`NoProductNamedDefaultTest`) — no string literal, comment or docblock under `src/` names the product in lowercase. Neutral defaults use the `middaglib` marker; examples use `acme`.
 - **No routing brand literal** (`RoutingBrandLiteralTest`) — routing sources never hard-code the lowercase `middag` literal; namespaces/slugs derive from `componentName()`.
 - **Enum case PascalCase** (`EnumCasePascalCaseTest`).
 

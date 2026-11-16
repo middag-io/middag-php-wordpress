@@ -36,7 +36,7 @@ final class WpTranslatorTest extends TestCase
     #[Test]
     public function getTranslatesThroughTheDefaultDomain(): void
     {
-        $GLOBALS['__wp_test_translations']['middag']['greeting'] = 'Olá';
+        $GLOBALS['__wp_test_translations']['middaglib']['greeting'] = 'Olá';
 
         self::assertSame('Olá', (new WpTranslator())->get('greeting'));
     }
@@ -45,9 +45,18 @@ final class WpTranslatorTest extends TestCase
     public function componentMapsToTheTextDomain(): void
     {
         $GLOBALS['__wp_test_translations']['myplugin']['greeting'] = 'Oi';
-        $GLOBALS['__wp_test_translations']['middag']['greeting'] = 'Olá';
+        $GLOBALS['__wp_test_translations']['middaglib']['greeting'] = 'Olá';
 
         self::assertSame('Oi', (new WpTranslator())->get('greeting', 'myplugin'));
+    }
+
+    #[Test]
+    public function theDefaultDomainIsConfigurable(): void
+    {
+        $GLOBALS['__wp_test_translations']['acme']['greeting'] = 'Oi';
+        $GLOBALS['__wp_test_translations']['middaglib']['greeting'] = 'Olá';
+
+        self::assertSame('Oi', (new WpTranslator('acme'))->get('greeting'));
     }
 
     #[Test]
@@ -74,7 +83,7 @@ final class WpTranslatorTest extends TestCase
     #[Test]
     public function pluralFormsCanBeTranslatedPerDomain(): void
     {
-        $GLOBALS['__wp_test_translations']['middag']['%count% item|%count% items'] = ['%count% item', '%count% itens'];
+        $GLOBALS['__wp_test_translations']['middaglib']['%count% item|%count% items'] = ['%count% item', '%count% itens'];
 
         self::assertSame('5 itens', (new WpTranslator())->get('%count% item|%count% items', '', ['%count%' => 5]));
     }

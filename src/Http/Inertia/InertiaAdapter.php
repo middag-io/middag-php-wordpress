@@ -146,7 +146,7 @@ final class InertiaAdapter
 
     /**
      * The DOM id the SPA mounts on, namespaced by the host component so two
-     * plugins never collide on `#middag-app`. The frontend entry must mount on
+     * plugins never collide on one `#app` node. The frontend entry must mount on
      * exactly this id.
      */
     public function mountId(): string

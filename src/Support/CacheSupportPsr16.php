@@ -20,6 +20,8 @@ use Psr\SimpleCache\CacheInterface;
  * PSR-16 adapter over the WordPress Object Cache (`wp_cache_*`), scoped to a
  * single cache area (mapped to a `wp_cache` group). Persistent when a backend
  * drop-in (Redis, Memcached) is installed; request-scoped otherwise.
+ * The group is `middaglib_{area}`: the neutral library marker, which names no
+ * product, plus the area.
  *
  * Allows platform-agnostic framework collaborators (e.g. the core cached item
  * repository decorator) to consume the WP object cache via {@see CacheInterface}
@@ -36,7 +38,7 @@ use Psr\SimpleCache\CacheInterface;
  */
 final readonly class CacheSupportPsr16 implements CacheInterface
 {
-    private const string GROUP_PREFIX = 'middag_';
+    private const string GROUP_PREFIX = 'middaglib_';
 
     private const string GENERATION_KEY = '__gen';
 

@@ -24,24 +24,26 @@ use Middag\WordPress\Support\HookSupport;
  * action hooks, so `add_action()` consumers anywhere in the site (satellite
  * plugins, themes) hear governed events without importing MIDDAG code:
  *
- *     dispatch('quote.created', [$quote]) → do_action('middag/quote.created', $quote)
- *     listen('quote.created', $callback)  → add_action('middag/quote.created', $callback)
+ *     dispatch('quote.created', [$quote]) → do_action('acme/quote.created', $quote)
+ *     listen('quote.created', $callback)  → add_action('acme/quote.created', $callback)
+ *
+ * (with the hook prefix `acme/`).
  *
  * This is the WordPress counterpart of `MoodleHostEventBridge`, which delegates
  * to the framework's in-memory {@see HookManager}
  * instead — WordPress already has the hooks API this contract describes, so the
  * adapter goes native. The payload is spread as positional arguments.
  *
- * The hook prefix defaults to the ecosystem convention (`middag/`) and is
- * constructor-configurable for products that namespace their public hook
- * surface differently.
+ * The hook prefix is a constructor argument. Its default is the neutral
+ * library marker `middaglib/`, which names no product: a consumer passes the
+ * prefix of its own public hook surface in its composition root.
  *
  * @api
  */
 final readonly class WpHostEventBridge implements HostEventBridgeInterface
 {
     public function __construct(
-        private string $hookPrefix = 'middag/',
+        private string $hookPrefix = 'middaglib/',
     ) {}
 
     public function dispatch(string $eventName, array $payload = []): void

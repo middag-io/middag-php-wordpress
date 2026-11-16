@@ -61,8 +61,7 @@ final class CsrfGuard
 
     /**
      * The WordPress nonce action for a host component's admin SPA. Derived from
-     * the component name so two plugins in the same request never share a nonce
-     * (this replaced the fixed `middag_inertia` action).
+     * the component name so two plugins in the same request never share a nonce.
      * {@see InertiaAdapter::nonceAction()} builds the same value on the emit side.
      */
     public static function nonceAction(string $component): string

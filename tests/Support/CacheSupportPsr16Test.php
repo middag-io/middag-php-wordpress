@@ -49,6 +49,14 @@ final class CacheSupportPsr16Test extends TestCase
     }
 
     #[Test]
+    public function theAreaMapsToANeutrallyPrefixedGroup(): void
+    {
+        (new CacheSupportPsr16('item'))->set('item_5', ['id' => 5]);
+
+        self::assertSame(['middaglib_item'], array_keys($GLOBALS['__wp_test_object_cache']));
+    }
+
+    #[Test]
     public function getReturnsDefaultOnMiss(): void
     {
         $cache = new CacheSupportPsr16('item');

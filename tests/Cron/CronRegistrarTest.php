@@ -242,7 +242,7 @@ final class CronRegistrarTest extends TestCase
     {
         // A loaded translation for the lib's default domain is honoured — proof
         // the label is not a hardcoded English literal.
-        $GLOBALS['__wp_test_translations']['middag']['Every hour'] = 'A cada hora';
+        $GLOBALS['__wp_test_translations']['middaglib']['Every hour'] = 'A cada hora';
 
         $schedules = $this->makeRegistrar()->registerIntervals([]);
 

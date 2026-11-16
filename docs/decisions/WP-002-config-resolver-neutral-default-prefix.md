@@ -2,7 +2,7 @@
 title: 'Injected per-plugin identity, neutral defaults, no mutable static state'
 status: accepted
 date: 2026-07-31
-last-updated: 2026-11-04
+last-updated: 2026-11-16
 lang: en
 domains: [wordpress, config, kernel]
 deciders: [leadership]
@@ -30,7 +30,7 @@ Several WordPress plugins built on this adapter can run in one PHP process and o
 
 ## Decision
 
-The adapter holds no static properties. The kernel is abstract and the consumer's subclass owns the singleton, so each plugin has its own kernel under its own namespace. Component identity (name, asset version, base path) is a value the consumer builds and injects through its own container into every service that needs it; WordPress consumers never use the framework's process-wide host-identity slot. Every adapter default is neutral: the config resolver defaults to `MIDDAGLIB_` / `middaglib_`, a marker meaning "this library, not configured", and every per-plugin namespace derives from the injected component name. Each product, MIDDAG's included, passes its real prefixes in its own composition root.
+The adapter holds no static properties. The kernel is abstract and the consumer's subclass owns the singleton, so each plugin has its own kernel under its own namespace. Component identity (name, asset version, base path) is a value the consumer builds and injects through its own container into every service that needs it; WordPress consumers never use the framework's process-wide host-identity slot. Every adapter default is neutral: the config resolver defaults to `MIDDAGLIB_` / `middaglib_`, a marker meaning "this library, not configured"; the translator's default text domain, the host event hook prefix, the hookfile file and filter names and the object cache group carry the same `middaglib` marker; and every per-plugin namespace derives from the injected component name. Each product, MIDDAG's included, passes its real prefixes in its own composition root.
 
 This is the deliberate opposite of the Moodle adapter, whose kernel keeps a static singleton (MDL-001): Moodle loads one component per request and its `lib.php` callbacks, hooks and scheduled tasks cannot receive injected services, while WordPress hosts many plugins per request and each one boots its own container.
 
@@ -41,7 +41,6 @@ This is the deliberate opposite of the Moodle adapter, whose kernel keeps a stat
 - (+) Per-plugin state is visible in constructors and containers instead of hidden in globals.
 - (−) Every consumer writes a kernel subclass with its own singleton storage and registers its own config prefixes.
 - (−) A consumer that forgets to register its prefixes reads library-marked keys, with no error or log.
-- (−) Some defaults still carry the `middag` name: the translator's default text domain (`src/Translation/WpTranslator.php:32`), the host event hook prefix (`src/Bus/WpHostEventBridge.php:44`), and the hookfile filter and file name (`src/Runtime/Loader/WpHookfileLoader.php:40,53`). The file name has no override.
 - (−) The Inertia adapter still writes the framework's static Inertia configuration on each render, which is safe only because wp-admin serves one component per request.
 
 ## Enforcement
@@ -52,5 +51,5 @@ This is the deliberate opposite of the Moodle adapter, whose kernel keeps a stat
 | The kernel holds no singleton; the consumer subclass owns it and boot is per kernel | test `tests/Runtime/KernelTest.php` | coded |
 | Config prefixes default to the neutral marker and are injectable | test `tests/Config/WpConfigResolverTest.php` | coded |
 | Routing namespaces derive from the injected component name | test `tests/Architecture/RoutingBrandLiteralTest.php` | coded |
-| No product-named default anywhere in `src/` | guard test | planned |
+| No product-named default anywhere in `src/`, comments and docblocks included | test `tests/Architecture/NoProductNamedDefaultTest.php` | coded |
 | Kernel, identity injection, config resolution and defaults | doc `docs-middag-dev:docs/framework/reference/adapters/wordpress/configuration.md` | coded |

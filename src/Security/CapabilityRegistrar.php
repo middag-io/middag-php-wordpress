@@ -24,8 +24,8 @@ use Middag\WordPress\Support\CapabilitySupport;
  *
  * ```php
  * $registrar = new CapabilityRegistrar([
- *     'administrator' => ['middag_manage_quotes', 'middag_view_reports'],
- *     'shop_manager'  => ['middag_manage_quotes'],
+ *     'administrator' => ['acme_manage_quotes', 'acme_view_reports'],
+ *     'shop_manager'  => ['acme_manage_quotes'],
  * ]);
  * $registrar->register();   // activation
  * $registrar->unregister(); // deactivation
