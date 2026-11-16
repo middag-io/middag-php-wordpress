@@ -31,13 +31,13 @@ use Psr\Container\ContainerInterface;
 #[CoversClass(HookRegistrar::class)]
 final class HookRegistrarTest extends TestCase
 {
-    private const FIXTURE_DIR = __DIR__ . '/Fixture';
+    private const string FIXTURE_DIR = __DIR__ . '/Fixture';
 
-    private const FIXTURE_NAMESPACE = 'Middag\WordPress\Tests\Hook\Fixture\\';
+    private const string FIXTURE_NAMESPACE = 'Middag\WordPress\Tests\Hook\Fixture\\';
 
-    private const EXTRA_DIR = __DIR__ . '/FixtureExtra';
+    private const string EXTRA_DIR = __DIR__ . '/FixtureExtra';
 
-    private const EXTRA_NAMESPACE = 'Middag\WordPress\Tests\Hook\FixtureExtra\\';
+    private const string EXTRA_NAMESPACE = 'Middag\WordPress\Tests\Hook\FixtureExtra\\';
 
     protected function setUp(): void
     {
@@ -129,8 +129,8 @@ final class HookRegistrarTest extends TestCase
     {
         $containerInstance = new DemoHooks();
 
-        $container = new class($containerInstance) implements ContainerInterface {
-            public function __construct(private readonly DemoHooks $instance) {}
+        $container = new readonly class($containerInstance) implements ContainerInterface {
+            public function __construct(private DemoHooks $instance) {}
 
             public function get(string $id): mixed
             {

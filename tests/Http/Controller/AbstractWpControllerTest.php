@@ -171,8 +171,8 @@ final class AbstractWpControllerTest extends TestCase
 
     private function containerWith(InertiaAdapter $adapter): ContainerInterface
     {
-        return new class($adapter) implements ContainerInterface {
-            public function __construct(private readonly InertiaAdapter $adapter) {}
+        return new readonly class($adapter) implements ContainerInterface {
+            public function __construct(private InertiaAdapter $adapter) {}
 
             public function get(string $id): mixed
             {

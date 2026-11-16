@@ -20,17 +20,16 @@
     "security": "https://github.com/middag-io/middag-php-wordpress/security/policy"
   },
   "require": {
-    "php": "^8.2",
+    "php": "^8.3",
     "ext-json": "*",
-    "firebase/php-jwt": "^7.0",
-    "middag-io/framework": "^1.13",
+    "middag-io/framework": "^1.20",
     "nyholm/psr7": "^1.8",
     "psr/container": "^2.0",
     "psr/log": "^3.0",
-    "symfony/dependency-injection": "^7.0",
-    "symfony/http-foundation": "^7.0 || ^8.0",
-    "symfony/psr-http-message-bridge": "^7.0 || ^8.0",
-    "symfony/routing": "^7.0 || ^8.0"
+    "symfony/dependency-injection": "^7.4 || ^8.1",
+    "symfony/http-foundation": "^7.4 || ^8.1",
+    "symfony/psr-http-message-bridge": "^7.4 || ^8.1",
+    "symfony/routing": "^7.4 || ^8.1"
   },
   "require-dev": {
     "friendsofphp/php-cs-fixer": "^3.0",
@@ -53,6 +52,9 @@
     }
   },
   "config": {
+    "platform": {
+      "php": "8.3.0"
+    },
     "sort-packages": true
   },
   "minimum-stability": "dev",
@@ -81,6 +83,6 @@
     "fix:rector": "rector process --config=.php-rector.php --no-progress-bar",
     "test": "phpunit",
     "test:cov": "XDEBUG_MODE=coverage phpunit --coverage-text",
-    "lint:php82": "bin/lint-php82.sh"
+    "lint:php83": "bin/lint-php83.sh"
   }
 }

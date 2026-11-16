@@ -61,7 +61,7 @@ final class CronIntervalTest extends TestCase
     #[Test]
     public function labelIsTranslatedWhenTheDomainProvidesIt(): void
     {
-        $GLOBALS['__wp_test_translations']['middag']['Every hour'] = 'A cada hora';
+        $GLOBALS['__wp_test_translations']['middaglib']['Every hour'] = 'A cada hora';
 
         self::assertSame('A cada hora', CronInterval::Hourly->label(new WpTranslator()));
     }

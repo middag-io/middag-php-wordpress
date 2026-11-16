@@ -19,8 +19,8 @@ use Middag\Framework\Database\Contract\VersionTrackerInterface;
  *
  * The WordPress counterpart of the Moodle adapter's `get_config`-backed
  * tracker: each lib registers its own tracker with a distinct option name so
- * schema versions are stored independently (e.g. `middag_core_schema_version`,
- * `middag_framework_schema_version`).
+ * schema versions are stored independently (e.g. `acme_core_schema_version`,
+ * `acme_billing_schema_version`).
  *
  * The option is written with `autoload = false`: the version is only read
  * during install/upgrade flows, never on the request hot path.

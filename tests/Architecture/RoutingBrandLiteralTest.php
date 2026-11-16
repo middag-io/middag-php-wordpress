@@ -21,7 +21,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
 /**
- * Architecture guard (O5-LIB-02): no routing source file may hard-code the
+ * Architecture guard: no routing source file may hard-code the
  * lowercase brand literal `middag` in a PHP string literal. Namespaces, slugs,
  * and REST namespaces must derive from the host component name so two plugins
  * in the same request stay disjoint — a brand default reintroduces coupling.

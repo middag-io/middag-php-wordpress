@@ -27,7 +27,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(PluginLifecycle::class)]
 final class PluginLifecycleTest extends TestCase
 {
-    private const PLUGIN_FILE = '/plugins/middag/middag.php';
+    private const string PLUGIN_FILE = '/plugins/middag/middag.php';
 
     protected function setUp(): void
     {

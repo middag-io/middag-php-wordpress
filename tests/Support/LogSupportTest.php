@@ -113,11 +113,11 @@ final class LogSupportTest extends TestCase
      */
     private function container(array $services): ContainerInterface
     {
-        return new class($services) implements ContainerInterface {
+        return new readonly class($services) implements ContainerInterface {
             /**
              * @param array<string, object> $services
              */
-            public function __construct(private readonly array $services) {}
+            public function __construct(private array $services) {}
 
             public function has(string $id): bool
             {

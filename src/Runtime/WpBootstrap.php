@@ -68,7 +68,7 @@ final class WpBootstrap implements BootstrapInterface
             ->setFactory([new Reference(ConnectionAdapterInterface::class), 'dialect'])
             ->setPublic(true);
 
-        // Native hookfile loader (discovers + loads middag_hooks.php across
+        // Native hookfile loader (discovers + loads the hookfiles across
         // content/theme/plugins).
         $builder->register(HookfileLoaderInterface::class, WpHookfileLoader::class)
             ->setPublic(true);

@@ -54,11 +54,11 @@ final class WpHookfileLoaderTest extends TestCase
 
     public function testDiscoverFindsContentAndThemeAndFilterPathsInOrder(): void
     {
-        $content_hook = $this->writeHook($this->contentDir . '/middag_hooks.php');
-        $theme_hook = $this->writeHook($this->contentDir . '/themes/' . $this->themeSlug . '/middag_hooks.php');
+        $content_hook = $this->writeHook($this->contentDir . '/middaglib_hooks.php');
+        $theme_hook = $this->writeHook($this->contentDir . '/themes/' . $this->themeSlug . '/middaglib_hooks.php');
 
-        $plugin_hook = $this->writeHook($this->tmpRoot . '/plugin/middag_hooks.php');
-        $GLOBALS['__middag_test_wp_filters']['middag_hookfiles'] = static fn (array $paths): array => array_merge($paths, [$plugin_hook]);
+        $plugin_hook = $this->writeHook($this->tmpRoot . '/plugin/middaglib_hooks.php');
+        $GLOBALS['__middag_test_wp_filters']['middaglib_hookfiles'] = static fn (array $paths): array => array_merge($paths, [$plugin_hook]);
 
         $discovered = $this->loader()->discover();
 
@@ -71,9 +71,9 @@ final class WpHookfileLoaderTest extends TestCase
 
     public function testDiscoverSkipsMissingFilterPaths(): void
     {
-        $real_hook = $this->writeHook($this->tmpRoot . '/plugin/middag_hooks.php');
+        $real_hook = $this->writeHook($this->tmpRoot . '/plugin/middaglib_hooks.php');
 
-        $GLOBALS['__middag_test_wp_filters']['middag_hookfiles'] = static fn (): array => [
+        $GLOBALS['__middag_test_wp_filters']['middaglib_hookfiles'] = static fn (): array => [
             '/nonexistent/path.php',
             $real_hook,
             123,
@@ -84,8 +84,8 @@ final class WpHookfileLoaderTest extends TestCase
 
     public function testDiscoverOmitsThemeSourceWhenStylesheetBlank(): void
     {
-        $content_hook = $this->writeHook($this->contentDir . '/middag_hooks.php');
-        $this->writeHook($this->contentDir . '/themes/' . $this->themeSlug . '/middag_hooks.php');
+        $content_hook = $this->writeHook($this->contentDir . '/middaglib_hooks.php');
+        $this->writeHook($this->contentDir . '/themes/' . $this->themeSlug . '/middaglib_hooks.php');
 
         $loader = new WpHookfileLoader(
             contentDir: $this->contentDir,
@@ -96,10 +96,10 @@ final class WpHookfileLoaderTest extends TestCase
 
     public function testCustomFilterNameIsolatesContributions(): void
     {
-        $contributed = $this->writeHook($this->tmpRoot . '/plugin/middag_hooks.php');
+        $contributed = $this->writeHook($this->tmpRoot . '/plugin/middaglib_hooks.php');
 
         $GLOBALS['__middag_test_wp_filters']['custom_brand_hookfiles'] = static fn (): array => [$contributed];
-        $GLOBALS['__middag_test_wp_filters']['middag_hookfiles'] = static fn (): array => ['/should/be/ignored.php'];
+        $GLOBALS['__middag_test_wp_filters']['middaglib_hookfiles'] = static fn (): array => ['/should/be/ignored.php'];
 
         $loader = new WpHookfileLoader(
             filterName: 'custom_brand_hookfiles',
@@ -109,9 +109,24 @@ final class WpHookfileLoaderTest extends TestCase
         self::assertSame([$contributed], $loader->discover());
     }
 
+    public function testCustomHookfileNameReplacesTheDefaultFile(): void
+    {
+        $this->writeHook($this->contentDir . '/middaglib_hooks.php');
+        $content_hook = $this->writeHook($this->contentDir . '/acme_hooks.php');
+        $theme_hook = $this->writeHook($this->contentDir . '/themes/' . $this->themeSlug . '/acme_hooks.php');
+
+        $loader = new WpHookfileLoader(
+            contentDir: $this->contentDir,
+            activeTheme: $this->themeSlug,
+            hookfileName: 'acme_hooks.php',
+        );
+
+        self::assertSame([$content_hook, $theme_hook], $loader->discover());
+    }
+
     public function testFilterReturningNonArrayIsIgnored(): void
     {
-        $GLOBALS['__middag_test_wp_filters']['middag_hookfiles'] = static fn (): string => 'not-an-array';
+        $GLOBALS['__middag_test_wp_filters']['middaglib_hookfiles'] = static fn (): string => 'not-an-array';
 
         self::assertSame([], $this->loader()->discover());
     }

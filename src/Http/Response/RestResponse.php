@@ -27,19 +27,19 @@ use WP_REST_Response;
  */
 final class RestResponse
 {
-    public const ERR_VALIDATION = 'VALIDATION_ERROR';
+    public const string ERR_VALIDATION = 'VALIDATION_ERROR';
 
-    public const ERR_AUTHENTICATION = 'AUTHENTICATION_ERROR';
+    public const string ERR_AUTHENTICATION = 'AUTHENTICATION_ERROR';
 
-    public const ERR_AUTHORIZATION = 'AUTHORIZATION_ERROR';
+    public const string ERR_AUTHORIZATION = 'AUTHORIZATION_ERROR';
 
-    public const ERR_NOT_FOUND = 'NOT_FOUND';
+    public const string ERR_NOT_FOUND = 'NOT_FOUND';
 
-    public const ERR_CONFLICT = 'CONFLICT';
+    public const string ERR_CONFLICT = 'CONFLICT';
 
-    public const ERR_RATE_LIMIT = 'RATE_LIMIT';
+    public const string ERR_RATE_LIMIT = 'RATE_LIMIT';
 
-    public const ERR_INTERNAL = 'INTERNAL_ERROR';
+    public const string ERR_INTERNAL = 'INTERNAL_ERROR';
 
     // -------------------------------------------------------------------------
     // Success responses

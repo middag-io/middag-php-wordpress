@@ -22,8 +22,8 @@ use PHPUnit\Framework\TestCase;
 /**
  * Covers the pass-through paths of enforce() that read the superglobals and
  * return without rejecting. The reject() branch terminates with `exit` and is
- * the intentionally-untested exit path (see the class docblock); it is tracked
- * in BACKLOG.md. The host passes the component's nonce action.
+ * the intentionally-untested exit path (see the class docblock). The host
+ * passes the component's nonce action.
  *
  * @internal
  */

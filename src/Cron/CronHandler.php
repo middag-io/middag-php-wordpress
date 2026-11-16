@@ -27,7 +27,7 @@ final class CronHandler
      *
      * Usage:
      *   $cronRegistrar->addEvent(
-     *       'middag_sync_invoices',
+     *       'acme_sync_invoices',
      *       CronInterval::FiveMinutes,
      *       CronHandler::dispatch($container, InvoiceService::class, 'syncFromStripe')
      *   );

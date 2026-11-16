@@ -11,16 +11,78 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# CI uses no private infrastructure and no credentials. This adapter builds on
+# the OSS middag-io/framework and the php-stubs/wordpress-stubs dev dependency,
+# all resolved from Packagist.
+
 jobs:
   # Released php-library-check component of middag-io/actions, called by its
-  # major tag. One job per PHP version: the static
-  # checks (composer validate, strict PSR-4, PHPStan, PHP-CS-Fixer and Rector)
-  # run on 8.2, the audit and PHPUnit on every version. This adapter builds on
-  # the OSS middag-io/framework from Packagist; no credentials.
+  # major tag. One job per PHP version, with the platform pin (8.3.0) kept:
+  # the static checks (composer validate, strict PSR-4, PHPStan, PHP-CS-Fixer
+  # and Rector) run on 8.3, the floor; the audit and PHPUnit on every
+  # version. The tool caches live in .cache.
   php-library-check:
     uses: middag-io/actions/.github/workflows/php-library-check.yml@php-library-check-v1
     permissions:
       contents: read
     with:
-      php-versions: '["8.2", "8.3", "8.4"]'
+      php-versions: '["8.3", "8.4", "8.5"]'
+      tool-cache-paths: .cache
       audit-blocking-severities: critical, high
+
+  # Second call of the same component: removes the platform pin and resolves
+  # the highest dependency versions on the PHP of each job, then asserts that
+  # every Symfony package of this adapter resolved to 8.x (Symfony 8 needs PHP
+  # 8.4 or later, so 8.3 stays in the locked job). The static checks already
+  # run in the locked job.
+  php-library-check-highest:
+    uses: middag-io/actions/.github/workflows/php-library-check.yml@php-library-check-v1
+    permissions:
+      contents: read
+    with:
+      php-versions: '["8.4", "8.5"]'
+      dependency-versions: highest
+      unset-platform-php: true
+      expect-majors: |
+        symfony/dependency-injection:8
+        symfony/http-foundation:8
+        symfony/psr-http-message-bridge:8
+        symfony/routing:8
+      composer-validate: false
+      strict-psr: false
+      phpstan-script: ""
+      cs-fixer-script: ""
+      rector-script: ""
+      audit-blocking-severities: critical, high
+
+  # Host matrix, specific to this repository: PHPStan against the WordPress
+  # stubs of each WordPress major in range (the latest major and the previous
+  # one). The unit tests run on hand-written stubs and do not change per
+  # WordPress version; this job is what proves that every WordPress function,
+  # class and signature the adapter calls exists in each supported version.
+  wordpress-matrix:
+    name: PHPStan (wordpress-stubs ${{ matrix.stubs }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        stubs: ['~7.0.0', '~7.1.0']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: middag-io/actions/php-composer-setup@php-composer-setup-v1
+        with:
+          php-version: '8.3'
+
+      - name: Pin wordpress-stubs to the matrix series
+        env:
+          STUBS: ${{ matrix.stubs }}
+        run: composer require --dev "php-stubs/wordpress-stubs:${STUBS}" --with-all-dependencies --no-interaction
+
+      - name: PHPStan against the matrix stubs
+        run: composer check:stan

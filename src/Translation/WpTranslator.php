@@ -19,7 +19,9 @@ use Middag\Framework\Translation\Contract\TranslatorInterface;
  * WordPress' gettext layer (`__()` / `_n()`).
  *
  * The `$component` maps to the WordPress text domain; an empty component falls
- * back to a configurable default domain. Pluralisation follows the framework's
+ * back to a configurable default domain. The default is the neutral library
+ * marker `middaglib`, which names no product: a consumer passes its own text
+ * domain. Pluralisation follows the framework's
  * Symfony-style convention: pass `%count%` in `$params` and either a
  * `singular|plural` pipe message or a single message that WordPress translates
  * via `_n()`. Remaining named params are interpolated into the result.
@@ -29,7 +31,7 @@ use Middag\Framework\Translation\Contract\TranslatorInterface;
 final readonly class WpTranslator implements TranslatorInterface
 {
     public function __construct(
-        private string $defaultDomain = 'middag',
+        private string $defaultDomain = 'middaglib',
     ) {}
 
     public function get(string $key, string $component = '', array $params = []): string

@@ -50,7 +50,7 @@ final class WpHostEventBridgeTest extends TestCase
         (new WpHostEventBridge())->dispatch('quote.created', [$quote, 42]);
 
         self::assertCount(1, $GLOBALS['__wp_test_dispatched']);
-        self::assertSame('middag/quote.created', $GLOBALS['__wp_test_dispatched'][0]['hook']);
+        self::assertSame('middaglib/quote.created', $GLOBALS['__wp_test_dispatched'][0]['hook']);
         self::assertSame([$quote, 42], $GLOBALS['__wp_test_dispatched'][0]['args']);
     }
 
@@ -59,8 +59,8 @@ final class WpHostEventBridgeTest extends TestCase
     {
         (new WpHostEventBridge())->listen('quote.created', static function (): void {}, 20);
 
-        self::assertArrayHasKey('middag/quote.created', $GLOBALS['__wp_test_actions']);
-        self::assertSame(20, $GLOBALS['__wp_test_actions']['middag/quote.created'][0]['priority']);
+        self::assertArrayHasKey('middaglib/quote.created', $GLOBALS['__wp_test_actions']);
+        self::assertSame(20, $GLOBALS['__wp_test_actions']['middaglib/quote.created'][0]['priority']);
     }
 
     #[Test]

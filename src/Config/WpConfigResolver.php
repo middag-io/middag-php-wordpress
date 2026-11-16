@@ -23,8 +23,8 @@ use Middag\WordPress\Support\OptionSupport;
  * — a neutral marker meaning "came from this library, no product prefix was
  * configured," carrying no brand of any consumer, including MIDDAG itself.
  * A real product wires its own prefixes explicitly in its composition root
- * (e.g. MIDDAG's own products inject `MIDDAG_`/`middag_` there); any other
- * consumer plugin may pass its own pair the same way. Env vars can be set via
+ * (for example `ACME_`/`acme_`); every consumer plugin, MIDDAG's own products
+ * included, passes its own pair the same way. Env vars can be set via
  * wp-config.php putenv(), a .env file (phpdotenv), Docker ENV, or server
  * configuration (Apache/Nginx SetEnv).
  *

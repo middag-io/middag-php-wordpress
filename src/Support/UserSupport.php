@@ -21,7 +21,8 @@ use WP_User;
 /**
  * Thin wrapper over WordPress's current-user / capability functions.
  *
- * Isolates `get_current_user_id`, `current_user_can`, and `wp_get_current_user`
+ * Isolates `get_current_user_id`, `current_user_can`, `user_can` and
+ * `wp_get_current_user`
  * so the adapter resolves identity and authorization through one seam. Degrades
  * to "anonymous / not permitted" (0, false, null) when the user API is absent,
  * which matches WP-CLI and cron contexts.
@@ -61,6 +62,24 @@ final class UserSupport
         }
 
         return current_user_can(self::capabilityString($capability), ...$args);
+    }
+
+    /**
+     * Whether a given user holds a capability (`user_can()`). Use it when the
+     * user to check is not the session user, for example the user a REST
+     * authenticator resolved from a token. Extra arguments are forwarded, so a
+     * meta capability gets its object id. Returns false when the capability
+     * API is unavailable.
+     */
+    public static function userCan(WP_User $user, CapabilityInterface|string $capability, mixed ...$args): bool
+    {
+        if (!function_exists('user_can')) {
+            // @codeCoverageIgnoreStart
+            return false;
+            // @codeCoverageIgnoreEnd
+        }
+
+        return user_can($user, self::capabilityString($capability), ...$args);
     }
 
     /**

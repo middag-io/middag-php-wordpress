@@ -16,16 +16,9 @@ use Rector\DeadCode\Rector\ClassMethod\RemoveUselessParamTagRector;
 use Rector\DeadCode\Rector\ClassMethod\RemoveUselessReturnTagRector;
 use Rector\DeadCode\Rector\Property\RemoveUnusedPrivatePropertyRector;
 use Rector\DeadCode\Rector\Property\RemoveUselessVarTagRector;
-use Rector\Naming\Rector\Assign\RenameVariableToMatchMethodCallReturnTypeRector;
-use Rector\Naming\Rector\Class_\RenamePropertyToMatchTypeRector;
-use Rector\Naming\Rector\ClassMethod\RenameParamToMatchTypeRector;
-use Rector\Naming\Rector\ClassMethod\RenameVariableToMatchNewTypeRector;
-use Rector\Naming\Rector\Foreach_\RenameForeachValueVariableToMatchExprVariableRector;
-use Rector\Naming\Rector\Foreach_\RenameForeachValueVariableToMatchMethodCallReturnTypeRector;
 use Rector\Php55\Rector\FuncCall\GetCalledClassToStaticClassRector;
 use Rector\Php73\Rector\FuncCall\RegexDashEscapeRector;
 use Rector\Php81\Rector\Array_\ArrayToFirstClassCallableRector;
-use Rector\Php81\Rector\FuncCall\NullToStrictStringFuncCallArgRector;
 use Rector\Set\ValueObject\LevelSetList;
 use Rector\Set\ValueObject\SetList;
 
@@ -44,7 +37,7 @@ return RectorConfig::configure()
     ->withImportNames(removeUnusedImports: false)
     ->withIndent()
     ->withSets([
-        LevelSetList::UP_TO_PHP_84,
+        LevelSetList::UP_TO_PHP_83,
         SetList::CODE_QUALITY,
         SetList::CODING_STYLE,
         SetList::DEAD_CODE,
@@ -64,7 +57,6 @@ return RectorConfig::configure()
         FunctionFirstClassCallableRector::class,
         GetCalledClassToStaticClassRector::class,
         NewlineAfterStatementRector::class,
-        NullToStrictStringFuncCallArgRector::class,
         RegexDashEscapeRector::class,
         RemoveEmptyClassMethodRector::class,
         RemoveNullTagValueNodeRector::class,
@@ -75,11 +67,5 @@ return RectorConfig::configure()
         RemoveUselessParamTagRector::class,
         RemoveUselessReturnTagRector::class,
         RemoveUselessVarTagRector::class,
-        RenameForeachValueVariableToMatchExprVariableRector::class,
-        RenameForeachValueVariableToMatchMethodCallReturnTypeRector::class,
-        RenameParamToMatchTypeRector::class,
-        RenamePropertyToMatchTypeRector::class,
-        RenameVariableToMatchMethodCallReturnTypeRector::class,
-        RenameVariableToMatchNewTypeRector::class,
         VariableConstFetchToClassConstFetchRector::class,
     ]);

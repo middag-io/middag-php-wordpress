@@ -31,7 +31,7 @@ use Middag\Framework\Kernel\Contract\MaintenanceGateInterface;
 final class WpMaintenanceGate implements MaintenanceGateInterface
 {
     /** Window (seconds) the legacy `.maintenance` flag is considered active. */
-    private const MAINTENANCE_WINDOW = 600;
+    private const int MAINTENANCE_WINDOW = 600;
 
     public function isUnderMaintenance(): bool
     {

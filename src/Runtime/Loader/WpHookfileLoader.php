@@ -24,10 +24,14 @@ use Psr\Log\NullLogger;
  * extend services, or otherwise inject behavior into the MIDDAG runtime
  * without packaging a full extension. Three discovery sources, in load order:
  *
- *   1. `WP_CONTENT_DIR/middag_hooks.php`                — site-local override
- *   2. `WP_CONTENT_DIR/themes/{active}/middag_hooks.php` — active theme
- *   3. Plugins/themes responding to the `middag_hookfiles` filter and
- *      returning a list of absolute paths.
+ *   1. `WP_CONTENT_DIR/{hookfileName}`                — site-local override
+ *   2. `WP_CONTENT_DIR/themes/{active}/{hookfileName}` — active theme
+ *   3. Plugins/themes responding to the `{filterName}` filter and returning a
+ *      list of absolute paths.
+ *
+ * The file name and the filter name are constructor arguments. Their defaults
+ * are the neutral library marker (`middaglib_hooks.php`, `middaglib_hookfiles`),
+ * which names no product: a consumer passes its own pair.
  *
  * Source order matters: later sources override earlier ones because the bus
  * reflects last-wins semantics for re-registered keys. Plugin contributions
@@ -37,23 +41,24 @@ use Psr\Log\NullLogger;
  */
 final class WpHookfileLoader extends HookfileLoader
 {
-    private const HOOKFILE_BASENAME = 'middag_hooks.php';
-
     /**
-     * @param string      $filterName  WordPress filter consulted for plugin/theme
-     *                                 contributions. Filter callbacks receive an
-     *                                 array and return an array of absolute paths.
-     * @param null|string $contentDir  Override WP_CONTENT_DIR. Defaults to the
-     *                                 constant when not provided. Tests inject this
-     *                                 so they don't depend on a one-shot constant.
-     * @param null|string $activeTheme Override get_stylesheet() result. Defaults
-     *                                 to the function's return value when null.
+     * @param string      $filterName   WordPress filter consulted for plugin/theme
+     *                                  contributions. Filter callbacks receive an
+     *                                  array and return an array of absolute paths.
+     * @param null|string $contentDir   Override WP_CONTENT_DIR. Defaults to the
+     *                                  constant when not provided. Tests inject this
+     *                                  so they don't depend on a one-shot constant.
+     * @param null|string $activeTheme  Override get_stylesheet() result. Defaults
+     *                                  to the function's return value when null.
+     * @param string      $hookfileName file name looked up in WP_CONTENT_DIR and in
+     *                                  the active theme directory
      */
     public function __construct(
-        private readonly string $filterName = 'middag_hookfiles',
+        private readonly string $filterName = 'middaglib_hookfiles',
         private readonly ?string $contentDir = null,
         private readonly ?string $activeTheme = null,
         LoggerInterface $logger = new NullLogger(),
+        private readonly string $hookfileName = 'middaglib_hooks.php',
     ) {
         parent::__construct($logger);
     }
@@ -67,13 +72,13 @@ final class WpHookfileLoader extends HookfileLoader
 
         $content_dir = $this->contentDir();
         if ($content_dir !== null) {
-            $this->maybeAdd($paths, $content_dir . '/' . self::HOOKFILE_BASENAME);
+            $this->maybeAdd($paths, $content_dir . '/' . $this->hookfileName);
 
             $active_theme = $this->activeThemeSlug();
             if ($active_theme !== null) {
                 $this->maybeAdd(
                     $paths,
-                    $content_dir . '/themes/' . $active_theme . '/' . self::HOOKFILE_BASENAME,
+                    $content_dir . '/themes/' . $active_theme . '/' . $this->hookfileName,
                 );
             }
         }

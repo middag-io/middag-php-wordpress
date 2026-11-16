@@ -4,95 +4,22 @@ Claude Code and Codex read this file; there is no `CLAUDE.md` in this repository
 
 ## What this package is
 
-OSS WordPress adapter (Apache-2.0) for the MIDDAG framework. It carries only basic host toil: `$wpdb` connection/dialect, REST base, hooks/cron, config/user context, translation, Inertia frontend glue, `wp_mail` email, uploads filesystem, and native post/user persistence. **It never imports non-OSS MIDDAG namespaces or packages** (Article-I). This boundary is enforced by the source-scan guard test `tests/AdapterPluginIsolationTest.php`, which runs as part of `composer test` — there is no separate `check:boundaries` script.
+OSS WordPress adapter (Apache-2.0) of `middag-io/framework`: it implements the framework ports with native WordPress APIs and ships no composition root; a WordPress plugin wires it in. It builds only on the OSS MIDDAG libraries (`middag-io/framework`, `middag-io/ui`) and never imports any other MIDDAG package.
 
-Governed MIDDAG capabilities (Item/EAV, QueryEngine, `middag_*` schema, Audit/ActivityFeed/ItemRevision/Job, outbox, tenant/organization, rate limit, scopes, Payment/Webhook/WooCommerce/CRM) are **not part of this OSS adapter** — they belong to non-OSS MIDDAG layers.
+## Architecture (on docs.middag.dev)
 
-Governed WordPress code lives in the proprietary `middag-io/core` under `src/Adapter/WordPress/`.
-That does not change this adapter's boundary: the OSS adapter stays generic and
-never imports `Middag\Core\`. If core/framework binds the neutral `async`
-transport on WordPress, name it as a WP-Cron binding owned by the consumer/core
-composition root, not as proprietary infrastructure inside this adapter.
+The architecture lives on the hub, not in this repository. The code is the source of truth for file lists.
 
-### Non-target host surfaces (by design)
+- Scope, requirements, port table, Support layer, cron and jobs, WooCommerce, `$wpdb` and the surfaces out of scope: [Reference — WordPress Adapter](https://docs.middag.dev/framework/reference/adapters/wordpress/).
+- REST, admin and public rewrite surfaces, the `#[Auth]` capability rule and the authentication seam: [Routing Surfaces](https://docs.middag.dev/framework/reference/adapters/wordpress/routing-surfaces).
+- Page-controller and REST bases: [Controller Bases](https://docs.middag.dev/framework/reference/adapters/wordpress/controller-bases).
+- Consumer kernel, component identity, config prefixes and neutral defaults: [Configuration & Identity](https://docs.middag.dev/framework/reference/adapters/wordpress/configuration).
+- Platform, CI jobs and guards of the library family: [Platform](https://docs.middag.dev/libraries/reference/platform) and [Guards](https://docs.middag.dev/libraries/reference/guards).
+- HTTP client mTLS: the `Http\Client\HttpClient` class docblock.
 
-Some WordPress host surfaces are **intentionally not targeted** by this adapter: **widgets** (`register_widget` / `WP_Widget`) and **`admin-ajax.php`** action handlers. Consumers reach the front end through the three formal routing surfaces below (REST, admin, public rewrite) plus the Inertia glue (`Http/Inertia`), so classic widget areas and the legacy `admin-ajax` transport carry no consumer and no code here. This is a scope decision, not a gap — do not add widget/`admin-ajax` seams without a real consumer. See the coverage roadmap in `BACKLOG.md` for other by-design-absent surfaces (R1).
+## Boundary enforcement
 
-- **Depends on** `middag-io/framework`
-- **Consumed by:** a WordPress host plugin, through its own composition root
-
-## Structure
-
-| Directory | Contents |
-|-----------|----------|
-| `src/Admin/` | AdminRouteRegistrar (wp-admin menu tree → Router dispatch) + MenuPage/SubMenuPage value objects — the ADMIN routing surface |
-| `src/Bus/` | WpUserContext (UserContextResolverInterface) |
-| `src/Config/` | WpConfigResolver (ConfigResolverInterface) |
-| `src/Cron/` | CronHandler, CronRegistrar (basic wp-cron) |
-| `src/Database/` | WpdbConnectionAdapter (ConnectionAdapterInterface), WpdbSqlDialect |
-| `src/Definition/` | PostTypeDefinition, TaxonomyDefinition, CronScheduleDefinition, ShortcodeDefinition + DefinitionRegistrar (declarative registration on the host) |
-| `src/Domain/Comment/` | CommentDto (host-neutral shape for WP comments) |
-| `src/Domain/Media/` | MediaAttachmentDto (attachments/uploads metadata) |
-| `src/Domain/Post/` | PostRepository, PostMetaRepository (wp_posts + wp_postmeta) |
-| `src/Domain/Taxonomy/` | TaxonomyDto, TermDto (native taxonomy/term shape) |
-| `src/Domain/User/` | UserRepository, UserMeta |
-| `src/Domain/WooCommerce/` | Optional WooCommerce value objects, guarded by runtime availability checks; no hard dependency |
-| `src/Exception/` | Adapter-specific exception hierarchy for hooks, settings rendering, database failures |
-| `src/Filesystem/` | WpUploadsFilesystem (framework FilesystemInterface → uploads dir, via LocalFilesystem) |
-| `src/Hook/` | HookRegistrar + `Contract/HookInterface` (requires an explicit, existing hook directory) |
-| `src/Http/` | `Client/{HttpClient,HttpResponse}` (wp_remote_* with optional mTLS — see below), `Contract/{RestControllerInterface, RequestAuthenticatorInterface}`, `Auth/WpSessionAuthenticator` (default request authenticator — WP-session only; bearer-token auth is product code, composed and injected), `Controller/AbstractWpController` (Inertia page base, extends the framework `AbstractController`), `Controller/AbstractWpRestController` (instance-based; `RequestAuthenticatorInterface` injected for permission callbacks), `Response/RestResponse`, `Routing/{WpRouter, RestRouteRegistrar + RestRouteAttributeRegistrar (REST surface), PublicRouteRegistrar (public rewrite surface)}` (the admin surface is `src/Admin/AdminRouteRegistrar`), `WpHttpKernel` (admin, `#[Nonce]`), `WpRestKernel` (attribute-routed REST), `ControllerResolver`, `Inertia/InertiaAdapter`, `Security/CsrfGuard` |
-| `src/Runtime/` | WpBootstrap (BootstrapInterface), WpComponentContext (HostComponentContextInterface), WpMaintenanceGate, PluginLifecycle, Loader/WpHookfileLoader |
-| `src/Mail/` | WpMailer (framework MailerInterface → wp_mail), EmailSender, EmailTemplate |
-| `src/Persistence/` | QueryBuilder (WP_Query/wp_posts) |
-| `src/Privacy/` | PrivacyRegistrar + `Contract/PersonalDataProviderInterface` (WordPress personal-data export/erasure glue) |
-| `src/Security/` | CapabilityRegistrar (declarative caps per role); `Enum/{WpCapability, WooCommerceCapability}` (typed capability catalogs) + `CapabilityInterface`/`NormalizesCapability` |
-| `src/Settings/` | Declarative settings framework: Tab→Section→Field (FieldType with default sanitizer), FieldRenderer (escaped), SettingsPageRegistrar over SettingDefinition/SettingsRegistrar |
-| `src/Support/` | 25 `*Support` static seams over WordPress functions (hooks, options, meta, cache, transients, uploads, sanitize/escape, logging, rewrite, ...) |
-| `src/Translation/` | WpTranslator (framework TranslatorInterface) |
-
-## Capability catalogs (typed authorization vocabulary)
-
-`Security/Enum/WpCapability` (WordPress core) and `Security/Enum/WooCommerceCapability` are closed enums of the native capability strings, so a plugin references `WpCapability::ManageOptions` instead of retyping `'manage_options'` — a typo fails at compile time, and neither product nor plugin re-declares the platform's own vocabulary. Both implement `CapabilityInterface` (`->toString()` yields the exact WP string; `->isMeta()` flags map_meta_cap object-scoped caps that must never be granted to a role).
-
-Every authorization seam accepts `string|CapabilityInterface` (backward compatible — raw strings still work): the read side (`UserSupport::currentUserCan`, `CapabilitySupport::userCan`, `UserRepository::currentUserCan`, `AdminRouteRegistrar` gate), the write side (`CapabilitySupport::addCap/removeCap/addRole`, `CapabilityRegistrar`), and the declarative value objects (`MenuPage`/`SubMenuPage`/`SettingDefinition` normalize on construct). The one enum→string conversion lives in the `NormalizesCapability` trait. WooCommerce caps are split out because WooCommerce is optional; referencing a case never requires WooCommerce loaded, but granting one only matters once its roles (e.g. `shop_manager`) exist. Not to be confused with `Middag\Framework\Database\Enum\Capability` (a DB-feature enum).
-
-## Routing surfaces
-
-Three formal surfaces, each per-component (namespace/slug/query-var derived from `WpComponentContext::componentName()` — **no brand literal**; the `tests/Architecture/RoutingBrandLiteralTest` guard fails the build if any routing string literal contains `middag`). A host plugin wires them in its own composition root.
-
-| Surface | Class | WordPress mechanism | Namespacing |
-|---|---|---|---|
-| **REST** | `Http/Routing/RestRouteRegistrar` | `register_rest_route` (via controllers) | `{component}/{version}` (default `v1`) |
-| **ADMIN** | `Admin/AdminRouteRegistrar` | `add_menu_page`/`add_submenu_page` + `Router` dispatch | menu slug `{component}`, submenu `{component}-{suffix}` |
-| **PUBLIC** | `Http/Routing/PublicRouteRegistrar` | `add_rewrite_rule` + `query_vars` + `template_redirect` | query var `{component}_route` |
-
-- **REST** — controllers implement `RestControllerInterface`; the registrar hands each the derived namespace on `register()` (call from `rest_api_init`).
-- **ADMIN** — registers a menu tree whose pages all render through one `renderApp()` dispatch; unmatched routes fall to an injected callable (the lib forces neither Inertia nor a default page). Controllers resolve from the plugin's own PSR-11 container.
-- **PUBLIC** — the third surface, formerly absent by design. Maps pretty URLs to handlers via the rewrite system; `RewriteSupport` is the `@internal` seam over `add_rewrite_rule`/`flush_rewrite_rules`/`get_query_var`. Rewrite flushing is expensive and driven from `PluginLifecycle` activate/deactivate, never from `register()`.
-
-## Contracts bridge
-
-| Framework contract | WordPress implementation |
-|---|---|
-| BootstrapInterface | WpBootstrap |
-| ConfigResolverInterface | WpConfigResolver |
-| MaintenanceGateInterface | WpMaintenanceGate |
-| HostComponentContextInterface | WpComponentContext |
-| ConnectionAdapterInterface | WpdbConnectionAdapter |
-| SqlDialectInterface | WpdbSqlDialect (factory via connection) |
-| UserContextResolverInterface | WpUserContext |
-| TranslatorInterface | WpTranslator |
-| FilesystemInterface | WpUploadsFilesystem |
-| MailerInterface | WpMailer |
-| HookfileLoaderInterface | WpHookfileLoader (extends the framework HookfileLoader) |
-
-## HTTP client mTLS (optional capability)
-
-`Http\Client\HttpClient` wraps `wp_remote_request()` and adds optional client-certificate (mTLS) support via the `certPath`/`certPassword`/`keyPath` args. Because WP_Http exposes no certificate arguments, the certificate is applied through an `http_api_curl` action registered right before and detached right after each request (via the `HookSupport::removeAction` seam). If the active transport never hands the action a cURL handle (non-cURL transport), the request fails loudly instead of silently going out without the client certificate. Consumers that prefer their own transport handling can always register their own `http_api_curl` hook instead.
-
-## Boundary enforcement (Article-I)
-
-- `tests/AdapterPluginIsolationTest.php` — source-scans every `src/` file for non-OSS MIDDAG namespaces, consumer-plugin namespaces, and hard-coded product gold tables. Runs with `composer test`.
+- `tests/AdapterPluginIsolationTest.php` — every `Middag\` namespace named in `src/` is one of the OSS namespaces `Middag\WordPress`, `Middag\Framework` or `Middag\Ui` (an allowlist: no other package is named in this repository). Runs with `composer test`.
 - `tests/ClassLoadabilityTest.php` — autoload smoke test over the whole `src/` tree.
 
 ### Architecture guards (`tests/Architecture/`)
@@ -100,14 +27,16 @@ Three formal surfaces, each per-component (namespace/slug/query-var derived from
 Enforced policies (all run under `composer test`):
 
 - **No static mutable state** (`NoStaticMutableStateTest`) — no `src/` class declares a static property. PHP has no readonly static, so a static property is process-wide state that collides between two plugins in one request. Per-request state is an injected instance dependency. Constants and static methods are fine.
-- **No bundled token auth** (`NoBundledTokenAuthTest`) — no `src/` file references `Firebase\JWT`. App-token/JWT logic (issue/verify/refresh) is product code and lives in the proprietary core (`WordPressTokenService`); the library exposes only the `RequestAuthenticatorInterface` seam (default `WpSessionAuthenticator`, WP-session only).
+- **No bundled token auth** (`NoBundledTokenAuthTest`) — no `src/` file references `Firebase\JWT`. App-token/JWT logic (issue/verify/refresh) is consumer code; the library exposes only the `RequestAuthenticatorInterface` seam (default `WpSessionAuthenticator`, WP-session only).
+- **No unused runtime dependency** (`NoUnusedRuntimeDependencyTest`) — every package in `require` is used by `src/` (one of its PSR-4 namespaces appears there). A package only the tests need goes to `require-dev`.
+- **No product-named default** (`NoProductNamedDefaultTest`) — no string literal, comment or docblock under `src/` names the product in lowercase. Neutral defaults use the `middaglib` marker; examples use `acme`.
 - **No routing brand literal** (`RoutingBrandLiteralTest`) — routing sources never hard-code the lowercase `middag` literal; namespaces/slugs derive from `componentName()`.
 - **Enum case PascalCase** (`EnumCasePascalCaseTest`).
 
 ## Decision records
 
 Architecture decisions live in [`docs/decisions/`](docs/decisions/) as `WP-NNN` records in the
-MIDDAG-MADR compact format (`docs-middag-ops` ADR-014): frontmatter, then Context → Considered Options
+MIDDAG-MADR compact format: frontmatter, then Context → Considered Options
 → Decision → Consequences → Enforcement. A record states **why** (the choice, the alternatives, the
 consequences); specification (class lists, catalogs, pipelines, naming tables) lives in the reference
 its Enforcement table points to, at docs.middag.dev (`docs-middag-dev`,
@@ -119,31 +48,10 @@ proprietary record ids. `deciders` is a role id (`leadership`), never a person.
 
 ## Versioning
 
-Releases come only from release-please. This lib follows ADR-032 of
-`docs-middag-ops` (the `middag-php-*` version family, amending ADR-003). The
-policy is in [`API-STABILITY.md`](API-STABILITY.md).
+Releases come only from release-please. The family rules (lifecycle, supported surface, compatibility matrix) are on [Versioning and compatibility](https://docs.middag.dev/libraries/reference/versioning-and-compatibility); the family-window check is in [`API-STABILITY.md`](API-STABILITY.md#versioning).
 
-- **`1.x` (now).** `fix:` cuts a patch and `feat:` cuts a minor. A break ships
-  as `feat:` (never `fix:`, so never in a patch). Never use `!` or
-  `BREAKING CHANGE:`, which would cut `2.0.0` in this lib alone.
-  The 1.x line is pre-stable and unsupported: it gets no backports or security fixes, and the move to 2.0.0 is a clean cut.
-- **From `2.0.0`.** The eight libs share MAJOR.MINOR. A patch carries fixes
-  only. `feat:` waits for a family minor window. A break waits for a family
-  major window, after a deprecation in a minor. The product owner decides every
-  family minor and major, never a maintainer or an architect. Each one is a
-  coordinated `Release-As: X.Y.0` in every lib. Consumers declare one `^2.N` for
-  every sibling.
-- **Check.** `.github/workflows/family-window.yml` runs
-  `php-version-family-check / check` on every PR. It checks the title and every
-  non-merge commit against the organization variable `PHP_LIBS_OPEN_RELEASE`
-  (empty = closed, `X.Y` = minor window, `X.0` = major window), set and cleared
-  on the order of the product owner; no workflow writes it. A window counts as
-  open only when it is ahead of this lib's version. Keep a waiting `feat:` PR
-  current by merging `main` into it (no rebase or force-push), and re-run the
-  check when the window opens. While a window is open, merge the Release PR
-  only at the coordinated `X.Y.0`.
-- **Do not** change `release-please-config.json` versioning or the sibling
-  ranges in `composer.json` outside the coordinated `2.0.0` cut.
+- **`1.x` (now).** `fix:` cuts a patch and `feat:` cuts a minor. A break ships as `feat:` (never `fix:`). Never use `!` or `BREAKING CHANGE:`, which would cut `2.0.0` in this lib alone. The 1.x line is pre-stable and unsupported, and the move to 2.0.0 is a clean cut.
+- **Do not** change `release-please-config.json` versioning or the sibling ranges in `composer.json` outside the coordinated family release.
 
 ## Composer scripts
 
@@ -155,5 +63,5 @@ policy is in [`API-STABILITY.md`](API-STABILITY.md).
 - `composer fix:all` — style → rector → style (re-runs style after rector)
 - `composer test` — PHPUnit (includes the boundary and loadability guard tests)
 - `composer test:cov` — PHPUnit with coverage (`XDEBUG_MODE=coverage`, text report)
-- `composer lint:php82` — PHP 8.2 parse-level lint (`bin/lint-php82.sh`)
+- `composer lint:php83` — PHP 8.3 parse-level lint (`bin/lint-php83.sh`)
 - `post-install-cmd` / `post-update-cmd` — register `.githooks` (`commit-msg` enforces Conventional Commits)
