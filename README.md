@@ -89,9 +89,10 @@ What the host must still do at boot:
   | `WpHostEventBridge` | hook prefix `middaglib/` | `$hookPrefix` |
   | `WpHookfileLoader` | filter `middaglib_hookfiles`, file `middaglib_hooks.php` | `$filterName`, `$hookfileName` |
   | `WpTranslator` | text domain `middaglib` | `$defaultDomain` |
+  | `CacheSupportPsr16` | `wp_cache` group `middaglib_{area}` | `$groupPrefix` |
 
-  `CacheSupportPsr16` stores each cache area in the `wp_cache` group
-  `middaglib_{area}`.
+  `$hookfileName` comes after `$logger`, so set it with a named argument:
+  `new WpHookfileLoader(filterName: 'acme_hookfiles', hookfileName: 'acme_hooks.php')`.
 
 REST routes declared with `#[Auth]` require login by default. Every capability
 an `#[Auth]` lists must pass `user_can()` for the user the injected
