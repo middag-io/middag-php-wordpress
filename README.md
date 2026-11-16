@@ -98,7 +98,10 @@ REST routes declared with `#[Auth]` require login by default. Every capability
 an `#[Auth]` lists must pass `user_can()` for the user the injected
 `RequestAuthenticatorInterface` resolved (a token user included), with the
 `instanceId` as the object id of a meta capability. Grant your plugin's
-capabilities to the roles that need them, administrators included.
+capabilities to the roles that need them, administrators included. The check
+fails closed: a resolved user with ID 0 gets 401, an `instanceid` option that
+is not a positive integer gets 403, and a throw while the requirements are
+resolved is logged and gets 403, not 500.
 
 See [WP-002](docs/decisions/WP-002-config-resolver-neutral-default-prefix.md),
 [Configuration & Identity](https://docs.middag.dev/framework/reference/adapters/wordpress/configuration)
