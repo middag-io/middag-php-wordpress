@@ -217,6 +217,63 @@ final class AbstractWpRestControllerCoverageTest extends TestCase
     }
 
     #[Test]
+    public function permissionCheckRejectsALoggedOutUserObject(): void
+    {
+        // A token authenticator that falls back to the session can hand back
+        // WordPress's logged-out user (ID 0); it must not pass a login route.
+        $request = new WP_REST_Request();
+        $request->set_method('GET');
+
+        $result = $this->controllerWith($this->userAuthenticator(0, true))->permissionCheck($request);
+
+        self::assertInstanceOf(WP_Error::class, $result);
+        self::assertSame('unauthorized', $result->get_error_code());
+        self::assertSame(['status' => 401], $result->get_error_data());
+    }
+
+    #[Test]
+    public function permissionCheckRejectsANegativeUserId(): void
+    {
+        $request = new WP_REST_Request();
+        $request->set_method('GET');
+
+        $result = $this->controllerWith($this->userAuthenticator(-1, true))->permissionCheck($request);
+
+        self::assertInstanceOf(WP_Error::class, $result);
+        self::assertSame('unauthorized', $result->get_error_code());
+    }
+
+    #[Test]
+    public function adminPermissionCheckRejectsALoggedOutUserObjectEvenWhenFlaggedAdmin(): void
+    {
+        $request = new WP_REST_Request();
+        $request->set_method('GET');
+
+        $result = $this->controllerWith($this->userAuthenticator(0, true))->adminPermissionCheck($request);
+
+        self::assertInstanceOf(WP_Error::class, $result);
+        self::assertSame('unauthorized', $result->get_error_code());
+        self::assertSame(['status' => 401], $result->get_error_data());
+    }
+
+    #[Test]
+    public function getUserReturnsNullForALoggedOutUserObject(): void
+    {
+        self::assertNull(
+            $this->controllerWith($this->userAuthenticator(0, true))->exposedGetUser(new WP_REST_Request()),
+        );
+    }
+
+    #[Test]
+    public function getUserReturnsAPositiveIdUserFromACustomAuthenticator(): void
+    {
+        $user = $this->controllerWith($this->userAuthenticator(12, false))->exposedGetUser(new WP_REST_Request());
+
+        self::assertInstanceOf(WP_User::class, $user);
+        self::assertSame(12, $user->ID);
+    }
+
+    #[Test]
     public function getBodyReturnsTheJsonParams(): void
     {
         $request = new WP_REST_Request();
@@ -298,6 +355,23 @@ final class AbstractWpRestControllerCoverageTest extends TestCase
             public function isAdmin(WP_REST_Request $request): bool
             {
                 return false;
+            }
+        };
+    }
+
+    private function userAuthenticator(int $id, bool $isAdmin): RequestAuthenticatorInterface
+    {
+        return new readonly class($id, $isAdmin) implements RequestAuthenticatorInterface {
+            public function __construct(private int $id, private bool $isAdmin) {}
+
+            public function resolveUser(WP_REST_Request $request): WP_User
+            {
+                return new WP_User($this->id);
+            }
+
+            public function isAdmin(WP_REST_Request $request): bool
+            {
+                return $this->isAdmin;
             }
         };
     }

@@ -51,17 +51,17 @@
 
 ### ⚠ BREAKING CHANGES
 
-* **config:** default neutro de prefixo em WpConfigResolver, marca real fica a cargo do consumidor
+* **config:** neutral default prefix in WpConfigResolver; the consumer supplies its own brand
 
 ### Bug Fixes
 
 * **ci:** replace the removed PHPUNIT_120 rector set with composer-based detection ([ff33874](https://github.com/middag-io/middag-php-wordpress/commit/ff33874e82dd4fd3771b7ca9ec63f5c00f9c82ae))
-* **config:** default neutro de prefixo em WpConfigResolver, marca real fica a cargo do consumidor ([2a36b9c](https://github.com/middag-io/middag-php-wordpress/commit/2a36b9c35d6e9aec51842d37c04532b5bc21340e))
+* **config:** neutral default prefix in WpConfigResolver; the consumer supplies its own brand ([2a36b9c](https://github.com/middag-io/middag-php-wordpress/commit/2a36b9c35d6e9aec51842d37c04532b5bc21340e))
 
 
 ### Documentation
 
-* canonical AGENTS.md, CLAUDE.md symlink (ADR-017) ([7113f37](https://github.com/middag-io/middag-php-wordpress/commit/7113f37337555e3636d06e4baee4d3e330807041))
+* canonical AGENTS.md, CLAUDE.md symlink ([7113f37](https://github.com/middag-io/middag-php-wordpress/commit/7113f37337555e3636d06e4baee4d3e330807041))
 
 
 ### Miscellaneous
@@ -73,27 +73,27 @@
 
 ### Features
 
-* **persistence:** WpdbConditionCompiler perde o braco do operador verbatim ([09d5603](https://github.com/middag-io/middag-php-wordpress/commit/09d5603a2e84a1d1663ee1cb024270fd6a83eb4d))
-* **persistence:** WpdbConditionCompiler perde o braço do operador verbatim (core[#132](https://github.com/middag-io/middag-php-wordpress/issues/132)) — PASSO 2 ([5d8ce8a](https://github.com/middag-io/middag-php-wordpress/commit/5d8ce8af1ad7410a947fab3ae4b0dbebef85fd7c))
+* **persistence:** WpdbConditionCompiler drops the verbatim operator branch ([09d5603](https://github.com/middag-io/middag-php-wordpress/commit/09d5603a2e84a1d1663ee1cb024270fd6a83eb4d))
+* **persistence:** WpdbConditionCompiler drops the verbatim operator branch, second step ([5d8ce8a](https://github.com/middag-io/middag-php-wordpress/commit/5d8ce8af1ad7410a947fab3ae4b0dbebef85fd7c))
 
 
 ### Miscellaneous
 
-* **build:** cache do phpstan por repo, em vez do diretorio global da maquina ([c0b1954](https://github.com/middag-io/middag-php-wordpress/commit/c0b195474bed5e8c88df2947863f65b9f0769516))
+* **build:** per-repository PHPStan cache instead of the machine-wide directory ([c0b1954](https://github.com/middag-io/middag-php-wordpress/commit/c0b195474bed5e8c88df2947863f65b9f0769516))
 
 ## [1.11.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.11.0...v1.11.1) (2026-07-27)
 
 
 ### Refactoring
 
-* aplica as regras novas do rector 2.5.8 ([#49](https://github.com/middag-io/middag-php-wordpress/issues/49)) ([1052eb7](https://github.com/middag-io/middag-php-wordpress/commit/1052eb7c6ff3c53c1e09724d46503eef591f681a))
+* apply the new Rector 2.5.8 rules ([#49](https://github.com/middag-io/middag-php-wordpress/issues/49)) ([1052eb7](https://github.com/middag-io/middag-php-wordpress/commit/1052eb7c6ff3c53c1e09724d46503eef591f681a))
 
 ## [1.11.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.10.0...v1.11.0) (2026-07-25)
 
 
 ### Features
 
-* **api:** promote the composition-root symbols core consumes to [@api](https://github.com/api) ([7e3385d](https://github.com/middag-io/middag-php-wordpress/commit/7e3385ddd6f79469f619f615da159ebf920827cc)), closes [#45](https://github.com/middag-io/middag-php-wordpress/issues/45)
+* **api:** promote the composition-root symbols consumers name to [@api](https://github.com/api) ([7e3385d](https://github.com/middag-io/middag-php-wordpress/commit/7e3385ddd6f79469f619f615da159ebf920827cc)), closes [#45](https://github.com/middag-io/middag-php-wordpress/issues/45)
 
 ## [1.10.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.9.0...v1.10.0) (2026-07-24)
 
@@ -175,7 +175,7 @@
 
 ### ⚠ BREAKING CHANGES
 
-* **http:** Middag\WordPress\Http\Middleware\AuthMiddleware is removed and Middag\WordPress\Http\Controller\BaseController is renamed to AbstractWpRestController with a required RequestAuthenticatorInterface constructor argument. App-session JWT tokens are now issued/verified by middag-io/core's WordPressTokenService; controllers receive an injected RequestAuthenticatorInterface (the library ships WpSessionAuthenticator for the WP-session case). No compatibility shim (hard-cutover).
+* **http:** Middag\WordPress\Http\Middleware\AuthMiddleware is removed and Middag\WordPress\Http\Controller\BaseController is renamed to AbstractWpRestController with a required RequestAuthenticatorInterface constructor argument. App-session JWT tokens are now issued and verified by consumer code; controllers receive an injected RequestAuthenticatorInterface (the library ships WpSessionAuthenticator for the WP-session case). No compatibility shim (hard-cutover).
 * **routing:** 3 formal REST/ADMIN/PUBLIC surfaces per component (O5-LIB-02)
 * **cron:** CronRegistrar API changed (hard-cutover, no shim):
     - `addEvent(string, CronInterval, callable)` -- 2nd arg no longer accepts a string.
@@ -297,7 +297,7 @@
 
 ### Documentation
 
-* note future core/src/WordPress + WP-Cron async binding boundary [LB-0-13/NOVO-WP-A] ([1a7988c](https://github.com/middag-io/middag-php-wordpress/commit/1a7988cb8715134f27b376977297bae6291a6ad2))
+* note the future WP-Cron async binding boundary ([1a7988c](https://github.com/middag-io/middag-php-wordpress/commit/1a7988cb8715134f27b376977297bae6291a6ad2))
 
 
 ### Miscellaneous
@@ -329,7 +329,7 @@
 
 ### Documentation
 
-* close QG-WP-03/04/05/07 and relocate coverage tail to BACKLOG ([71f6982](https://github.com/middag-io/middag-php-wordpress/commit/71f698221cb760556b3de5ffbc475dab428e2750))
+* close the quality gates and move the coverage tail to the backlog ([71f6982](https://github.com/middag-io/middag-php-wordpress/commit/71f698221cb760556b3de5ffbc475dab428e2750))
 
 ## [1.1.2](https://github.com/middag-io/middag-php-wordpress/compare/v1.1.1...v1.1.2) (2026-07-05)
 

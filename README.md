@@ -38,12 +38,14 @@ composition root that wires it in.
 |---|---|
 | PHP | `^8.3`: 8.3, 8.4 and 8.5, with `ext-json` |
 | Symfony | `^7.4 \|\| ^8.1` for every Symfony component it requires. PHP 8.3 resolves Symfony 7.4; PHP 8.4 and 8.5 can resolve 8.x |
-| `middag-io/framework` | `^1.13` on the `1.x` line (it brings `middag-io/ui`) |
+| `middag-io/framework` | `^1.20` on the `1.x` line (it brings `middag-io/ui`) |
 | WordPress | 7.0 and 7.1 (the latest major and the previous one) |
 
 CI runs the test suite on PHP 8.3, 8.4 and 8.5 at the lowest platform, a
-`highest` job on PHP 8.4 and 8.5 that asserts the Symfony 8 major, and PHPStan
-against the WordPress 7.0 and 7.1 stubs. The platform rules are on
+`highest` job on PHP 8.4 and 8.5 that asserts the Symfony 8 major, PHPStan
+against the WordPress 7.0 and 7.1 stubs, and the integration suite against a
+real WordPress 7.0 and 7.1 (the newest patch release of each) on MySQL 8.4.
+The platform rules are on
 [Platform](https://docs.middag.dev/libraries/reference/platform).
 
 ## Installation
@@ -100,7 +102,10 @@ REST routes declared with `#[Auth]` require login by default. Every capability
 an `#[Auth]` lists must pass `user_can()` for the user the injected
 `RequestAuthenticatorInterface` resolved (a token user included), with the
 `instanceId` as the object id of a meta capability. Grant your plugin's
-capabilities to the roles that need them, administrators included.
+capabilities to the roles that need them, administrators included. The check
+fails closed: a resolved user with ID 0 gets 401, an `instanceid` option that
+is not a positive integer gets 403, and a throw while the requirements are
+resolved is logged and gets 403, not 500.
 
 See [WP-002](docs/decisions/WP-002-config-resolver-neutral-default-prefix.md),
 [Configuration & Identity](https://docs.middag.dev/framework/reference/adapters/wordpress/configuration)
@@ -158,6 +163,9 @@ Run the quality gates and the test suite:
 composer check   # PHP-CS-Fixer + Rector (dry-run) + PHPStan
 composer test    # PHPUnit (includes the boundary and architecture guards)
 ```
+
+The integration suite (`tests/Integration`) runs on a real WordPress and a real
+MySQL database; see [`tests/Integration/README.md`](tests/Integration/README.md).
 
 `composer.json` pins `config.platform.php` to `8.3.0`, so Composer resolves the
 lowest PHP of the range locally. `composer.lock` is gitignored, like a typical
