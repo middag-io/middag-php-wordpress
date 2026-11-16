@@ -31,14 +31,14 @@ use Symfony\Component\Routing\RouteCollection;
  *
  * Routes live in a {@see RouteCollection}; discovery is delegated to the
  * framework {@see RouteLoaderInterface}, which reflection-scans controllers
- * for `#[Route]` attributes (class-level attribute = path/name group). This
- * supersedes the array-based {@see Router} (deprecated): controllers declare
- * their own routes and the same collection feeds matching (`WpHttpKernel`)
- * and URL generation.
+ * for `#[Route]` attributes (class-level attribute = path/name group).
+ * Controllers declare their own routes, and the same collection feeds matching
+ * (`WpHttpKernel`) and URL generation.
  *
- * URL generation returns Symfony PATHS (`/collaborators/42`). Composing a
- * wp-admin URL (`admin.php?page={slug}&route={path}`) is the admin surface's
- * concern — see `AdminRouteRegistrar::adminUrl()`.
+ * URL generation returns Symfony PATHS (`/collaborators/42`). The router does
+ * not compose wp-admin URLs: the admin surface (`AdminRouteRegistrar`) passes
+ * the path in the `route` query argument of its menu page
+ * (`admin.php?page={slug}&route={path}`), and the consumer builds that URL.
  *
  * @api
  */
