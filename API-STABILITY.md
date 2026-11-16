@@ -160,6 +160,20 @@ Every type tagged `@api` in `src/`, by namespace.
 - `Middag\WordPress\Definition\ShortcodeDefinition`
 - `Middag\WordPress\Definition\TaxonomyDefinition`
 
+### Diagnostics
+
+- `Middag\WordPress\Diagnostics\BootReport`
+- `Middag\WordPress\Diagnostics\CallbackCheck`
+- `Middag\WordPress\Diagnostics\CheckResult`
+- `Middag\WordPress\Diagnostics\Contract\DiagnosticCheckInterface`
+- `Middag\WordPress\Diagnostics\DiagnosticsRegistry`
+- `Middag\WordPress\Diagnostics\DoctorCommand`
+- `Middag\WordPress\Diagnostics\DoctorCommandRegistrar`
+- `Middag\WordPress\Diagnostics\Enum\CheckScope`
+- `Middag\WordPress\Diagnostics\Enum\CheckStatus`
+- `Middag\WordPress\Diagnostics\PackageProbe`
+- `Middag\WordPress\Diagnostics\PackageReport`
+
 ### Domain
 
 - `Middag\WordPress\Domain\Comment\CommentDto`
