@@ -17,7 +17,7 @@ Report privately through one of:
 
 - GitHub's [private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)
   — use **"Report a vulnerability"** under the repository's **Security** tab, or
-- email **michael@middag.io** with a description and steps to reproduce.
+- email **security@middag.io** with a description and steps to reproduce.
 
 We aim to acknowledge a report within 5 business days and to share a remediation
 timeline after triage. Please give us reasonable time to release a fix before any
