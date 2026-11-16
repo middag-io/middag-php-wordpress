@@ -14,6 +14,9 @@ namespace Middag\WordPress\Tests\Http;
 
 use Middag\Framework\Http\Attribute\Auth;
 use Middag\Framework\Http\Attribute\Middleware;
+use Middag\Framework\Http\Auth\CapabilityReference;
+use Middag\Framework\Http\Auth\CapabilityRequirement;
+use Middag\Framework\Http\Contract\CapabilityDefinitionInterface;
 use Middag\WordPress\Http\Contract\RequestAuthenticatorInterface;
 use Middag\WordPress\Http\Contract\RestRouteMiddlewareInterface;
 use Middag\WordPress\Http\Response\RestResponse;
@@ -38,6 +41,21 @@ final class WpRestKernelTest extends TestCase
     {
         parent::setUp();
         RestKernelMiddlewareRecorder::$calls = [];
+        $GLOBALS['__wp_test_user_caps'] = [];
+        $GLOBALS['__wp_test_user_can_calls'] = [];
+        $GLOBALS['__wp_test_caps'] = [];
+        $GLOBALS['__wp_test_cap_calls'] = [];
+    }
+
+    protected function tearDown(): void
+    {
+        unset(
+            $GLOBALS['__wp_test_user_caps'],
+            $GLOBALS['__wp_test_user_can_calls'],
+            $GLOBALS['__wp_test_caps'],
+            $GLOBALS['__wp_test_cap_calls'],
+        );
+        parent::tearDown();
     }
 
     #[Test]
@@ -99,17 +117,136 @@ final class WpRestKernelTest extends TestCase
     }
 
     #[Test]
-    public function authorizeForbidsANonAdminWhenTheRouteRequiresCapabilities(): void
+    public function authorizeAllowsANonAdministratorWhoHoldsTheCapability(): void
     {
-        $authenticator = $this->createStub(RequestAuthenticatorInterface::class);
-        $authenticator->method('resolveUser')->willReturn(new WP_User(7));
-        $authenticator->method('isAdmin')->willReturn(false);
+        $GLOBALS['__wp_test_user_caps'][7]['manage_options'] = true;
 
-        $kernel = new WpRestKernel($this->createStub(ContainerInterface::class), $authenticator);
-        $result = $kernel->authorize(WpRestKernelTestController::class, 'adminAction', $this->request());
+        $result = $this->kernelFor(new WP_User(7), isAdmin: false)
+            ->authorize(WpRestKernelTestController::class, 'adminAction', $this->request());
+
+        self::assertTrue($result);
+    }
+
+    #[Test]
+    public function authorizeForbidsAnAdministratorWithoutTheCapability(): void
+    {
+        $result = $this->kernelFor(new WP_User(1), isAdmin: true)
+            ->authorize(WpRestKernelTestController::class, 'adminAction', $this->request());
 
         self::assertInstanceOf(WP_Error::class, $result);
         self::assertSame('forbidden', $result->get_error_code());
+        self::assertSame(403, $result->get_error_data()['status']);
+    }
+
+    #[Test]
+    public function authorizeRequiresEveryListedCapability(): void
+    {
+        $GLOBALS['__wp_test_user_caps'][7]['edit_posts'] = true;
+
+        $result = $this->kernelFor(new WP_User(7))
+            ->authorize(WpRestKernelTestController::class, 'twoCapabilitiesAction', $this->request());
+
+        self::assertInstanceOf(WP_Error::class, $result);
+        self::assertSame('forbidden', $result->get_error_code());
+
+        $GLOBALS['__wp_test_user_caps'][7]['publish_posts'] = true;
+
+        self::assertTrue($this->kernelFor(new WP_User(7))
+            ->authorize(WpRestKernelTestController::class, 'twoCapabilitiesAction', $this->request()));
+    }
+
+    #[Test]
+    public function authorizePassesTheInstanceIdAsTheMetaCapabilityObjectId(): void
+    {
+        $GLOBALS['__wp_test_user_caps'][7]['edit_post'] = true;
+
+        $result = $this->kernelFor(new WP_User(7))
+            ->authorize(WpRestKernelTestController::class, 'metaCapabilityAction', $this->request());
+
+        self::assertTrue($result);
+        self::assertSame(
+            [['user' => 7, 'capability' => 'edit_post', 'args' => [42]]],
+            $GLOBALS['__wp_test_user_can_calls'],
+        );
+    }
+
+    #[Test]
+    public function authorizePrefersTheInstanceIdOfARequirementOverTheAttribute(): void
+    {
+        $GLOBALS['__wp_test_user_caps'][7]['edit_post'] = true;
+
+        $this->kernelFor(new WP_User(7))
+            ->authorize(WpRestKernelTestController::class, 'requirementObjectAction', $this->request());
+
+        self::assertSame([99], $GLOBALS['__wp_test_user_can_calls'][0]['args']);
+    }
+
+    #[Test]
+    public function authorizeChecksTheResolvedUserNotTheSessionUser(): void
+    {
+        // The session user holds the capability; the token user the
+        // authenticator resolved does not. The resolved user decides.
+        $GLOBALS['__wp_test_caps']['manage_options'] = true;
+        $GLOBALS['__wp_test_user_caps'][1]['manage_options'] = true;
+
+        $result = $this->kernelFor(new WP_User(7))
+            ->authorize(WpRestKernelTestController::class, 'adminAction', $this->request());
+
+        self::assertInstanceOf(WP_Error::class, $result);
+        self::assertSame(7, $GLOBALS['__wp_test_user_can_calls'][0]['user']);
+        self::assertSame([], $GLOBALS['__wp_test_cap_calls'] ?? []);
+    }
+
+    #[Test]
+    public function authorizeResolvesADefinitionRequirementToItsCapability(): void
+    {
+        $GLOBALS['__wp_test_user_caps'][7]['manage_reports'] = true;
+
+        self::assertTrue($this->kernelFor(new WP_User(7))
+            ->authorize(WpRestKernelTestController::class, 'definitionAction', $this->request()));
+        self::assertTrue($this->kernelFor(new WP_User(7))
+            ->authorize(WpRestKernelTestController::class, 'definitionClassAction', $this->request()));
+    }
+
+    #[Test]
+    public function authorizeResolvesADefinitionClassFromTheContainer(): void
+    {
+        $GLOBALS['__wp_test_user_caps'][7]['approve_quotes'] = true;
+
+        $container = $this->createStub(ContainerInterface::class);
+        $container->method('has')->willReturnCallback(static fn (string $id): bool => $id === WpRestKernelNeedyDefinition::class);
+        $container->method('get')->willReturn(new WpRestKernelNeedyDefinition('approve_quotes'));
+
+        self::assertTrue($this->kernelFor(new WP_User(7), container: $container)
+            ->authorize(WpRestKernelTestController::class, 'needyDefinitionAction', $this->request()));
+    }
+
+    #[Test]
+    public function authorizeDeniesARequirementItCannotResolve(): void
+    {
+        // The definition class needs a constructor argument and is not in the
+        // container: the kernel cannot tell which capability it stands for, so
+        // it denies instead of skipping the requirement.
+        $result = $this->kernelFor(new WP_User(7))
+            ->authorize(WpRestKernelTestController::class, 'needyDefinitionAction', $this->request());
+
+        self::assertInstanceOf(WP_Error::class, $result);
+        self::assertSame('forbidden', $result->get_error_code());
+        self::assertSame([], $GLOBALS['__wp_test_user_can_calls'] ?? []);
+    }
+
+    #[Test]
+    public function authorizeNeverConsultsIsAdminForCapabilities(): void
+    {
+        $GLOBALS['__wp_test_user_caps'][7]['manage_options'] = true;
+
+        $authenticator = $this->createMock(RequestAuthenticatorInterface::class);
+        $authenticator->method('resolveUser')->willReturn(new WP_User(7));
+        $authenticator->expects($this->never())->method('isAdmin');
+
+        $kernel = new WpRestKernel($this->createStub(ContainerInterface::class), $authenticator);
+
+        self::assertTrue($kernel->authorize(WpRestKernelTestController::class, 'adminAction', $this->request()));
     }
 
     #[Test]
@@ -214,6 +351,15 @@ final class WpRestKernelTest extends TestCase
         $kernel->handle(MiddlewarePipelineTestController::class, 'misconfigured', $this->request());
     }
 
+    private function kernelFor(WP_User $user, bool $isAdmin = false, ?ContainerInterface $container = null): WpRestKernel
+    {
+        $authenticator = $this->createStub(RequestAuthenticatorInterface::class);
+        $authenticator->method('resolveUser')->willReturn($user);
+        $authenticator->method('isAdmin')->willReturn($isAdmin);
+
+        return new WpRestKernel($container ?? $this->createStub(ContainerInterface::class), $authenticator);
+    }
+
     private function request(string $method = 'GET'): WP_REST_Request
     {
         $request = new WP_REST_Request();
@@ -253,6 +399,42 @@ final class WpRestKernelTestController
     public function adminAction(): WP_REST_Response
     {
         return RestResponse::success(['admin' => true]);
+    }
+
+    #[Auth(capabilities: ['edit_posts', 'publish_posts'])]
+    public function twoCapabilitiesAction(): WP_REST_Response
+    {
+        return RestResponse::success(['both' => true]);
+    }
+
+    #[Auth(capabilities: ['edit_post'], instanceId: 42)]
+    public function metaCapabilityAction(): WP_REST_Response
+    {
+        return RestResponse::success(['meta' => true]);
+    }
+
+    #[Auth(instanceId: 42, requirements: [new CapabilityRequirement(new CapabilityReference('edit_post'), options: ['instanceid' => 99])])]
+    public function requirementObjectAction(): WP_REST_Response
+    {
+        return RestResponse::success(['requirement' => true]);
+    }
+
+    #[Auth(requirements: [new WpRestKernelReportsDefinition()])]
+    public function definitionAction(): WP_REST_Response
+    {
+        return RestResponse::success(['definition' => true]);
+    }
+
+    #[Auth(requirements: [WpRestKernelReportsDefinition::class])]
+    public function definitionClassAction(): WP_REST_Response
+    {
+        return RestResponse::success(['definition-class' => true]);
+    }
+
+    #[Auth(requirements: [WpRestKernelNeedyDefinition::class])]
+    public function needyDefinitionAction(): WP_REST_Response
+    {
+        return RestResponse::success(['needy' => true]);
     }
 
     /**
@@ -410,5 +592,44 @@ final class ClassMiddlewareTestController
         RestKernelMiddlewareRecorder::$calls[] = 'action';
 
         return RestResponse::success();
+    }
+}
+
+/**
+ * Capability definition the kernel can build with a zero-argument `new`.
+ *
+ * @internal
+ */
+final class WpRestKernelReportsDefinition implements CapabilityDefinitionInterface
+{
+    public function capabilityReference(): CapabilityReference
+    {
+        return new CapabilityReference('manage_reports');
+    }
+
+    public function capabilityOptions(): array
+    {
+        return [];
+    }
+}
+
+/**
+ * Capability definition with a required constructor argument: only the
+ * container can build it.
+ *
+ * @internal
+ */
+final readonly class WpRestKernelNeedyDefinition implements CapabilityDefinitionInterface
+{
+    public function __construct(private string $capability) {}
+
+    public function capabilityReference(): CapabilityReference
+    {
+        return new CapabilityReference($this->capability);
+    }
+
+    public function capabilityOptions(): array
+    {
+        return [];
     }
 }

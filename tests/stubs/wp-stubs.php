@@ -624,6 +624,20 @@ if (!function_exists('current_user_can')) {
     }
 }
 
+// Stubbed user_can() — reads a per-user capability map from global
+// $__wp_test_user_caps[userId][capability] and records each call (user id,
+// capability and extra args) so tests can assert which user was checked and
+// which object id was forwarded.
+if (!function_exists('user_can')) {
+    function user_can(int|WP_User $user, string $capability, mixed ...$args): bool
+    {
+        $userId = $user instanceof WP_User ? $user->ID : $user;
+        $GLOBALS['__wp_test_user_can_calls'][] = ['user' => $userId, 'capability' => $capability, 'args' => $args];
+
+        return (bool) ($GLOBALS['__wp_test_user_caps'][$userId][$capability] ?? false);
+    }
+}
+
 // Stubbed wp_get_current_user() — returns global $__wp_test_current_user or an
 // anonymous WP_User (ID 0).
 if (!function_exists('wp_get_current_user')) {

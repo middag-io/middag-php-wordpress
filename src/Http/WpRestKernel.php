@@ -14,9 +14,12 @@ namespace Middag\WordPress\Http;
 
 use Middag\Framework\Http\Attribute\Auth;
 use Middag\Framework\Http\Attribute\Middleware;
+use Middag\Framework\Http\Auth\CapabilityRequirement;
+use Middag\Framework\Http\Contract\CapabilityDefinitionInterface;
 use Middag\WordPress\Http\Contract\RequestAuthenticatorInterface;
 use Middag\WordPress\Http\Contract\RestRouteMiddlewareInterface;
 use Middag\WordPress\Http\Response\RestResponse;
+use Middag\WordPress\Support\UserSupport;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use ReflectionMethod;
@@ -37,9 +40,10 @@ use WP_User;
  * attributes:
  *
  *  - {@see authorize()} reads `#[Auth]` (method wins over class; absent = login
- *    required, a secure default) and gates through the injected
- *    {@see RequestAuthenticatorInterface} — the same JWT/session seam the
- *    imperative controllers used.
+ *    required, a secure default), resolves the user through the injected
+ *    {@see RequestAuthenticatorInterface} (the session/token seam the
+ *    imperative controllers use) and requires every capability the attribute
+ *    lists of that user, with `user_can()`.
  *  - {@see handle()} composes the route-middleware chain declared with
  *    `#[Middleware]` (the org-scope/RBAC and rate-limit gate) around the action,
  *    resolves the controller from the container, injects the method arguments
@@ -62,6 +66,19 @@ final readonly class WpRestKernel
 
     /**
      * Permission callback: enforce the route's `#[Auth]` requirement.
+     *
+     * 1. `OPTIONS` (CORS preflight) passes.
+     * 2. `login: false` passes.
+     * 3. The authenticator resolves the user: a `WP_Error` is returned as is,
+     *    no user gives `401 unauthorized`.
+     * 4. Every requirement of the attribute (its `capabilities` and its
+     *    `requirements`) must pass `user_can()` for the resolved user, or the
+     *    result is `403 forbidden`. The resolved user may be a token user, so
+     *    the check never reads the session user (`current_user_can()`). The
+     *    object id of a meta capability is the requirement's `instanceid`
+     *    option, else the attribute's `instanceId` when greater than zero.
+     *    A requirement whose capability cannot be resolved is denied, never
+     *    skipped. An attribute with no capability means login only.
      */
     public function authorize(string $controllerClass, string $action, WP_REST_Request $request): true|WP_Error
     {
@@ -85,8 +102,10 @@ final readonly class WpRestKernel
             return new WP_Error('unauthorized', 'User not authenticated.', ['status' => 401]);
         }
 
-        if ($auth->capabilities !== [] && !$this->authenticator->isAdmin($request)) {
-            return new WP_Error('forbidden', 'Access denied.', ['status' => 403]);
+        foreach ($auth->requirements as $requirement) {
+            if (!$this->userMeets($user, $requirement, $auth->instanceId)) {
+                return new WP_Error('forbidden', 'Access denied.', ['status' => 403]);
+            }
         }
 
         return true;
@@ -191,6 +210,74 @@ final readonly class WpRestKernel
         }
 
         return $next($request);
+    }
+
+    /**
+     * Whether the user holds the capability a requirement stands for, with the
+     * meta-capability object id when there is one. Fails closed: a requirement
+     * with no resolvable capability is not met.
+     */
+    private function userMeets(WP_User $user, CapabilityRequirement $requirement, int $instanceId): bool
+    {
+        $capability = $this->capabilityOf($requirement);
+
+        if ($capability === null) {
+            return false;
+        }
+
+        $objectId = isset($requirement->options['instanceid']) && is_numeric($requirement->options['instanceid'])
+            ? (int) $requirement->options['instanceid']
+            : $instanceId;
+
+        return $objectId > 0
+            ? UserSupport::userCan($user, $capability, $objectId)
+            : UserSupport::userCan($user, $capability);
+    }
+
+    /**
+     * The WordPress capability a requirement stands for: its reference key,
+     * else the reference of its definition object, else the reference of its
+     * definition class, built from the container (or with a zero-argument `new`
+     * when not registered). Null when none of them yields a non-empty key.
+     */
+    private function capabilityOf(CapabilityRequirement $requirement): ?string
+    {
+        $capability = $requirement->key()
+            ?? ($requirement->definition ?? $this->buildDefinition($requirement->definitionClass))?->capabilityReference()->key;
+
+        return $capability !== null && $capability !== '' ? $capability : null;
+    }
+
+    private function buildDefinition(?string $definitionClass): ?CapabilityDefinitionInterface
+    {
+        if ($definitionClass === null || !is_a($definitionClass, CapabilityDefinitionInterface::class, true)) {
+            return null;
+        }
+
+        try {
+            $definition = $this->container->has($definitionClass)
+                ? $this->container->get($definitionClass)
+                : $this->instantiateWithoutArguments($definitionClass);
+        } catch (Throwable) {
+            return null;
+        }
+
+        return $definition instanceof CapabilityDefinitionInterface ? $definition : null;
+    }
+
+    /**
+     * @param class-string<CapabilityDefinitionInterface> $class
+     */
+    private function instantiateWithoutArguments(string $class): ?object
+    {
+        $reflection = new ReflectionClass($class);
+        $constructor = $reflection->getConstructor();
+
+        if (!$reflection->isInstantiable() || ($constructor instanceof ReflectionMethod && $constructor->getNumberOfRequiredParameters() > 0)) {
+            return null;
+        }
+
+        return $reflection->newInstance();
     }
 
     /**

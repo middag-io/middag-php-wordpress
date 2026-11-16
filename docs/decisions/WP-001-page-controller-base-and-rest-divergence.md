@@ -2,7 +2,7 @@
 title: 'WordPress HTTP integration'
 status: accepted
 date: 2026-07-24
-last-updated: 2026-11-04
+last-updated: 2026-11-16
 lang: en
 domains: [wordpress, http]
 deciders: [leadership]
@@ -32,16 +32,19 @@ WordPress reaches plugin code through three request paths with different lifecyc
 
 The adapter exposes three routing surfaces and derives every namespace, slug and query var from the component name the consumer injects, never from a literal. Admin pages run through the framework HTTP kernel, so page controllers extend the framework controller base and inherit its middleware pipeline, `#[Auth]` and helpers; the adapter adds only the WordPress login, capability and nonce gates. REST stays on WordPress's own model: a REST controller does not extend the page base, and attribute-routed REST actions are dispatched by a WP-native kernel that reads the same `#[Route]`, `#[Auth]` and `#[Middleware]` attributes but answers with WordPress REST responses and errors. The public surface hands a matched route to the consumer's handler.
 
+Both surfaces give `#[Auth]` capabilities the same meaning: every listed capability is required, with the object id when one is given. They differ only in the user they check. An admin page checks the session user (`current_user_can()`). REST checks the user its authenticator resolved, a token user included (`user_can()`), so a REST capability check never reads the session. A REST requirement whose capability cannot be resolved is denied, never skipped.
+
 ## Consequences
 
 - (+) Two plugins in one request expose disjoint REST roots, menus and query vars.
 - (+) Controllers declare routes, auth and middleware with one attribute vocabulary on every surface.
 - (+) A REST denial or failure stays inside the WordPress REST envelope instead of halting the request.
 - (+) Page controllers keep parity with the framework and Moodle bases, minus Moodle-only concerns.
+- (+) A capability in `#[Auth]` means the same on admin pages and on REST; a non-administrator who holds it passes, an administrator who lacks it does not.
 - (−) One `#[Middleware]` attribute maps to two middleware contracts: the framework's on admin pages and a WP-REST-native one on REST.
 - (−) The REST base is not container-aware. Composing a framework controller role into it is possible but deferred until a consumer needs it.
 - (−) Two REST registrars, imperative and attribute-driven, coexist while consumers migrate.
-- (−) On the REST surface a capability list in `#[Auth]` is enforced as an administrator check, not capability by capability (`src/Http/WpRestKernel.php:88`).
+- (−) A REST authenticator that resolves a user WordPress does not know (no roles, no capabilities) fails every capability check; the authenticator has to map a token to a real `WP_User`.
 
 ## Enforcement
 
@@ -51,5 +54,6 @@ The adapter exposes three routing surfaces and derives every namespace, slug and
 | Page controllers extend the framework controller base and map the WordPress capability gate | test `tests/Http/Controller/AbstractWpControllerTest.php` | coded |
 | Admin pages run through the framework kernel with the WordPress nonce gate | test `tests/Http/WpHttpKernelTest.php` | coded |
 | REST keeps a WP-native kernel that reads the shared attributes | test `tests/Http/WpRestKernelTest.php` | coded |
+| REST requires every `#[Auth]` capability of the resolved user, with the object id, and denies an unresolvable requirement | test `tests/Http/WpRestKernelTest.php` | coded |
 | Surfaces, registrars and dispatch | doc `docs-middag-dev:docs/framework/reference/adapters/wordpress/routing-surfaces.md` | coded |
 | Controller bases and why they do not share a parent | doc `docs-middag-dev:docs/framework/reference/adapters/wordpress/controller-bases.md` | coded |

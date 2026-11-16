@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Middag\WordPress\Http\Contract;
 
 use Middag\WordPress\Http\Auth\WpSessionAuthenticator;
+use Middag\WordPress\Http\Controller\AbstractWpRestController;
 use WP_Error;
 use WP_REST_Request;
 use WP_User;
@@ -43,6 +44,10 @@ interface RequestAuthenticatorInterface
 
     /**
      * Whether the user behind the request is a site administrator.
+     *
+     * Backs {@see AbstractWpRestController::adminPermissionCheck()}
+     * only. `#[Auth]` capabilities are checked capability by capability with
+     * `user_can()` on the resolved user, never through this method.
      */
     public function isAdmin(WP_REST_Request $request): bool;
 }
