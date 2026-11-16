@@ -23,10 +23,10 @@ use ReflectionClass;
 use ReflectionProperty;
 
 /**
- * Architecture guard (O5-LIB-03 / O5-LIB-07): no source class may declare a
+ * Architecture guard: no source class may declare a
  * static property. PHP has no readonly static, so a static property is
  * process-wide mutable state that collides between two plugins running in the
- * same WordPress request (the exact bug LIB-03 removed — InertiaAdapter shared
+ * same WordPress request (the bug that once hit InertiaAdapter shared
  * props, LogSupport logger, AuthMiddleware issuer). Per-request state must be an
  * injected instance dependency instead.
  *

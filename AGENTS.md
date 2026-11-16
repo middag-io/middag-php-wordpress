@@ -36,7 +36,7 @@ Enforced policies (all run under `composer test`):
 ## Decision records
 
 Architecture decisions live in [`docs/decisions/`](docs/decisions/) as `WP-NNN` records in the
-MIDDAG-MADR compact format (`docs-middag-ops` ADR-014): frontmatter, then Context → Considered Options
+MIDDAG-MADR compact format: frontmatter, then Context → Considered Options
 → Decision → Consequences → Enforcement. A record states **why** (the choice, the alternatives, the
 consequences); specification (class lists, catalogs, pipelines, naming tables) lives in the reference
 its Enforcement table points to, at docs.middag.dev (`docs-middag-dev`,
