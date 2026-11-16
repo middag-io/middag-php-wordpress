@@ -126,6 +126,9 @@ composer check   # PHP-CS-Fixer + Rector (dry-run) + PHPStan
 composer test    # PHPUnit (includes the boundary and architecture guards)
 ```
 
+The integration suite (`tests/Integration`) runs on a real WordPress and a real
+MySQL database; see [`tests/Integration/README.md`](tests/Integration/README.md).
+
 `composer.json` pins `config.platform.php` to `8.3.0`, so Composer resolves the
 lowest PHP of the range locally. `composer.lock` is gitignored, like a typical
 library. Git hooks are configured automatically via `post-install-cmd`; the

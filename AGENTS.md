@@ -21,6 +21,7 @@ The architecture lives on the hub, not in this repository. The code is the sourc
 
 - `tests/AdapterPluginIsolationTest.php` — every `Middag\` namespace named in `src/` is one of the OSS namespaces `Middag\WordPress`, `Middag\Framework` or `Middag\Ui` (an allowlist: no other package is named in this repository). Runs with `composer test`.
 - `tests/ClassLoadabilityTest.php` — autoload smoke test over the whole `src/` tree.
+- `tests/Integration/` — integration suite on a real WordPress of each supported major and a real MySQL database (`composer test:integration`, own `phpunit.integration.xml` and bootstrap, never `tests/stubs`). The unit suite excludes it. Setup in [`tests/Integration/README.md`](tests/Integration/README.md).
 
 ### Architecture guards (`tests/Architecture/`)
 
