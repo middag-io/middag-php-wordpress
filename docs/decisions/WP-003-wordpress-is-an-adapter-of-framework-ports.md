@@ -2,7 +2,7 @@
 title: 'WordPress is an adapter of the framework ports'
 status: accepted
 date: 2026-11-04
-last-updated: 2026-11-04
+last-updated: 2026-11-16
 lang: en
 domains: [wordpress, adapters, portability]
 deciders: [leadership]
@@ -40,7 +40,6 @@ The framework reaches a host only through ports, each with an OSS default (FW-01
 - (−) Host events do not pass through the framework hook manager, so the WordPress and Moodle adapters deliver them differently.
 - (−) Without Action Scheduler, jobs run on WP-Cron: traffic-driven, with no retry and no claiming.
 - (−) A token-authenticated API needs a consumer-supplied authenticator.
-- (−) `composer.json` still requires `firebase/php-jwt`, although no file under `src/` uses it (and `NoBundledTokenAuthTest` forbids it).
 
 ## Enforcement
 
@@ -52,4 +51,4 @@ The framework reaches a host only through ports, each with an OSS default (FW-01
 | Host events are native WordPress actions | test `tests/Bus/WpHostEventBridgeTest.php` | coded |
 | Port-by-host matrix | doc `docs-middag-dev:docs/framework/reference/bridge-contracts.md` | coded |
 | Native bridges, Support seams, cron and job drivers, WooCommerce, `$wpdb` | doc `docs-middag-dev:docs/framework/reference/adapters/wordpress/index.md` | coded |
-| No unused token dependency in `composer.json` | dependency check | planned |
+| No unused runtime dependency in `composer.json`, a token codec included | test `tests/Architecture/NoUnusedRuntimeDependencyTest.php` | coded |
