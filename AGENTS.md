@@ -123,12 +123,10 @@ Releases come only from release-please. This lib follows ADR-032 of
 `docs-middag-ops` (the `middag-php-*` version family, amending ADR-003). The
 policy is in [`API-STABILITY.md`](API-STABILITY.md).
 
-- **`1.x` (now).** `fix:` cuts a patch and `feat:` cuts a minor. A break is
-  allowed in a minor only until 2026-11-30 (a recorded exception). It ships as
-  `feat:` (never `fix:`, so never in a patch) with the break described in the
-  body. Never use `!`
-  or `BREAKING CHANGE:`, which would cut `2.0.0` in this lib alone. From
-  2026-12-01 no break lands on `1.x`.
+- **`1.x` (now).** `fix:` cuts a patch and `feat:` cuts a minor. A break ships
+  as `feat:` (never `fix:`, so never in a patch). Never use `!` or
+  `BREAKING CHANGE:`, which would cut `2.0.0` in this lib alone.
+  The 1.x line is pre-stable and unsupported: it gets no backports or security fixes, and the move to 2.0.0 is a clean cut.
 - **From `2.0.0`.** The eight libs share MAJOR.MINOR. A patch carries fixes
   only. `feat:` waits for a family minor window. A break waits for a family
   major window, after a deprecation in a minor. The product owner decides every

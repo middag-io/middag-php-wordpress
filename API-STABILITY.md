@@ -73,17 +73,12 @@ During the `1.x` line the API is **still consolidating**:
 - **Patch** (`1.y.Z`) — bug fixes and `@internal`-only changes. Never a breaking
   `@api` change.
 - **Minor** (`1.Y.0`) — additive `@api` changes (new helpers, new optional
-  parameters, promoting an `@internal` symbol to `@api`). **Until 2026-11-30** a
-  minor may also carry a breaking `@api` change, under a recorded exception
-  that ends on that date and is not renewed.
-- A break on `1.x` ships as `feat:`, so it cuts a minor and never a patch, with
-  the break and the migration described in the commit body, so the CHANGELOG
-  still lists it. It never ships as `fix:`, `refactor:` or `chore:`. Never mark it
-  with `!` or a `BREAKING CHANGE:` footer. release-please would cut `2.0.0` in
-  this lib alone, and the family-window check (below) refuses both markers.
-- **From 2026-12-01 no break lands on `1.x`.** The family is planned to ship
-  `2.0.0` before that date. If the cut slips, `1.x` takes only non-breaking
-  changes until the cut.
+  parameters, promoting an `@internal` symbol to `@api`).
+- A break on `1.x` ships as `feat:`, so it cuts a minor and never a patch. It
+  never ships as `fix:`, `refactor:` or `chore:`. Never mark it with `!` or a
+  `BREAKING CHANGE:` footer. release-please would cut `2.0.0` in this lib alone,
+  and the family-window check (below) refuses both markers.
+- The 1.x line is pre-stable and unsupported: it gets no backports or security fixes, and the move to 2.0.0 is a clean cut.
 - There is no per-lib major. This adapter reaches `2.0.0` together with the
   rest of the family, through a coordinated `Release-As: 2.0.0`, when the product
   owner decides the cut.
@@ -103,8 +98,7 @@ During the `1.x` line the API is **still consolidating**:
   support, a MIDDAG release needs a feature, a deprecation or a new range, or a
   new Symfony minor needs absorbing.
 - **Previous major.** The last minor of a family major gets security fixes
-  only, for 6 months after the next major ships. The last `1.x` minor gets them
-  for 6 months after `2.0.0`.
+  only, for 6 months after the next major ships.
 
 ## The family-window check
 
