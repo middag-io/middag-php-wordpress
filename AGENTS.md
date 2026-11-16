@@ -48,9 +48,11 @@ proprietary record ids. `deciders` is a role id (`leadership`), never a person.
 
 ## Versioning
 
-Releases come only from release-please. The family rules (lifecycle, supported surface, compatibility matrix) are on [Versioning and compatibility](https://docs.middag.dev/libraries/reference/versioning-and-compatibility); the family-window check is in [`API-STABILITY.md`](API-STABILITY.md#versioning).
+Releases come only from release-please. The family rules (lifecycle, supported surface, compatibility matrix) are on [Versioning and compatibility](https://docs.middag.dev/libraries/reference/versioning-and-compatibility); the lifecycle and the family-window check of this repository are in [`API-STABILITY.md`](API-STABILITY.md#how-releases-are-cut).
 
 - **`1.x` (now).** `fix:` cuts a patch and `feat:` cuts a minor. A break ships as `feat:` (never `fix:`). Never use `!` or `BREAKING CHANGE:`, which would cut `2.0.0` in this lib alone. The 1.x line is pre-stable and unsupported, and the move to 2.0.0 is a clean cut.
+- **From `2.0.0`.** The library joins the `middag-php-*` version family: `feat:` waits for a family minor window, and `!` or `BREAKING CHANGE:` for a family major window. Consumers require every family library with the same `^2.N`.
+- A type tagged `@api` is listed in `## The public surface` of [`API-STABILITY.md`](API-STABILITY.md#the-public-surface); a new, promoted or demoted `@api` type updates that list in the same change.
 - **Do not** change `release-please-config.json` versioning or the sibling ranges in `composer.json` outside the coordinated family release.
 
 ## Composer scripts
