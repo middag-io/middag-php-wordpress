@@ -45,16 +45,9 @@ abstract class AbstractWpRestController implements RestControllerInterface
             return true;
         }
 
-        $user = $this->authenticator->resolveUser($request);
-        if (is_wp_error($user)) {
-            return $user;
-        }
+        $user = $this->resolveAuthenticatedUser($request);
 
-        if ($user instanceof WP_User) {
-            return true;
-        }
-
-        return new WP_Error('unauthorized', 'User not authenticated.', ['status' => 401]);
+        return is_wp_error($user) ? $user : true;
     }
 
     /**
@@ -62,13 +55,9 @@ abstract class AbstractWpRestController implements RestControllerInterface
      */
     public function adminPermissionCheck(WP_REST_Request $request): true|WP_Error
     {
-        $user = $this->authenticator->resolveUser($request);
+        $user = $this->resolveAuthenticatedUser($request);
         if (is_wp_error($user)) {
             return $user;
-        }
-
-        if (!$user instanceof WP_User) {
-            return new WP_Error('unauthorized', 'User not authenticated.', ['status' => 401]);
         }
 
         if (!$this->authenticator->isAdmin($request)) {
@@ -87,11 +76,12 @@ abstract class AbstractWpRestController implements RestControllerInterface
     }
 
     /**
-     * Get the authenticated user from the request.
+     * Get the authenticated user from the request, or null when the request is
+     * not authenticated (including a resolved user whose ID is not positive).
      */
     protected function getUser(WP_REST_Request $request): ?WP_User
     {
-        $user = $this->authenticator->resolveUser($request);
+        $user = $this->resolveAuthenticatedUser($request);
 
         return $user instanceof WP_User ? $user : null;
     }
@@ -201,5 +191,26 @@ abstract class AbstractWpRestController implements RestControllerInterface
             'callback' => $callback,
             'permission_callback' => $permission ?? [$this, 'permissionCheck'],
         ]);
+    }
+
+    /**
+     * Resolve the request user and reject anything that is not a logged-in
+     * account. WordPress represents "not logged in" as a WP_User with ID 0,
+     * and an authenticator (for example a token one that falls back to the
+     * session) may hand that object back, so an ID that is not positive is
+     * treated as unauthenticated (401), never as a user.
+     */
+    private function resolveAuthenticatedUser(WP_REST_Request $request): WP_Error|WP_User
+    {
+        $user = $this->authenticator->resolveUser($request);
+        if (is_wp_error($user)) {
+            return $user;
+        }
+
+        if (!$user instanceof WP_User || $user->ID <= 0) {
+            return new WP_Error('unauthorized', 'User not authenticated.', ['status' => 401]);
+        }
+
+        return $user;
     }
 }
