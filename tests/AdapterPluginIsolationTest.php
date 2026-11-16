@@ -35,7 +35,7 @@ use RecursiveIteratorIterator;
 #[CoversNothing]
 final class AdapterPluginIsolationTest extends TestCase
 {
-    private const SRC_DIR = __DIR__ . '/../src';
+    private const string SRC_DIR = __DIR__ . '/../src';
 
     /**
      * Namespace prefixes the OSS adapter must never reference.
@@ -46,7 +46,7 @@ final class AdapterPluginIsolationTest extends TestCase
      * they are deliberately kept here (and out of the public docs) per the OSS
      * boundary policy.
      */
-    private const FORBIDDEN_NAMESPACES = [
+    private const array FORBIDDEN_NAMESPACES = [
         'Middag\Account\\',
         'Middag\Core\\',
         'Middag\Licensing\\',
@@ -54,7 +54,7 @@ final class AdapterPluginIsolationTest extends TestCase
     ];
 
     /** Gold-table string literals the adapter must not hard-code. */
-    private const FORBIDDEN_TABLE_LITERALS = [
+    private const array FORBIDDEN_TABLE_LITERALS = [
         "'middag_items'",
         "'middag_itemmeta'",
         "'middag_item_revision'",

@@ -37,7 +37,7 @@ use Psr\Log\NullLogger;
  */
 final class WpHookfileLoader extends HookfileLoader
 {
-    private const HOOKFILE_BASENAME = 'middag_hooks.php';
+    private const string HOOKFILE_BASENAME = 'middag_hooks.php';
 
     /**
      * @param string      $filterName  WordPress filter consulted for plugin/theme

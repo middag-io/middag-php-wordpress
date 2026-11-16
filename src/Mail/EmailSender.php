@@ -23,7 +23,7 @@ use Psr\Log\LoggerInterface;
  */
 final readonly class EmailSender
 {
-    private const DEFAULT_CONTENT_TYPE = 'text/html';
+    private const string DEFAULT_CONTENT_TYPE = 'text/html';
 
     public function __construct(
         private LoggerInterface $logger = new ErrorLogFallbackLogger(),

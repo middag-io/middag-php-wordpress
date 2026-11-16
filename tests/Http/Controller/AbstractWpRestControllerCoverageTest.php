@@ -287,8 +287,8 @@ final class AbstractWpRestControllerCoverageTest extends TestCase
 
     private function rejectingAuthenticator(string $code): RequestAuthenticatorInterface
     {
-        return new class($code) implements RequestAuthenticatorInterface {
-            public function __construct(private readonly string $code) {}
+        return new readonly class($code) implements RequestAuthenticatorInterface {
+            public function __construct(private string $code) {}
 
             public function resolveUser(WP_REST_Request $request): WP_Error
             {

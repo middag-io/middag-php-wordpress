@@ -48,16 +48,16 @@ use Middag\WordPress\Support\SecuritySupport;
 final class CsrfGuard
 {
     /** HTTP status for a missing/invalid nonce (WordPress-native, not Laravel's 419). */
-    public const STATUS_FORBIDDEN = 403;
+    public const int STATUS_FORBIDDEN = 403;
 
     /** Superglobal key for the `X-WP-Nonce` request header. */
-    private const HEADER_KEY = 'HTTP_X_WP_NONCE';
+    private const string HEADER_KEY = 'HTTP_X_WP_NONCE';
 
     /** Body field name for the classic-form nonce fallback. */
-    private const BODY_KEY = '_wpnonce';
+    private const string BODY_KEY = '_wpnonce';
 
     /** @var list<string> */
-    private const UNSAFE_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
+    private const array UNSAFE_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
 
     /**
      * The WordPress nonce action for a host component's admin SPA. Derived from

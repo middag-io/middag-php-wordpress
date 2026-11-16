@@ -36,9 +36,9 @@ use Psr\SimpleCache\CacheInterface;
  */
 final readonly class CacheSupportPsr16 implements CacheInterface
 {
-    private const GROUP_PREFIX = 'middag_';
+    private const string GROUP_PREFIX = 'middag_';
 
-    private const GENERATION_KEY = '__gen';
+    private const string GENERATION_KEY = '__gen';
 
     private string $group;
 
