@@ -485,14 +485,14 @@
 
 * replace static Container calls with constructor injection ([42414fd](https://github.com/middag-io/middag-php-wordpress/commit/42414fd42c012a6259efcc2f29fe69ed144bbaa9))
 
-## [1.0.1](https://github.com/middag-io/middag-wordpress/compare/v1.0.0...v1.0.1) (2026-05-14)
+## [1.0.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.0.0...v1.0.1) (2026-05-14)
 
 
 ### Bug Fixes
 
-* replace a product-specific env helper with framework-native resolveEnv ([b6a8767](https://github.com/middag-io/middag-wordpress/commit/b6a87675eb01df67363182eecda0bd47128156b8))
+* replace a product-specific env helper with framework-native resolveEnv (b6a8767)
 
-## [1.0.0](https://github.com/middag-io/middag-wordpress/compare/v0.1.1...v1.0.0) (2026-05-14)
+## 1.0.0 (2026-05-14)
 
 
 ### ⚠ BREAKING CHANGES
@@ -501,11 +501,11 @@
 
 ### Code Refactoring
 
-* replace static Container calls with constructor injection ([42414fd](https://github.com/middag-io/middag-wordpress/commit/42414fd42c012a6259efcc2f29fe69ed144bbaa9))
+* replace static Container calls with constructor injection (42414fd)
 
-## [0.1.1](https://github.com/middag-io/middag-wordpress/compare/v0.1.0...v0.1.1) (2026-05-13)
+## 0.1.1 (2026-05-13)
 
 
 ### Bug Fixes
 
-* use semver constraints for internal deps ([5900544](https://github.com/middag-io/middag-wordpress/commit/5900544ce5e054960c46d4f312e6e3d4587c7111))
+* use semver constraints for internal deps (5900544)
