@@ -1,13 +1,14 @@
 # middag-io/wordpress
 
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![CI](https://github.com/middag-io/middag-php-wordpress/actions/workflows/ci.yml/badge.svg)](https://github.com/middag-io/middag-php-wordpress/actions/workflows/ci.yml) [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0) [![PHP](https://img.shields.io/badge/php-%5E8.3-777BB4.svg)](https://www.php.net/)
 
 MIDDAG WordPress adapter — persistence, three routing surfaces (REST / admin /
 public rewrite), hooks, cron, Inertia frontend, and email implementations of the
 [`middag-io/framework`](https://github.com/middag-io/middag-php-framework)
 contracts for WordPress.
 
-> **License:** Apache-2.0.
+**Documentation:** [Reference — WordPress Adapter](https://docs.middag.dev/framework/reference/adapters/wordpress/)
+on docs.middag.dev.
 
 ## What this package is
 
@@ -22,20 +23,28 @@ composition root that wires it in.
 
 ### What it does not include
 
-- No product features or governed MIDDAG domain capabilities (Item/EAV,
-  QueryEngine, Audit/ActivityFeed, payments, CRM, and similar). Those are not
-  part of this adapter.
-- No dependency on any non-OSS MIDDAG package — the adapter builds only on the
-  OSS framework and the host platform. Importing any non-OSS MIDDAG namespace or
-  package is forbidden and enforced by the `AdapterPluginIsolationTest` guard
-  test (part of `composer test`).
+- No product features or governed domain capabilities (item storage, query
+  engine, audit and activity feeds, payments, CRM and similar).
+- No dependency on a MIDDAG package other than the OSS `middag-io/framework`
+  and `middag-io/ui`. The `AdapterPluginIsolationTest` guard test (part of
+  `composer test`) allows only the OSS MIDDAG namespaces in `src/`.
+- No bearer-token or JWT code: a consumer that accepts tokens injects its own
+  `RequestAuthenticatorInterface`.
 - No bundled WordPress plugin. You wire the adapter into your own plugin.
 
 ## Requirements
 
-- PHP `^8.3` (tested on 8.3, 8.4 and 8.5)
-- `ext-json`
-- A WordPress site (the adapter targets WordPress runtime APIs)
+| Item | Supported |
+|---|---|
+| PHP | `^8.3`: 8.3, 8.4 and 8.5, with `ext-json` |
+| Symfony | `^7.4 \|\| ^8.1` for every Symfony component it requires. PHP 8.3 resolves Symfony 7.4; PHP 8.4 and 8.5 can resolve 8.x |
+| `middag-io/framework` | `^1.13` on the `1.x` line (it brings `middag-io/ui`) |
+| WordPress | 7.0 and 7.1 (the latest major and the previous one) |
+
+CI runs the test suite on PHP 8.3, 8.4 and 8.5 at the lowest platform, a
+`highest` job on PHP 8.4 and 8.5 that asserts the Symfony 8 major, and PHPStan
+against the WordPress 7.0 and 7.1 stubs. The platform rules are on
+[Platform](https://docs.middag.dev/libraries/reference/platform).
 
 ## Installation
 
@@ -57,10 +66,10 @@ call `YourKernel::init()` on `plugins_loaded`. Boot wires `HookRegistrar` and
 `CronRegistrar` (`init`, priority 5) and `RestRouteRegistrar`
 (`rest_api_init`) whenever your container binds them — everything
 product-specific goes in your `onBoot()` override. The kernel holds no static
-state; the singleton lives on YOUR subclass, so two MIDDAG plugins in one
-request never share a kernel.
+state; the singleton lives on YOUR subclass, so two plugins built on the
+adapter never share a kernel in one request.
 
-Two obligations the host must still satisfy at boot:
+What the host must still do at boot:
 
 - **Inject the component identity.** Build
   `new WpComponentContext($componentName, $assetVersion, $basePath)` once and
@@ -70,12 +79,29 @@ Two obligations the host must still satisfy at boot:
   `EmailSender`) receive it by injection. Do **not** register it with the
   framework's `HostContext::set()`: that slot is one per PHP process, and with
   several plugins in one request the last plugin to boot would win.
-- **Register your config prefixes.** `WpConfigResolver` defaults to the neutral
-  `MIDDAGLIB_` / `middaglib_` prefixes; bind it with your own pair.
+- **Pass your own names.** Every adapter default uses the neutral `middaglib`
+  marker, which names no product. Bind the classes with your plugin's own
+  values:
 
-See [WP-002](docs/decisions/WP-002-config-resolver-neutral-default-prefix.md)
-for the decision and the
-[WordPress adapter reference](https://docs.middag.dev/framework/reference/adapters/wordpress/)
+  | Class | Default | Constructor argument |
+  |---|---|---|
+  | `WpConfigResolver` | `MIDDAGLIB_` / `middaglib_` | `$envPrefix`, `$optionPrefix` |
+  | `WpHostEventBridge` | hook prefix `middaglib/` | `$hookPrefix` |
+  | `WpHookfileLoader` | filter `middaglib_hookfiles`, file `middaglib_hooks.php` | `$filterName`, `$hookfileName` |
+  | `WpTranslator` | text domain `middaglib` | `$defaultDomain` |
+
+  `CacheSupportPsr16` stores each cache area in the `wp_cache` group
+  `middaglib_{area}`.
+
+REST routes declared with `#[Auth]` require login by default. Every capability
+an `#[Auth]` lists must pass `user_can()` for the user the injected
+`RequestAuthenticatorInterface` resolved (a token user included), with the
+`instanceId` as the object id of a meta capability. Grant your plugin's
+capabilities to the roles that need them, administrators included.
+
+See [WP-002](docs/decisions/WP-002-config-resolver-neutral-default-prefix.md),
+[Configuration & Identity](https://docs.middag.dev/framework/reference/adapters/wordpress/configuration)
+and [Routing Surfaces](https://docs.middag.dev/framework/reference/adapters/wordpress/routing-surfaces)
 for the details.
 
 Logging needs no priming: the adapter's operational sites (cron dispatch,
@@ -96,54 +122,21 @@ Run the quality gates and the test suite:
 
 ```bash
 composer check   # PHP-CS-Fixer + Rector (dry-run) + PHPStan
-composer test    # PHPUnit (includes the boundary guard test)
+composer test    # PHPUnit (includes the boundary and architecture guards)
 ```
 
-Git hooks are configured automatically via `post-install-cmd`. The `commit-msg`
-hook enforces [Conventional Commits](https://www.conventionalcommits.org/).
-
-### Working against a sibling framework checkout
-
-During development the adapter can resolve `middag-io/framework` from a sibling
-path repository (`../middag-php-framework`, symlinked). Per ADR-013 this path
-repository is declared in the **root/consumer** `composer.json` of the monorepo
-workspace — **not** in this package's `composer.json`, which carries no
-`repositories` entry. Composer only reads the root package's `repositories`, so
-a dependency's own path repos would be inert for consumers anyway. This is a
-**development-only** convenience for editing the framework and the adapter side
-by side. Published releases resolve the dependency through the normal Composer
-registry — the path repository has no effect on consumers.
-
-### `composer.lock` is gitignored
-
-Like a typical library, this repo does not commit `composer.lock`; consumers pin
-versions in their own application. Because the development setup may use a path
-repository for the framework, a **local** `composer.lock` can show path or dev
-references. That is expected local development state and **not** a defect in the
-released package.
-
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the full contributor setup,
-including the dependency-resolution notes.
-
-### Commit format
-
-```
-type(scope): description
-
-Types: feat, fix, chore, docs, style, refactor, perf, test, build, ci, revert
-```
+`composer.json` pins `config.platform.php` to `8.3.0`, so Composer resolves the
+lowest PHP of the range locally. `composer.lock` is gitignored, like a typical
+library. Git hooks are configured automatically via `post-install-cmd`; the
+`commit-msg` hook enforces [Conventional Commits](https://www.conventionalcommits.org/).
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the contributor setup.
 
 ### Releases
 
 Releases are managed by [release-please](https://github.com/googleapis/release-please).
-Conventional commits merged to `main` open a Release PR automatically.
-
-The package is on `1.x`. From `2.0.0` it shares MAJOR.MINOR with the other
-`middag-php-*` libraries, as one version family: a patch carries only fixes,
-and a family minor or major is decided by the product owner. A consumer then
-declares one `^2.N` range for every sibling. Every PR runs the family-window
-check (`php-version-family-check / check`). See
-[`API-STABILITY.md`](API-STABILITY.md) for the policy and the check.
+The package is on `1.x`, which is pre-stable and unsupported; from `2.0.0` it
+joins the `middag-php-*` version family. See [`API-STABILITY.md`](API-STABILITY.md)
+and [Versioning and compatibility](https://docs.middag.dev/libraries/reference/versioning-and-compatibility).
 
 ## License
 
