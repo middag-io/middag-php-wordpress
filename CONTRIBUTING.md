@@ -5,7 +5,7 @@ host adapter for the [MIDDAG framework](https://github.com/middag-io/middag-php-
 
 ## Getting started
 
-Requirements: PHP 8.2+ and Composer 2.
+Requirements: PHP 8.3+ and Composer 2.
 
 ```bash
 git clone https://github.com/middag-io/middag-php-wordpress

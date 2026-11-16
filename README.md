@@ -33,7 +33,7 @@ composition root that wires it in.
 
 ## Requirements
 
-- PHP `^8.2` (tested on 8.2, 8.3, 8.4)
+- PHP `^8.3` (tested on 8.3, 8.4 and 8.5)
 - `ext-json`
 - A WordPress site (the adapter targets WordPress runtime APIs)
 

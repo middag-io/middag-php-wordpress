@@ -155,5 +155,5 @@ policy is in [`API-STABILITY.md`](API-STABILITY.md).
 - `composer fix:all` — style → rector → style (re-runs style after rector)
 - `composer test` — PHPUnit (includes the boundary and loadability guard tests)
 - `composer test:cov` — PHPUnit with coverage (`XDEBUG_MODE=coverage`, text report)
-- `composer lint:php82` — PHP 8.2 parse-level lint (`bin/lint-php82.sh`)
+- `composer lint:php83` — PHP 8.3 parse-level lint (`bin/lint-php83.sh`)
 - `post-install-cmd` / `post-update-cmd` — register `.githooks` (`commit-msg` enforces Conventional Commits)

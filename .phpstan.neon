@@ -8,6 +8,7 @@ parameters:
     # `"…/SPL.stub" is not a file` once the lending project is gone. `.cache/` is
     # already gitignored here.
     tmpDir: %currentWorkingDirectory%/.cache/phpstan
+    phpVersion: 80300
     level: 6
     paths:
         - src
