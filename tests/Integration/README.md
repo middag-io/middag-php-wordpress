@@ -40,5 +40,7 @@ previous one), on the newest patch release of each.
 
 The bootstrap drops every table with the `wp_` prefix in that database and
 installs a fresh site on each run, so point it at a database used for nothing
-else. `WORDPRESS_MAJOR` is optional; when set, a test asserts that the loaded
+else. `WORDPRESS_DB_NAME`, `WORDPRESS_DB_USER` and `WORDPRESS_DB_HOST` are
+required: the generated `wp-config.php` refuses to run without them instead of
+falling back to a guessed database. `WORDPRESS_MAJOR` is optional; when set, a test asserts that the loaded
 WordPress belongs to that major.

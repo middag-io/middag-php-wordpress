@@ -69,10 +69,19 @@ cat >"$target/wp-config.php" <<'PHP'
 
 // Written by bin/wp-integration-setup.sh for the integration suite only.
 
-define('DB_NAME', getenv('WORDPRESS_DB_NAME') ?: 'wordpress');
-define('DB_USER', getenv('WORDPRESS_DB_USER') ?: 'root');
-define('DB_PASSWORD', getenv('WORDPRESS_DB_PASSWORD') ?: '');
-define('DB_HOST', getenv('WORDPRESS_DB_HOST') ?: '127.0.0.1');
+// The suite drops every table with the prefix below, so the database is never
+// guessed: each connection setting must come from the environment.
+foreach (['WORDPRESS_DB_NAME', 'WORDPRESS_DB_USER', 'WORDPRESS_DB_HOST'] as $name) {
+    if (getenv($name) === false || getenv($name) === '') {
+        fwrite(STDERR, $name . " is not set; refusing to guess the integration database.\n");
+        exit(1);
+    }
+}
+
+define('DB_NAME', getenv('WORDPRESS_DB_NAME'));
+define('DB_USER', getenv('WORDPRESS_DB_USER'));
+define('DB_PASSWORD', (string) getenv('WORDPRESS_DB_PASSWORD'));
+define('DB_HOST', getenv('WORDPRESS_DB_HOST'));
 define('DB_CHARSET', 'utf8mb4');
 define('DB_COLLATE', '');
 

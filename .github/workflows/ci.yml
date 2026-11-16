@@ -28,6 +28,7 @@ jobs:
     with:
       php-versions: '["8.3", "8.4", "8.5"]'
       tool-cache-paths: .cache
+      lint-script: lint:php83
       audit-blocking-severities: critical, high
 
   # Second call of the same component: removes the platform pin and resolves
