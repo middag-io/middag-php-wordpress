@@ -43,6 +43,14 @@ composer check   # PHP-CS-Fixer (dry-run) + Rector (dry-run) + PHPStan
 composer test    # PHPUnit (includes the boundary guard test)
 ```
 
+A change to code that calls WordPress also runs the integration suite, on a
+real WordPress and a real MySQL database
+([`tests/Integration/README.md`](tests/Integration/README.md)):
+
+```bash
+composer test:integration
+```
+
 Auto-fix style and Rector findings with:
 
 ```bash

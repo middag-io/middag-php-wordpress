@@ -82,6 +82,7 @@
     "fix:style": "php-cs-fixer fix --verbose --show-progress=none --config=.php-cs-fixer.dist.php",
     "fix:rector": "rector process --config=.php-rector.php --no-progress-bar",
     "test": "phpunit",
+    "test:integration": "phpunit --configuration=phpunit.integration.xml",
     "test:cov": "XDEBUG_MODE=coverage phpunit --coverage-text",
     "lint:php83": "bin/lint-php83.sh"
   }
