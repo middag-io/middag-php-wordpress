@@ -2,15 +2,12 @@
 
 ## Supported versions
 
-This library follows [semantic versioning](https://semver.org/). Security fixes
-land on the latest released minor version; only the most recent tagged release
-of the `1.x` line is supported.
+The 1.x line is pre-stable and unsupported: it gets no backports or security fixes, and the move to 2.0.0 is a clean cut.
 
 From `2.0.0` this library is part of the `middag-php-*` version family (see
 [`API-STABILITY.md`](API-STABILITY.md)). The latest family minor is supported.
 The last minor of the previous family major gets security fixes only, for 6
-months after the next major ships. The last `1.x` minor gets them for 6 months
-after `2.0.0`.
+months after the next major ships.
 
 ## Reporting a vulnerability
 

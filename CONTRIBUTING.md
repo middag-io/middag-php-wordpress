@@ -70,12 +70,10 @@ The full policy is in [`API-STABILITY.md`](API-STABILITY.md), which follows
 ADR-032 of `docs-middag-ops` (the version family of the `middag-php-*`
 libraries; it amends ADR-003 for them). In short:
 
-- **On `1.x`:** `fix:` cuts a patch and `feat:` cuts a minor. Until 2026-11-30 a
-  minor may carry a breaking change, under a recorded exception that is not
-  renewed. Ship it as `feat:` (never `fix:`, so it never lands in a patch) and
-  describe the break and its migration in the commit body. Never use `!` or a
+- **On `1.x`:** `fix:` cuts a patch and `feat:` cuts a minor. Ship a break as
+  `feat:` (never `fix:`, so it never lands in a patch). Never use `!` or a
   `BREAKING CHANGE:` footer: release-please would cut `2.0.0` in this lib alone.
-  From 2026-12-01 no break lands on `1.x`.
+  The 1.x line is pre-stable and unsupported: it gets no backports or security fixes, and the move to 2.0.0 is a clean cut.
 - **From `2.0.0`:** this lib shares MAJOR.MINOR with the other seven
   `middag-php-*` libraries. A patch carries only fixes. A `feat:` waits for a
   family minor window. A break waits for a family major window, after a
