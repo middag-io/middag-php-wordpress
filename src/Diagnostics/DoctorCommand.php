@@ -29,6 +29,12 @@ use WP_CLI;
  * through an injected writer; {@see __invoke()} is the thin WP-CLI glue that
  * halts with that code. Register it with {@see DoctorCommandRegistrar}.
  *
+ * A health gate should pass the full list of packages it expects with
+ * `--expect`. The constructor list belongs to the package that registered the
+ * command: if that package fails to load, its list never runs, and a
+ * sibling's registration of the same root may answer instead. So a
+ * constructor list should name the sibling packages too.
+ *
  * @api
  */
 final readonly class DoctorCommand

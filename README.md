@@ -132,6 +132,13 @@ $registry->register(new PackageProbe('acme-shop', ACME_SHOP_VERSION, AcmeShopKer
 (new DoctorCommandRegistrar(new DoctorCommand($registry, ['acme-shop']), 'acme'))->register();
 ```
 
+A gate should pass the full package list with `--expect` (for example
+`wp acme doctor --expect=acme-shop,acme-quotes`). The constructor list only
+runs when the package that registered the command loaded, so it cannot catch
+that package's own absence. A package whose bootstrap chooses between
+autoloaders passes the chosen file as `PackageProbe::$autoloaderPath`, and the
+`autoload` check reports it.
+
 The built-in checks prove boot, not render. A package can add a
 `DiagnosticCheckInterface` (or a `CallbackCheck`) with `CheckScope::Render`,
 for example "the admin page still emits its HTML shell and the core script

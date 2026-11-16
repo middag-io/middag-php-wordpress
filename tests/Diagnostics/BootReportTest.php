@@ -93,6 +93,24 @@ final class BootReportTest extends TestCase
     }
 
     #[Test]
+    public function theDeclaredAutoloaderPathIsReportedAndAMissingOneFails(): void
+    {
+        $autoloader = dirname(__DIR__, 2) . '/vendor/autoload.php';
+        $missing = '/nonexistent/vendor/autoload.php';
+
+        $found = BootReport::collect([new PackageProbe('acme-shop', '1.0.0', entryClass: PackageProbe::class, autoloaderPath: $autoloader)]);
+        $absent = BootReport::collect([new PackageProbe('acme-shop', '1.0.0', entryClass: PackageProbe::class, autoloaderPath: $missing)]);
+
+        $foundCheck = $this->resultsByName($found->packages[0])['autoload'];
+        self::assertSame(CheckStatus::Pass, $foundCheck->status);
+        self::assertStringContainsString('via autoloader ' . $autoloader, $foundCheck->message);
+
+        $absentCheck = $this->resultsByName($absent->packages[0])['autoload'];
+        self::assertSame(CheckStatus::Fail, $absentCheck->status);
+        self::assertStringContainsString($missing . ' does not exist', $absentCheck->message);
+    }
+
+    #[Test]
     public function aKernelClassThatIsNotAKernelFails(): void
     {
         /** @var class-string<DiagnosticsKernel> $notAKernel */

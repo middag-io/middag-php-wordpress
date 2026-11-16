@@ -56,8 +56,22 @@ final readonly class PackageInspector
         }
 
         $file = (new ReflectionClass($class))->getFileName();
+        $message = sprintf('%s resolved from %s', $class, $file === false ? '(internal)' : $file);
 
-        return CheckResult::pass('autoload', sprintf('%s resolved from %s', $class, $file === false ? '(internal)' : $file));
+        return $this->withAutoloaderPath($message, $probe->autoloaderPath);
+    }
+
+    private function withAutoloaderPath(string $message, ?string $autoloaderPath): CheckResult
+    {
+        if ($autoloaderPath === null) {
+            return CheckResult::pass('autoload', $message);
+        }
+
+        if (!is_file($autoloaderPath)) {
+            return CheckResult::fail('autoload', sprintf('%s, but the declared autoloader %s does not exist', $message, $autoloaderPath));
+        }
+
+        return CheckResult::pass('autoload', sprintf('%s via autoloader %s', $message, $autoloaderPath));
     }
 
     private function kernel(PackageProbe $probe): CheckResult

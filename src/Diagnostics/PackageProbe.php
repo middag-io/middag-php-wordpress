@@ -24,8 +24,11 @@ use Middag\WordPress\Runtime\Kernel;
  * built-in checks it drives are:
  *
  * - `autoload`: the entry class (or the kernel class when no entry class is
- *   given) resolves through the autoloader, and from which file, which shows
- *   whether the plugin's own `vendor/` or a shared one won;
+ *   given) resolves through the autoloader, and from which file. A class file
+ *   alone does not tell which `vendor/autoload.php` was loaded, so a package
+ *   whose bootstrap chooses between autoloaders (its own `vendor/` or a shared
+ *   one) passes the chosen path as `autoloaderPath`; the check reports it and
+ *   fails when that file does not exist;
  * - `kernel`: the kernel subclass reports {@see Kernel::isBooted()} (read-only:
  *   it never boots the kernel);
  * - `version`: the package declared a version.
@@ -46,13 +49,15 @@ use Middag\WordPress\Runtime\Kernel;
 final readonly class PackageProbe
 {
     /**
-     * @param string                         $name        stable package identifier, matched by the
-     *                                                    command's expected-package list
-     * @param string                         $version     declared package version; empty is a warning
-     * @param null|class-string<Kernel>      $kernelClass the package's kernel subclass, when it has one
-     * @param null|class-string              $entryClass  class proving the autoloader resolved the
-     *                                                    package; defaults to the kernel class
-     * @param list<DiagnosticCheckInterface> $checks      further package or host checks
+     * @param string                         $name           stable package identifier, matched by the
+     *                                                       command's expected-package list
+     * @param string                         $version        declared package version; empty is a warning
+     * @param null|class-string<Kernel>      $kernelClass    the package's kernel subclass, when it has one
+     * @param null|class-string              $entryClass     class proving the autoloader resolved the
+     *                                                       package; defaults to the kernel class
+     * @param list<DiagnosticCheckInterface> $checks         further package or host checks
+     * @param null|string                    $autoloaderPath the `autoload.php` the package's bootstrap
+     *                                                       required, when it chooses between several
      *
      * @throws InvalidArgumentException when the name is empty
      */
@@ -62,6 +67,7 @@ final readonly class PackageProbe
         public ?string $kernelClass = null,
         public ?string $entryClass = null,
         public array $checks = [],
+        public ?string $autoloaderPath = null,
     ) {
         if (trim($name) === '') {
             throw new InvalidArgumentException('A diagnostics package probe needs a non-empty name.');
