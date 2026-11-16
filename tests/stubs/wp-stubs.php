@@ -1353,3 +1353,33 @@ if (!function_exists('wp_die')) {
         throw new WpDieSignal($message, $args);
     }
 }
+
+// ─── WP-CLI stub ─────────────────────────────────────────────────────────────
+
+// Stubbed WP_CLI — records add_command() in $__wp_test_cli_commands, line() in
+// $__wp_test_cli_lines and halt() in $__wp_test_cli_halt. Real WP-CLI exits on
+// halt(); the stub returns so a test can assert the code. The WP_CLI constant is
+// NOT defined here: a test that needs a WP-CLI context defines it in a separate
+// process.
+if (!class_exists('WP_CLI')) {
+    class WP_CLI
+    {
+        /** @param array<string, mixed> $args */
+        public static function add_command(string $name, mixed $callable, array $args = []): bool
+        {
+            $GLOBALS['__wp_test_cli_commands'][$name] = ['callable' => $callable, 'args' => $args];
+
+            return true;
+        }
+
+        public static function line(string $message = ''): void
+        {
+            $GLOBALS['__wp_test_cli_lines'][] = $message;
+        }
+
+        public static function halt(int $return_code): void
+        {
+            $GLOBALS['__wp_test_cli_halt'] = $return_code;
+        }
+    }
+}

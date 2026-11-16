@@ -92,6 +92,8 @@ What the host must still do at boot:
   | `WpHookfileLoader` | filter `middaglib_hookfiles`, file `middaglib_hooks.php` | `$filterName`, `$hookfileName` |
   | `WpTranslator` | text domain `middaglib` | `$defaultDomain` |
   | `CacheSupportPsr16` | `wp_cache` group `middaglib_{area}` | `$groupPrefix` |
+  | `DiagnosticsRegistry` | filter `middaglib_diagnostics` | `$filterName` |
+  | `DoctorCommandRegistrar` | WP-CLI root `middaglib` (`wp middaglib doctor`) | `$root` |
 
   `$hookfileName` comes after `$logger`, so set it with a named argument:
   `new WpHookfileLoader(filterName: 'acme_hookfiles', hookfileName: 'acme_hooks.php')`.
@@ -115,6 +117,37 @@ email send/render) resolve their PSR-3 logger per call through
 `Middag\WordPress\Support\LogSupport::resolve($container)` — an explicit
 `Psr\Log\LoggerInterface` binding wins, then the framework's channel
 `LoggerFactory`, then the `error_log()` fallback.
+
+### Boot diagnostics
+
+`Middag\WordPress\Diagnostics` answers "did my package boot?" from the command
+line. Each package declares a `PackageProbe` (name, version, kernel class,
+optional entry class and extra checks) on a `DiagnosticsRegistry` from its main
+plugin file, before the kernel boots. The registry rides on a WordPress filter,
+so every plugin that shares the filter name meets in one report.
+`DoctorCommandRegistrar` adds `wp <root> doctor`, which prints a `BootReport`
+(autoloader resolved and from which file, kernel booted, version, the package's
+own checks). It exits `1` when a check fails or an expected package never
+registered (`--expect=a,b`) and `0` otherwise; `--strict` also fails on
+warnings and `--format=json` prints one JSON document.
+
+```php
+$registry = new DiagnosticsRegistry('acme_diagnostics');
+$registry->register(new PackageProbe('acme-shop', ACME_SHOP_VERSION, AcmeShopKernel::class));
+(new DoctorCommandRegistrar(new DoctorCommand($registry, ['acme-shop']), 'acme'))->register();
+```
+
+A gate should pass the full package list with `--expect` (for example
+`wp acme doctor --expect=acme-shop,acme-quotes`). The constructor list only
+runs when the package that registered the command loaded, so it cannot catch
+that package's own absence. A package whose bootstrap chooses between
+autoloaders passes the chosen file as `PackageProbe::$autoloaderPath`, and the
+`autoload` check reports it.
+
+The built-in checks prove boot, not render. A package can add a
+`DiagnosticCheckInterface` (or a `CallbackCheck`) with `CheckScope::Render`,
+for example "the admin page still emits its HTML shell and the core script
+bundles". Until one runs, the report states that it covers boot only.
 
 ## Development
 
