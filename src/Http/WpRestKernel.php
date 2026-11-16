@@ -14,11 +14,13 @@ namespace Middag\WordPress\Http;
 
 use Middag\Framework\Http\Attribute\Auth;
 use Middag\Framework\Http\Attribute\Middleware;
+use Middag\Framework\Http\Auth\CapabilityReference;
 use Middag\Framework\Http\Auth\CapabilityRequirement;
 use Middag\Framework\Http\Contract\CapabilityDefinitionInterface;
 use Middag\WordPress\Http\Contract\RequestAuthenticatorInterface;
 use Middag\WordPress\Http\Contract\RestRouteMiddlewareInterface;
 use Middag\WordPress\Http\Response\RestResponse;
+use Middag\WordPress\Support\LogSupport;
 use Middag\WordPress\Support\UserSupport;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
@@ -70,15 +72,31 @@ final readonly class WpRestKernel
      * 1. `OPTIONS` (CORS preflight) passes.
      * 2. `login: false` passes.
      * 3. The authenticator resolves the user: a `WP_Error` is returned as is,
-     *    no user gives `401 unauthorized`.
+     *    no user, or a user with an ID that is not positive (WordPress's
+     *    logged-out user is ID 0), gives `401 unauthorized`.
      * 4. Every requirement of the attribute (its `capabilities` and its
      *    `requirements`) must pass `user_can()` for the resolved user, or the
      *    result is `403 forbidden`. The resolved user may be a token user, so
-     *    the check never reads the session user (`current_user_can()`). The
-     *    object id of a meta capability is the requirement's `instanceid`
-     *    option, else the attribute's `instanceId` when greater than zero.
+     *    the check never reads the session user (`current_user_can()`).
      *    A requirement whose capability cannot be resolved is denied, never
      *    skipped. An attribute with no capability means login only.
+     * 5. The object id of a meta capability is the requirement's `instanceid`
+     *    option, else the attribute's `instanceId`. An `instanceid` option
+     *    that is not a positive integer, or a negative `instanceId`, is
+     *    denied: an explicit but invalid object id never degrades to a check
+     *    without one. An `instanceId` of 0 (the default) means "no object":
+     *    the capability is checked as a primitive one, and core meta
+     *    capabilities (`edit_post` and the like) then map to `do_not_allow`
+     *    in `map_meta_cap()`, so they are denied.
+     * 6. A `Throwable` while the attribute or a capability is resolved, or
+     *    while `user_can()` runs, is logged and denied with `403 forbidden`;
+     *    it never leaves the permission callback as a 500.
+     *
+     * The `host` of a {@see CapabilityReference} is not read: the framework
+     * defines no host convention, so the key goes to `user_can()` whatever the
+     * host says. A key no role holds is denied;
+     * a multisite super admin passes any key except `do_not_allow`, which
+     * grants nothing a super admin does not already hold.
      */
     public function authorize(string $controllerClass, string $action, WP_REST_Request $request): true|WP_Error
     {
@@ -86,7 +104,11 @@ final readonly class WpRestKernel
             return true;
         }
 
-        $auth = $this->authFor($controllerClass, $action);
+        try {
+            $auth = $this->authFor($controllerClass, $action);
+        } catch (Throwable $throwable) {
+            return $this->denyOnFailure($throwable, $controllerClass, $action);
+        }
 
         if (!$auth->login) {
             return true;
@@ -98,13 +120,19 @@ final readonly class WpRestKernel
             return $user;
         }
 
-        if (!$user instanceof WP_User) {
+        if (!$user instanceof WP_User || $user->ID <= 0) {
             return new WP_Error('unauthorized', 'User not authenticated.', ['status' => 401]);
         }
 
         foreach ($auth->requirements as $requirement) {
-            if (!$this->userMeets($user, $requirement, $auth->instanceId)) {
-                return new WP_Error('forbidden', 'Access denied.', ['status' => 403]);
+            try {
+                $isMet = $this->userMeets($user, $requirement, $auth->instanceId);
+            } catch (Throwable $throwable) {
+                return $this->denyOnFailure($throwable, $controllerClass, $action);
+            }
+
+            if (!$isMet) {
+                return $this->forbidden();
             }
         }
 
@@ -212,26 +240,70 @@ final readonly class WpRestKernel
         return $next($request);
     }
 
+    private function forbidden(): WP_Error
+    {
+        return new WP_Error('forbidden', 'Access denied.', ['status' => 403]);
+    }
+
+    /**
+     * Deny a request whose authorization subject could not be resolved, and
+     * log why. Fails closed: the throw becomes a 403, never a 500. A logger
+     * that throws in turn is ignored, so logging cannot reopen the 500.
+     */
+    private function denyOnFailure(Throwable $throwable, string $controllerClass, string $action): WP_Error
+    {
+        try {
+            LogSupport::resolve($this->container, 'wordpress', 'http')->error(
+                'REST authorization failed while resolving the route requirements; the request is denied.',
+                ['exception' => $throwable, 'controller' => $controllerClass, 'action' => $action],
+            );
+        } catch (Throwable) {
+            // The request is already denied; a broken logger must not turn the denial into a 500.
+        }
+
+        return $this->forbidden();
+    }
+
     /**
      * Whether the user holds the capability a requirement stands for, with the
      * meta-capability object id when there is one. Fails closed: a requirement
-     * with no resolvable capability is not met.
+     * with no resolvable capability, or with an invalid object id, is not met.
      */
     private function userMeets(WP_User $user, CapabilityRequirement $requirement, int $instanceId): bool
     {
         $capability = $this->capabilityOf($requirement);
+        $objectId = $this->objectIdOf($requirement, $instanceId);
 
-        if ($capability === null) {
+        if ($capability === null || $objectId === null) {
             return false;
         }
-
-        $objectId = isset($requirement->options['instanceid']) && is_numeric($requirement->options['instanceid'])
-            ? (int) $requirement->options['instanceid']
-            : $instanceId;
 
         return $objectId > 0
             ? UserSupport::userCan($user, $capability, $objectId)
             : UserSupport::userCan($user, $capability);
+    }
+
+    /**
+     * The meta-capability object id of a requirement: its `instanceid` option
+     * when set, else the attribute's `instanceId`. Zero means "no object".
+     * Null means an explicit but invalid id (an option that is not a positive
+     * integer, or a negative attribute id), which the caller denies.
+     */
+    private function objectIdOf(CapabilityRequirement $requirement, int $instanceId): ?int
+    {
+        if (!isset($requirement->options['instanceid'])) {
+            return $instanceId >= 0 ? $instanceId : null;
+        }
+
+        $option = $requirement->options['instanceid'];
+
+        if (!is_int($option) && !is_string($option)) {
+            return null;
+        }
+
+        $objectId = filter_var($option, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+
+        return is_int($objectId) ? $objectId : null;
     }
 
     /**
