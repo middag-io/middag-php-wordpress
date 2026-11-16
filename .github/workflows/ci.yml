@@ -86,3 +86,59 @@ jobs:
 
       - name: PHPStan against the matrix stubs
         run: composer check:stan
+
+  # Integration suite, specific to this repository: tests/Integration runs on
+  # a real WordPress and a real MySQL database (the unit suite of
+  # php-library-check runs on hand-written stubs). Support window: the adapter
+  # supports the latest WordPress major and the previous one; the previous
+  # major leaves this matrix 6 months after a new major is released.
+  # bin/wp-integration-setup.sh installs the newest patch release of each
+  # major from wordpress.org and verifies its checksum. No cache step: caching
+  # belongs to the shared components.
+  wordpress-integration:
+    name: Integration (WordPress ${{ matrix.wordpress }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        wordpress: ['7.0', '7.1']
+    services:
+      mysql:
+        image: mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902
+        env:
+          MYSQL_DATABASE: wordpress
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+          MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+        ports:
+          - 127.0.0.1:3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --host=127.0.0.1 --user=wordpress --password=wordpress"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+    env:
+      WORDPRESS_DIR: ${{ github.workspace }}/.wordpress/${{ matrix.wordpress }}
+      WORDPRESS_MAJOR: ${{ matrix.wordpress }}
+      WORDPRESS_DB_HOST: 127.0.0.1:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: middag-io/actions/php-composer-setup@php-composer-setup-v1
+        with:
+          php-version: '8.3'
+          php-extensions: mbstring, xml, mysqli
+
+      - name: Install WordPress ${{ matrix.wordpress }}
+        run: bin/wp-integration-setup.sh "$WORDPRESS_MAJOR" "$WORDPRESS_DIR"
+
+      - name: Integration suite
+        run: composer test:integration

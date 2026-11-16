@@ -42,8 +42,10 @@ composition root that wires it in.
 | WordPress | 7.0 and 7.1 (the latest major and the previous one) |
 
 CI runs the test suite on PHP 8.3, 8.4 and 8.5 at the lowest platform, a
-`highest` job on PHP 8.4 and 8.5 that asserts the Symfony 8 major, and PHPStan
-against the WordPress 7.0 and 7.1 stubs. The platform rules are on
+`highest` job on PHP 8.4 and 8.5 that asserts the Symfony 8 major, PHPStan
+against the WordPress 7.0 and 7.1 stubs, and the integration suite against a
+real WordPress 7.0 and 7.1 (the newest patch release of each) on MySQL 8.4.
+The platform rules are on
 [Platform](https://docs.middag.dev/libraries/reference/platform).
 
 ## Installation
