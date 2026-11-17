@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.16.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.16.0...v1.16.1) (2026-11-17)
+
+
+### Documentation
+
+* point the security contact to security@middag.io ([58471fd](https://github.com/middag-io/middag-php-wordpress/commit/58471fdbacb09f4f1039088b1a7d3920bfc417f5))
+* point the security contact to security@middag.io ([fd7e056](https://github.com/middag-io/middag-php-wordpress/commit/fd7e05690849bce6e5b970b130dfcddfe67eb382))
+
 ## [1.16.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.15.1...v1.16.0) (2026-11-16)
 
 
