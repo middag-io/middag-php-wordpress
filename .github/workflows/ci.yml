@@ -16,45 +16,71 @@ concurrency:
 # all resolved from Packagist.
 
 jobs:
-  # Released php-library-check component of middag-io/actions, called by its
+  # Released php-library-check composite of middag-io/actions, called by its
   # major tag. One job per PHP version, with the platform pin (8.3.0) kept:
   # the static checks (composer validate, strict PSR-4, PHPStan, PHP-CS-Fixer
   # and Rector) run on 8.3, the floor; the audit and PHPUnit on every
   # version. The tool caches live in .cache.
   php-library-check:
-    uses: middag-io/actions/.github/workflows/php-library-check.yml@php-library-check-v1
+    name: check (PHP ${{ matrix.php-version }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     permissions:
       contents: read
-    with:
-      php-versions: '["8.3", "8.4", "8.5"]'
-      tool-cache-paths: .cache
-      lint-script: lint:php83
-      audit-blocking-severities: critical, high
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.3', '8.4', '8.5']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
-  # Second call of the same component: removes the platform pin and resolves
+      - uses: middag-io/actions/php-library-check@php-library-check-v1
+        with:
+          php-version: ${{ matrix.php-version }}
+          static-checks: ${{ matrix.php-version == '8.3' }}
+          tool-cache-paths: .cache
+          lint-script: lint:php83
+          audit-blocking-severities: critical, high
+
+  # Second use of the same composite: removes the platform pin and resolves
   # the highest dependency versions on the PHP of each job, then asserts that
   # every Symfony package of this adapter resolved to 8.x (Symfony 8 needs PHP
   # 8.4 or later, so 8.3 stays in the locked job). The static checks already
   # run in the locked job.
   php-library-check-highest:
-    uses: middag-io/actions/.github/workflows/php-library-check.yml@php-library-check-v1
+    name: check (PHP ${{ matrix.php-version }}, highest)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     permissions:
       contents: read
-    with:
-      php-versions: '["8.4", "8.5"]'
-      dependency-versions: highest
-      unset-platform-php: true
-      expect-majors: |
-        symfony/dependency-injection:8
-        symfony/http-foundation:8
-        symfony/psr-http-message-bridge:8
-        symfony/routing:8
-      composer-validate: false
-      strict-psr: false
-      phpstan-script: ""
-      cs-fixer-script: ""
-      rector-script: ""
-      audit-blocking-severities: critical, high
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.4', '8.5']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: middag-io/actions/php-library-check@php-library-check-v1
+        with:
+          php-version: ${{ matrix.php-version }}
+          static-checks: 'false'
+          dependency-versions: highest
+          unset-platform-php: 'true'
+          expect-majors: |
+            symfony/dependency-injection:8
+            symfony/http-foundation:8
+            symfony/psr-http-message-bridge:8
+            symfony/routing:8
+          composer-validate: 'false'
+          strict-psr: 'false'
+          phpstan-script: ""
+          cs-fixer-script: ""
+          rector-script: ""
+          audit-blocking-severities: critical, high
 
   # Host matrix, specific to this repository: PHPStan against the WordPress
   # stubs of each WordPress major in range (the latest major and the previous
