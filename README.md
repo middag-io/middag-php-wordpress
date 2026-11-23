@@ -38,8 +38,8 @@ composition root that wires it in.
 |---|---|
 | PHP | `^8.3`: 8.3, 8.4 and 8.5, with `ext-json` |
 | Symfony | `^7.4 \|\| ^8.1` for every Symfony component it requires. PHP 8.3 resolves Symfony 7.4; PHP 8.4 and 8.5 can resolve 8.x |
-| `middag-io/framework` | `^1.20` on the `1.x` line (it brings `middag-io/ui`) |
-| WordPress | 7.0 and 7.1 (the latest major and the previous one) |
+| `middag-io/framework` | `^1.20.4` on the `1.x` line (it brings `middag-io/ui`) |
+| WordPress | 7.0 and 7.1 (the latest major and the previous one), within the PHP versions each one supports |
 
 CI runs the test suite on PHP 8.3, 8.4 and 8.5 with the platform pinned to PHP 8.3.0, a
 `highest` job on PHP 8.4 and 8.5 that asserts the Symfony 8 major, PHPStan
@@ -177,7 +177,9 @@ See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the contributor setup.
 
 Releases are managed by [release-please](https://github.com/googleapis/release-please).
 The package is on `1.x`, which is pre-stable and unsupported; from `2.0.0` it
-joins the `middag-php-*` version family. See [`API-STABILITY.md`](API-STABILITY.md)
+joins the open-source `middag-php-*` version family, which shares only the
+MAJOR; the supported WordPress versions belong to this adapter, and dropping
+one whose upstream support has ended is not a breaking change. See [`API-STABILITY.md`](API-STABILITY.md)
 and [Versioning and compatibility](https://docs.middag.dev/libraries/reference/versioning-and-compatibility).
 
 ## Help and status
