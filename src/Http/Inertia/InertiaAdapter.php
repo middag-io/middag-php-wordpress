@@ -33,7 +33,7 @@ use Symfony\Component\HttpFoundation\Response;
  * (409 + `X-Inertia-Location`), `X-Inertia-Reset` and entity normalization — is
  * delegated to {@see InertiaResponse} through
  * {@see InertiaFactory::render()}. This adapter contributes only the parts that
- * are genuinely WordPress: the CSRF nonce shared as `csrfToken`, the
+ * are genuinely WordPress: the CSRF nonce shared as `csrf_token`, the
  * component-namespaced mount node (`{component}-app`), the wp-admin HTML shell,
  * the per-component asset version, the SPA asset enqueue, and the XHR detection
  * helper the admin router intercepts on.
@@ -73,7 +73,7 @@ final class InertiaAdapter
      * Render an Inertia page for this component, emitting the response through the
      * injected emitter.
      *
-     * Builds the props (shared + local + auto `csrfToken`) and hands them to the
+     * Builds the props (shared + local + auto `csrf_token`) and hands them to the
      * framework wire, which decides between the JSON (Inertia XHR) and HTML shell
      * (first visit) branches and applies every v3 rule. The Inertia XHR branch
      * pre-empts the wp-admin HTML shell and therefore terminates; a full visit
@@ -187,7 +187,7 @@ final class InertiaAdapter
      * Build the props handed to the framework wire: shared props overlaid by the
      * per-render local props, plus the auto-shared WP nonce.
      *
-     * The nonce is exposed as `csrfToken` so the SPA can echo it back via the
+     * The nonce is exposed as `csrf_token` so the SPA can echo it back via the
      * `X-WP-Nonce` header that CsrfGuard verifies on mutating requests; an
      * explicit share/prop of the same key wins. Everything else (closures,
      * `optional()`/`defer()`/`merge()` wrappers, and any `contract` envelope) is
@@ -204,8 +204,8 @@ final class InertiaAdapter
     {
         $merged = array_merge($this->sharedProps, $props);
 
-        if (!array_key_exists('csrfToken', $merged)) {
-            $merged['csrfToken'] = SecuritySupport::createNonce($this->nonceAction());
+        if (!array_key_exists('csrf_token', $merged)) {
+            $merged['csrf_token'] = SecuritySupport::createNonce($this->nonceAction());
         }
 
         return $merged;
