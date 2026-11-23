@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.18.0...v1.18.1) (2026-11-23)
+
+
+### Documentation
+
+* add enum evolution policy to API-STABILITY ([4e02189](https://github.com/middag-io/middag-php-wordpress/commit/4e02189f9c27c0e75f1570b92fb2d439f6e81da8))
+
 ## [1.18.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.17.1...v1.18.0) (2026-11-23)
 
 
