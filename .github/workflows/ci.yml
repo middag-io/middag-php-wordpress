@@ -82,6 +82,40 @@ jobs:
           rector-script: ""
           audit-blocking-severities: critical, high
 
+  # Third use of the same composite: removes the platform pin and resolves
+  # the lowest dependency versions on PHP 8.3 (composer update
+  # --prefer-lowest --prefer-stable), then asserts that every Symfony package
+  # resolved to 7.x. The constraints '^7.4 || ^8.1' resolve to 7.4.0, so this
+  # cell proves the 7.x floor together with the declared PHP and extension
+  # floors. The static checks already run in the locked job.
+  php-library-check-lowest:
+    name: check (PHP 8.3, lowest)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: middag-io/actions/php-library-check@php-library-check-v1
+        with:
+          php-version: '8.3'
+          static-checks: 'false'
+          dependency-versions: lowest
+          unset-platform-php: 'true'
+          expect-majors: |
+            symfony/dependency-injection:7
+            symfony/http-foundation:7
+            symfony/routing:7
+          composer-validate: 'false'
+          strict-psr: 'false'
+          phpstan-script: ""
+          cs-fixer-script: ""
+          rector-script: ""
+          audit-blocking-severities: critical, high
+
   # Host matrix, specific to this repository: PHPStan against the WordPress
   # stubs of each WordPress major in range (the latest major and the previous
   # one). The unit tests run on hand-written stubs and do not change per
