@@ -61,28 +61,31 @@ and `Diagnostics\BootReportRenderer` are `@internal` too.
 
 ## Versioning from `2.0.0`
 
-This adapter belongs to the `middag-php-*` library version family: every
-library of the family shares MAJOR.MINOR, and PATCH is free per library. A
-patch carries fixes only, a family minor carries additive `@api` changes, and
-a family major carries breaking `@api` changes. **Every library of the family
-is required with the same `^2.N`**, with the same `N`.
+From `2.0.0`, the open-source `middag-php-*` libraries (`ui`, `framework`, `moodle`, `wordpress` and the `demo-standalone` example) share the MAJOR version. MINOR and PATCH releases are per library. Each library requires its siblings with `^2.N`, where `N` is the lowest MINOR it needs, so Composer installs a compatible set. Require each package you import with `^2.0`, or with the MINOR whose features you use.
+
+A PATCH carries fixes only. A MINOR carries additive `@api` changes. A MAJOR carries breaking `@api` changes, following [Deprecation](#deprecation).
+
+A platform floor (the lowest PHP version or the lowest Symfony line) rises only in a MAJOR. Support for a new PHP version or a new Symfony LTS line is added in a MINOR.
+
+The supported host versions belong to this adapter. Adding a host version is a MINOR. Dropping a host version whose upstream support has ended is not a breaking change and ships in a MINOR.
 
 The full rules (lifecycle, what a patch, minor and major may carry, the
 supported surface and the compatibility matrix) are on
 [Versioning and compatibility](https://docs.middag.dev/libraries/reference/versioning-and-compatibility).
-The platform and the CI jobs, the family window check included, are on
+The platform and the CI jobs are on
 [Platform](https://docs.middag.dev/libraries/reference/platform).
+
+## Deprecation
+
+A removal or incompatible change of an `@api` element ships only in a MAJOR. Where possible it is announced first in a MINOR of the current MAJOR: the element carries `@deprecated` naming its replacement, the changelog lists it, and code that still runs emits an `E_USER_DEPRECATED` notice where PHP can raise one. A change that cannot be deprecated in place, such as a new abstract method on an interface or a changed signature, ships in a MAJOR with an entry in `UPGRADING.md`.
+
+## Support
+
+Fixes go to the latest MINOR of the current MAJOR, as PATCH releases. When the next MAJOR ships, the last MINOR of the previous MAJOR receives critical and high severity security fixes only, from an `N.x` branch opened at the cut, for 6 months or until the end of life of the PHP or host version that motivated the new MAJOR, whichever comes first. Releases before `2.0.0` are unsupported.
 
 ## How releases are cut
 
-- Releases are cut only by
-  [release-please](https://github.com/googleapis/release-please) from
-  [Conventional Commits](https://www.conventionalcommits.org/). There are no
-  manual tags.
-- Every pull request runs the family window check
-  `php-version-family-check / check` (`.github/workflows/family-window.yml`).
-  `!` before the colon, or a `BREAKING CHANGE:` footer, fails unless a family
-  major window is open. Give each commit the type that matches the change.
+Releases are cut by release-please from Conventional Commits. The contributor rules, the version check included, are in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## The contracts this adapter fulfils
 
@@ -113,8 +116,8 @@ their shape: type-hint the framework contract, name the concrete only to wire it
   `@internal` symbol, open an issue to have it promoted rather than reaching in.
 - **On `1.x`:** the line is pre-stable and unsupported (see
   [Lifecycle](#lifecycle)).
-- **From `2.0.0`:** declare one `^2.N` range, with the same `N`, for this
-  adapter and every other `middag-php-*` library you depend on.
+- **From `2.0.0`:** require `middag-io/wordpress` with `^2.0`, or with the
+  MINOR whose features you use.
 - The dependency direction only points downward: the adapter depends on the OSS
   framework's published `@api` and never imports the proprietary layer.
 

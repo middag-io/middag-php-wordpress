@@ -76,11 +76,12 @@ The other guards are in `tests/Architecture/`.
 Releases are cut **exclusively** by release-please, never by a manual tag. On
 `1.x`, which is pre-stable and unsupported, `fix:` cuts a patch and `feat:`
 cuts a minor; a break ships as `feat:`, never with `!` or a `BREAKING CHANGE:`
-footer. From `2.0.0` the library joins the `middag-php-*` version family:
-`feat:` waits for a family minor window, and `!` or `BREAKING CHANGE:` for a
-family major window. Every PR runs the family-window check
-`php-version-family-check / check`. The rules are in
-[`API-STABILITY.md`](API-STABILITY.md#how-releases-are-cut) and on
+footer. From `2.0.0` the library shares the MAJOR version with the other
+`middag-php-*` libraries; MINOR and PATCH are per library. `feat:` cuts a MINOR
+of this library, `fix:` cuts a PATCH, and `!` or `BREAKING CHANGE:` is for a
+MAJOR. Give each commit the type that matches the change. Every PR runs the
+version check `php-version-family-check / check`. The rules are in
+[`API-STABILITY.md`](API-STABILITY.md#versioning-from-200) and on
 [Versioning and compatibility](https://docs.middag.dev/libraries/reference/versioning-and-compatibility).
 
 ## Code of conduct
