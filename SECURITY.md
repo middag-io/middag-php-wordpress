@@ -2,23 +2,24 @@
 
 ## Supported versions
 
-The 1.x line is pre-stable and unsupported: it gets no backports or security fixes, and the move to 2.0.0 is a clean cut.
+The `1.x` line is pre-stable and unsupported: it gets no backports or security fixes, and the move to `2.0.0` is a clean cut.
 
-From `2.0.0` this library is part of the `middag-php-*` version family (see
-[`API-STABILITY.md`](API-STABILITY.md)). The latest family minor is supported.
-The last minor of the previous family major gets security fixes only, for 6
-months after the next major ships.
+From `2.0.0`, `middag-io/wordpress` is part of the `middag-php-*` version family ([Versioning and compatibility](https://docs.middag.dev/libraries/reference/versioning-and-compatibility)). Security fixes go to the latest MINOR of the current MAJOR.
 
 ## Reporting a vulnerability
 
-Please **do not** open public issues for security vulnerabilities.
+Do not open public issues, pull requests or discussions for security problems.
 
-Report privately through one of:
+Report privately through either:
 
-- GitHub's [private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability)
-  — use **"Report a vulnerability"** under the repository's **Security** tab, or
-- email **security@middag.io** with a description and steps to reproduce.
+- GitHub private vulnerability reporting: **Report a vulnerability** under the repository's **Security** tab, or
+- email to **security@middag.io**.
 
-We aim to acknowledge a report within 5 business days and to share a remediation
-timeline after triage. Please give us reasonable time to release a fix before any
-public disclosure.
+Include a description and its impact, steps to reproduce or a proof of concept, and the affected versions.
+
+## What to expect
+
+- **Acknowledgement** within 5 business days.
+- **Triage:** we confirm whether the report is accepted and share our plan for a fix. There is no fixed deadline for the fix.
+- **Coordinated disclosure:** please keep the report confidential until a fix is released.
+- **Credit:** we credit reporters who want it once the issue is resolved.
