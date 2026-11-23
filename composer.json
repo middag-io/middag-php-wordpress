@@ -22,7 +22,7 @@
   "require": {
     "php": "^8.3",
     "ext-json": "*",
-    "middag-io/framework": "^1.20.4",
+    "middag-io/framework": "^1.22",
     "nyholm/psr7": "^1.8",
     "psr/container": "^2.0",
     "psr/log": "^3.0",

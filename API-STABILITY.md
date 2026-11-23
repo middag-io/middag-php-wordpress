@@ -77,6 +77,24 @@ supported surface and the compatibility matrix) are on
 The platform and the CI jobs are on
 [Platform](https://docs.middag.dev/libraries/reference/platform).
 
+## Enum evolution
+
+Whether an enum can grow in a MINOR depends on what happens to a value the
+consumer does not know. This mirrors the policy in
+[`middag-io/ui` `API-STABILITY.md`](https://github.com/middag-io/middag-php-ui/blob/main/API-STABILITY.md#enum-evolution-on-the-wire).
+
+- **Control enums** drive behavior and reject an unknown value instead of
+  guessing. Adding a case to one is a **MAJOR** change.
+- **Open or presentational enums** reach a consumer that falls back safely on a
+  value it does not know. Adding a case to one is a **MINOR** change.
+- Removing or renaming a case is always a **MAJOR** change, for both kinds.
+
+The `@api` enums of this adapter (for example `Settings\Enum\FieldType`,
+`Diagnostics\Enum\CheckStatus`, `Diagnostics\Enum\CheckScope` and
+`Cron\Enum\CronInterval`) are classified by this rule when a case is added:
+an enum that the adapter matches exhaustively or rejects on an unknown value is
+a control enum.
+
 ## Deprecation
 
 A removal or incompatible change of an `@api` element ships only in a MAJOR. Where possible it is announced first in a MINOR of the current MAJOR: the element carries `@deprecated` naming its replacement, the changelog lists it, and code that still runs emits an `E_USER_DEPRECATED` notice where PHP can raise one. A change that cannot be deprecated in place, such as a new abstract method on an interface or a changed signature, ships in a MAJOR with an entry in `UPGRADING.md`.
