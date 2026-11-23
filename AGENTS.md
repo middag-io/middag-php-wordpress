@@ -40,9 +40,8 @@ Architecture decisions live in [`docs/decisions/`](docs/decisions/) as `WP-NNN` 
 MIDDAG-MADR compact format: frontmatter, then Context → Considered Options
 → Decision → Consequences → Enforcement. A record states **why** (the choice, the alternatives, the
 consequences); specification (class lists, catalogs, pipelines, naming tables) lives in the reference
-its Enforcement table points to, at docs.middag.dev (`docs-middag-dev`,
-`docs/framework/reference/adapters/wordpress/`). Ids are never reused. OSS records never cite
-proprietary record ids. `deciders` is a role id (`leadership`), never a person.
+its Enforcement table points to, at docs.middag.dev. Ids are never reused. Records cite only
+public material. `deciders` is a role id, never a person.
 
 **`domains` vocabulary** (a record uses only these): `wordpress`, `adapters`, `portability`, `http`,
 `config`, `kernel`, `persistence`, `bus`.
