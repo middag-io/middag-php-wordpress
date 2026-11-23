@@ -30,6 +30,11 @@ use Middag\WordPress\Support\SettingsSupport;
  * `do_settings_sections("{page}-{tabSlug}")`. Replaces the hand-rolled
  * settings frameworks every plugin reinvents.
  *
+ * Use one option group per tab (call `register()` once per tab, each with its
+ * own `$optionGroup`). WordPress `options.php` saves every option of the posted
+ * group and writes null to the ones missing from the form, so a group shared by
+ * several tabs makes saving one tab erase the fields of the others.
+ *
  * The constructor needs no arguments: the staging {@see SettingsRegistrar}
  * (an implementation detail) defaults to a fresh instance, so consumers never name it.
  *
@@ -47,7 +52,7 @@ final readonly class SettingsPageRegistrar
      * Stage and register every tab of a settings page.
      *
      * @param non-empty-string           $page        settings page slug (menu wiring is the consumer's concern)
-     * @param non-empty-string           $optionGroup register_setting() option group
+     * @param non-empty-string           $optionGroup register_setting() option group; use a distinct group for each tab (see the class docblock)
      * @param list<Tab>                  $tabs
      * @param CapabilityInterface|string $capability  capability required to WRITE the options (raw string or typed)
      */
