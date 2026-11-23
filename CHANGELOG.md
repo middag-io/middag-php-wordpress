@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.17.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.16.2...v1.17.0) (2026-11-23)
+
+
+### Features
+
+* let SettingsPageRegistrar construct without the internal registrar ([8ba4520](https://github.com/middag-io/middag-php-wordpress/commit/8ba4520abcdbcf9b4064bcfe6793217722bf7d12))
+
+
+### Bug Fixes
+
+* meta update, table prefix, hook path and event payload bugs ([f17418d](https://github.com/middag-io/middag-php-wordpress/commit/f17418d30b81971ca24e2aa453ce120fd3496377))
+
+### Consumer impact
+
+`SettingsPageRegistrar` can now be constructed without an argument. Record helpers apply the table prefix, `MetaSupport::update()` accepts a new key, `HookRegistrar` normalises directory and namespace separators (a namespace containing `/` throws `HookRegistrationException`), and `WpHostEventBridge::dispatch()` accepts an associative payload (keys are ignored). No action is needed from consumers.
+
 ## [1.16.2](https://github.com/middag-io/middag-php-wordpress/compare/v1.16.1...v1.16.2) (2026-11-23)
 
 
