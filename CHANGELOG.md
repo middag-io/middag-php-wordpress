@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.18.2](https://github.com/middag-io/middag-php-wordpress/compare/v1.18.1...v1.18.2) (2026-11-23)
+
+
+### Documentation
+
+* match the README framework range to 1.22 ([cc6c34f](https://github.com/middag-io/middag-php-wordpress/commit/cc6c34fdfc517541e426a17ee492fdaac061a3ae))
+
+### Consumer impact
+
+- None. This release only changes the README; no code, API or dependency range changed.
+
 ## [1.18.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.18.0...v1.18.1) (2026-11-23)
 
 
