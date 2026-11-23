@@ -24,6 +24,12 @@ on:
     types: [completed]
     branches: [main]
   workflow_dispatch:
+    inputs:
+      reference-tag:
+        description: Existing release tag (for example v1.18.1) whose API reference to publish again. Empty runs release-please only.
+        type: string
+        required: false
+        default: ""
 
 permissions: {}
 
@@ -45,3 +51,25 @@ jobs:
       app-client-id: ${{ vars.GH_APPS_MIDDAG_CI_RELEASE_CLIENT_ID }}
     secrets:
       app-private-key: ${{ secrets.GH_APPS_MIDDAG_CI_RELEASE_PRIVATE_KEY }}
+
+  # API reference (kind xref) of each release, generated with phpDocumentor
+  # and uploaded to the public docs bucket by the reference publish component
+  # (ADR-015/016/020 of docs-middag-ops). The component fails unless this
+  # repository is public. write-manifest stays false: the manifest belongs to
+  # the docs publication. A workflow_dispatch with reference-tag republishes
+  # an existing release (backfill or retry).
+  reference:
+    needs: release-please
+    if: ${{ !cancelled() && (needs.release-please.outputs.release-created == 'true' || (github.event_name == 'workflow_dispatch' && inputs.reference-tag != '')) }}
+    permissions:
+      contents: read
+    uses: middag-io/actions/.github/workflows/cloudflare-r2-reference-publish.yml@cloudflare-r2-reference-publish-v1
+    with:
+      generator: phpdocumentor
+      ref: ${{ needs.release-please.outputs.tag-name || inputs.reference-tag }}
+      source-paths: src
+      write-manifest: false
+    secrets:
+      endpoint: ${{ secrets.CLOUDFLARE_R2_DOCS_PUBLISH_ENDPOINT }}
+      access-key-id: ${{ secrets.CLOUDFLARE_R2_DOCS_PUBLISH_ACCESS_KEY_ID }}
+      secret-access-key: ${{ secrets.CLOUDFLARE_R2_DOCS_PUBLISH_SECRET_ACCESS_KEY }}
