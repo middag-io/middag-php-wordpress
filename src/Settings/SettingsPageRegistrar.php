@@ -30,12 +30,15 @@ use Middag\WordPress\Support\SettingsSupport;
  * `do_settings_sections("{page}-{tabSlug}")`. Replaces the hand-rolled
  * settings frameworks every plugin reinvents.
  *
+ * The constructor needs no arguments: the staging {@see SettingsRegistrar}
+ * (an implementation detail) defaults to a fresh instance, so consumers never name it.
+ *
  * @api
  */
 final readonly class SettingsPageRegistrar
 {
     public function __construct(
-        private SettingsRegistrar $settings,
+        private SettingsRegistrar $settings = new SettingsRegistrar(),
         private FieldRenderer $renderer = new FieldRenderer(),
         private ResponseEmitterInterface $emitter = new PhpSapiEmitter(),
     ) {}

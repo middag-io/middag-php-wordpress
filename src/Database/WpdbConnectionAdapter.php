@@ -32,9 +32,10 @@ use wpdb;
  * as assoc arrays (`ARRAY_A`). Mapping rows to domain entities happens above, in
  * repositories.
  *
- * Table names received here are *physical* (already prefixed) — the WordPress
- * dialect is a near-passthrough and does not brace table names, so callers that
- * use the record helpers must pass the prefixed name (see {@see WpdbSqlDialect}).
+ * The record helpers (`insert()`, `update()`, `delete()`, `find()`, `findAll()`)
+ * accept a logical or an already-prefixed table name: the dialect prepends the
+ * `$wpdb` prefix when it is missing (see {@see WpdbSqlDialect}). Raw SQL passed
+ * to `execute()`, `fetch()` and `fetchAll()` is sent as written.
  *
  * Public surface: the consumer's composition root registers it for the framework
  * {@see ConnectionAdapterInterface} and references it when wiring the
@@ -124,7 +125,7 @@ final readonly class WpdbConnectionAdapter implements ConnectionAdapterInterface
 
     public function insert(string $table, array $record): int
     {
-        $result = $this->wpdb->insert($table, $record);
+        $result = $this->wpdb->insert($this->dialect->table($table), $record);
 
         if ($result === false) {
             throw new WordPressDatabaseException(sprintf('wpdb insert into [%s] failed: %s', $table, $this->wpdb->last_error));
@@ -142,7 +143,7 @@ final readonly class WpdbConnectionAdapter implements ConnectionAdapterInterface
         $id = $record['id'];
         unset($record['id']);
 
-        $result = $this->wpdb->update($table, $record, ['id' => $id]);
+        $result = $this->wpdb->update($this->dialect->table($table), $record, ['id' => $id]);
 
         if ($result === false) {
             throw new WordPressDatabaseException(sprintf('wpdb update of [%s] failed: %s', $table, $this->wpdb->last_error));
@@ -151,7 +152,7 @@ final readonly class WpdbConnectionAdapter implements ConnectionAdapterInterface
 
     public function delete(string $table, array $conditions): void
     {
-        $result = $this->wpdb->delete($table, $conditions);
+        $result = $this->wpdb->delete($this->dialect->table($table), $conditions);
 
         if ($result === false) {
             throw new WordPressDatabaseException(sprintf('wpdb delete from [%s] failed: %s', $table, $this->wpdb->last_error));
@@ -161,7 +162,7 @@ final readonly class WpdbConnectionAdapter implements ConnectionAdapterInterface
     public function find(string $table, array $conditions): ?array
     {
         [$where, $params] = $this->compileConditions($conditions);
-        $sql = sprintf('SELECT * FROM %s%s LIMIT 1', $table, $where);
+        $sql = sprintf('SELECT * FROM %s%s LIMIT 1', $this->dialect->table($table), $where);
 
         return $this->fetch($sql, $params);
     }
@@ -169,7 +170,7 @@ final readonly class WpdbConnectionAdapter implements ConnectionAdapterInterface
     public function findAll(string $table, array $conditions = []): array
     {
         [$where, $params] = $this->compileConditions($conditions);
-        $sql = sprintf('SELECT * FROM %s%s', $table, $where);
+        $sql = sprintf('SELECT * FROM %s%s', $this->dialect->table($table), $where);
 
         return $this->fetchAll($sql, $params);
     }

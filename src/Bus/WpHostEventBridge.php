@@ -32,7 +32,7 @@ use Middag\WordPress\Support\HookSupport;
  * This is the WordPress counterpart of `MoodleHostEventBridge`, which delegates
  * to the framework's in-memory {@see HookManager}
  * instead — WordPress already has the hooks API this contract describes, so the
- * adapter goes native. The payload is spread as positional arguments.
+ * adapter goes native. The payload is spread as positional arguments (keys are ignored).
  *
  * The hook prefix is a constructor argument. Its default is the neutral
  * library marker `middaglib/`, which names no product: a consumer passes the
@@ -48,7 +48,8 @@ final readonly class WpHostEventBridge implements HostEventBridgeInterface
 
     public function dispatch(string $eventName, array $payload = []): void
     {
-        HookSupport::doAction($this->hook($eventName), ...$payload);
+        // array_values(): a string-keyed payload would spread as named arguments.
+        HookSupport::doAction($this->hook($eventName), ...array_values($payload));
     }
 
     public function listen(string $eventName, callable $listener, int $priority = 10): void
