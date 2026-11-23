@@ -55,6 +55,14 @@ final class WpHostEventBridgeTest extends TestCase
     }
 
     #[Test]
+    public function dispatchSpreadsAnAssociativePayloadPositionally(): void
+    {
+        (new WpHostEventBridge())->dispatch('order.paid', ['id' => 'order-1', 'total' => 99.9]);
+
+        self::assertSame(['order-1', 99.9], $GLOBALS['__wp_test_dispatched'][0]['args']);
+    }
+
+    #[Test]
     public function listenRegistersANativePrefixedActionCallback(): void
     {
         (new WpHostEventBridge())->listen('quote.created', static function (): void {}, 20);

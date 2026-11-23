@@ -82,6 +82,35 @@ final class HookRegistrarTest extends TestCase
     }
 
     #[Test]
+    public function registerNormalisesATrailingSlashOnTheDirectory(): void
+    {
+        $registrar = new HookRegistrar(hookPaths: [self::FIXTURE_NAMESPACE => self::FIXTURE_DIR . '/']);
+
+        $registrar->register();
+
+        self::assertContains(DemoHooks::class, $this->registeredClasses());
+    }
+
+    #[Test]
+    public function registerNormalisesANamespaceWithoutTheTrailingBackslash(): void
+    {
+        $registrar = new HookRegistrar(hookPaths: [rtrim(self::FIXTURE_NAMESPACE, '\\') => self::FIXTURE_DIR]);
+
+        $registrar->register();
+
+        self::assertContains(DemoHooks::class, $this->registeredClasses());
+    }
+
+    #[Test]
+    public function constructorRejectsANamespaceWrittenWithForwardSlashes(): void
+    {
+        $this->expectException(HookRegistrationException::class);
+        $this->expectExceptionMessage('forward slash');
+
+        new HookRegistrar(hookPaths: ['Acme/Hooks/' => self::FIXTURE_DIR]);
+    }
+
+    #[Test]
     public function registerSkipsClassesThatDoNotImplementTheContract(): void
     {
         $registrar = new HookRegistrar(hookPaths: [self::FIXTURE_NAMESPACE => self::FIXTURE_DIR]);

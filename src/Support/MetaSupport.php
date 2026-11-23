@@ -47,7 +47,9 @@ final class MetaSupport
             // @codeCoverageIgnoreEnd
         }
 
-        return update_metadata($type, $objectId, $key, $value);
+        // update_metadata() returns the new meta ID (int) when the key is new,
+        // true on update and false on failure or an unchanged value.
+        return (bool) update_metadata($type, $objectId, $key, $value);
     }
 
     /**

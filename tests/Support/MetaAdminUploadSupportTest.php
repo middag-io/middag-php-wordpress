@@ -51,6 +51,13 @@ final class MetaAdminUploadSupportTest extends TestCase
     }
 
     #[Test]
+    public function updateReturnsTrueForANewKeyWhereWordPressReturnsTheMetaId(): void
+    {
+        self::assertTrue(MetaSupport::update('post', 1, 'brand_new_key', 'v'));
+        self::assertTrue(MetaSupport::update('post', 1, 'brand_new_key', 'w'));
+    }
+
+    #[Test]
     public function metadataRoundTripForAnyMetaType(): void
     {
         self::assertTrue(MetaSupport::update('term', 42, 'acme_color', 'blue'));

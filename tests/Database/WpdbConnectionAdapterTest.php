@@ -177,6 +177,30 @@ final class WpdbConnectionAdapterTest extends TestCase
     }
 
     #[Test]
+    public function recordWritesApplyTheTablePrefixToALogicalName(): void
+    {
+        $this->adapter->insert('t', ['title' => 'x']);
+        $this->adapter->update('t', ['id' => 1, 'title' => 'y']);
+        $this->adapter->delete('t', ['id' => 1]);
+
+        self::assertSame('wp_t', $this->wpdb->calls[0]['args'][0]);
+        self::assertSame('wp_t', $this->wpdb->calls[1]['args'][0]);
+        self::assertSame('wp_t', $this->wpdb->calls[2]['args'][0]);
+    }
+
+    #[Test]
+    public function recordReadsApplyTheTablePrefixToALogicalName(): void
+    {
+        $this->wpdb->mock_row = ['id' => '1'];
+        $this->adapter->find('t', ['id' => 1]);
+        $this->adapter->findAll('t');
+
+        $sql = implode(' ', array_map(static fn (array $c): string => (string) $c['args'][0], $this->wpdb->calls));
+        self::assertStringContainsString('FROM wp_t', $sql);
+        self::assertStringNotContainsString('FROM t ', $sql . ' ');
+    }
+
+    #[Test]
     public function insertFailureThrowsWithTheWpdbError(): void
     {
         $failing = new class extends wpdb {

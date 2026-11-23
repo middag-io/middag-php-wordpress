@@ -1073,11 +1073,13 @@ if (!function_exists('get_metadata')) {
     }
 }
 if (!function_exists('update_metadata')) {
-    function update_metadata(string $meta_type, int $object_id, string $meta_key, mixed $meta_value): bool
+    // Like WordPress: returns the new meta ID (int) when the key is new, true on update.
+    function update_metadata(string $meta_type, int $object_id, string $meta_key, mixed $meta_value): bool|int
     {
+        $isNew = !array_key_exists($meta_key, $GLOBALS['__wp_test_metadata'][$meta_type][$object_id] ?? []);
         $GLOBALS['__wp_test_metadata'][$meta_type][$object_id][$meta_key] = $meta_value;
 
-        return true;
+        return $isNew ? 7 : true;
     }
 }
 if (!function_exists('delete_metadata')) {
@@ -1240,7 +1242,7 @@ if (!function_exists('get_user_meta')) {
     }
 }
 if (!function_exists('update_user_meta')) {
-    function update_user_meta(int $user_id, string $meta_key, mixed $meta_value): bool
+    function update_user_meta(int $user_id, string $meta_key, mixed $meta_value): bool|int
     {
         return update_metadata('user', $user_id, $meta_key, $meta_value);
     }
@@ -1269,7 +1271,7 @@ if (!function_exists('get_post_meta')) {
     }
 }
 if (!function_exists('update_post_meta')) {
-    function update_post_meta(int $post_id, string $meta_key, mixed $meta_value): bool
+    function update_post_meta(int $post_id, string $meta_key, mixed $meta_value): bool|int
     {
         return update_metadata('post', $post_id, $meta_key, $meta_value);
     }

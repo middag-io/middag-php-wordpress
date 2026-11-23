@@ -24,7 +24,9 @@ use ReflectionMethod;
  * Discovers every {@see HookInterface} implementation under the configured
  * roots and registers it (container-resolved when the consumer provides one).
  * The FQCN of each hook is derived from the path relative to its root,
- * prefixed with that root's namespace.
+ * prefixed with that root's namespace. A trailing `/` on the directory and a
+ * missing trailing `\` on the namespace are normalised; a namespace written
+ * with `/` is rejected with a {@see HookRegistrationException}.
  *
  * Discovery follows the INTERFACE, never the filename. Matching on a `*Hooks`
  * suffix — or on a single root directory — makes registration depend on where
@@ -53,7 +55,19 @@ final readonly class HookRegistrar
             );
         }
 
+        $normalised = [];
+
         foreach ($hookPaths as $namespace => $directory) {
+            $namespace = (string) $namespace;
+
+            if (str_contains($namespace, '/')) {
+                throw new HookRegistrationException(sprintf(
+                    'HookRegistrar received a namespace containing a forward slash: "%s". '
+                    . 'Use backslashes, for example "Acme\Hooks\".',
+                    $namespace,
+                ));
+            }
+
             if (!is_dir($directory)) {
                 throw new HookRegistrationException(sprintf(
                     'HookRegistrar received a non-existing directory for namespace "%s": "%s".',
@@ -61,9 +75,14 @@ final readonly class HookRegistrar
                     $directory,
                 ));
             }
+
+            // Trailing separators are normalised so discovery maps path to FQCN
+            // exactly: "Acme\Hooks" and "Acme\Hooks\", "/dir" and "/dir/" match.
+            $normalisedNamespace = $namespace === '' ? '' : rtrim($namespace, '\\') . '\\';
+            $normalised[$normalisedNamespace] = rtrim($directory, '/') ?: '/';
         }
 
-        $this->hookPaths = $hookPaths;
+        $this->hookPaths = $normalised;
     }
 
     public function register(): void
