@@ -11,6 +11,10 @@
 * drop internal references from AGENTS.md ([6e44876](https://github.com/middag-io/middag-php-wordpress/commit/6e44876440abc7d666a4c147eb08a97d6d600132))
 * state the 3.0 platform floor intent ([af8e4da](https://github.com/middag-io/middag-php-wordpress/commit/af8e4da48ee858b7e29522ff94805fbb0883be62))
 
+### Consumer impact
+
+No consumer impact: documentation only (SECURITY.md and policy text, README and AGENTS.md wording, API stability wording). No runtime change.
+
 ## [1.16.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.16.0...v1.16.1) (2026-11-23)
 
 
