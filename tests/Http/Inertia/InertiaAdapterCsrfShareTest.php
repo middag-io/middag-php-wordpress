@@ -22,7 +22,7 @@ use ReflectionMethod;
 
 /**
  * Covers the WP-03 contract that {@see InertiaAdapter} auto-shares the native
- * WordPress nonce to the SPA as the `csrfToken` prop, so the client can echo it
+ * WordPress nonce to the SPA as the `csrf_token` prop, so the client can echo it
  * back through the `X-WP-Nonce` header that {@see CsrfGuard} verifies. The nonce
  * action is derived from the component (`middag_inertia` for `middag`).
  *
@@ -53,25 +53,25 @@ final class InertiaAdapterCsrfShareTest extends TestCase
     {
         $props = $this->resolveProps([]);
 
-        self::assertSame('spa-nonce', $props['csrfToken']);
+        self::assertSame('spa-nonce', $props['csrf_token']);
     }
 
     #[Test]
     public function anExplicitCsrfTokenPropOverridesTheAutoSharedNonce(): void
     {
-        $props = $this->resolveProps(['csrfToken' => 'caller-supplied']);
+        $props = $this->resolveProps(['csrf_token' => 'caller-supplied']);
 
-        self::assertSame('caller-supplied', $props['csrfToken']);
+        self::assertSame('caller-supplied', $props['csrf_token']);
     }
 
     #[Test]
     public function anExplicitlySharedCsrfTokenOverridesTheAutoSharedNonce(): void
     {
-        $this->adapter->share('csrfToken', 'shared-supplied');
+        $this->adapter->share('csrf_token', 'shared-supplied');
 
         $props = $this->resolveProps([]);
 
-        self::assertSame('shared-supplied', $props['csrfToken']);
+        self::assertSame('shared-supplied', $props['csrf_token']);
     }
 
     /**
