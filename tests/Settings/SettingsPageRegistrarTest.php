@@ -56,6 +56,20 @@ final class SettingsPageRegistrarTest extends TestCase
     }
 
     #[Test]
+    public function constructsWithoutTheInternalSettingsRegistrar(): void
+    {
+        $registrar = new SettingsPageRegistrar();
+
+        $registrar->register('acme', 'acme_group', [
+            new Tab('general', 'General', [
+                new Section('acme_core', 'Core', [new Field('acme_name', 'Name')]),
+            ]),
+        ]);
+
+        self::assertArrayHasKey('acme_name', $GLOBALS['__wp_test_settings']);
+    }
+
+    #[Test]
     public function registersSettingsSectionsAndFieldsPerTabPage(): void
     {
         $this->registrar->register('acme', 'acme_group', [

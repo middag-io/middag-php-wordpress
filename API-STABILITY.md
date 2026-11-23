@@ -271,6 +271,8 @@ Every type tagged `@api` in `src/`, by namespace.
 - `Middag\WordPress\Settings\SettingsPageRegistrar`
 - `Middag\WordPress\Settings\Tab`
 
+`SettingsPageRegistrar` constructs with no arguments. The `SettingsRegistrar` it stages settings through is `@internal` and defaults to a fresh instance, so consumers never name it. Do not pass one from outside the package.
+
 ### Support
 
 - `Middag\WordPress\Support\AdminSupport`
