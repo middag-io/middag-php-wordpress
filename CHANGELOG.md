@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.17.2](https://github.com/middag-io/middag-php-wordpress/compare/v1.17.1...v1.17.2) (2026-11-23)
+
+
+### Bug Fixes
+
+* share the CSRF nonce as csrf_token ([c9b84e2](https://github.com/middag-io/middag-php-wordpress/commit/c9b84e25aed7cc55aa07eccb9c772d5982195a91))
+
+
+### Documentation
+
+* document one option group per settings tab ([3e592c7](https://github.com/middag-io/middag-php-wordpress/commit/3e592c713c4118b9e2177da978382364cd8fa09f))
+
 ## [1.17.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.17.0...v1.17.1) (2026-11-23)
 
 
