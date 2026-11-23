@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.17.0...v1.17.1) (2026-11-23)
+
+
+### Documentation
+
+* match the README framework range and the shared-MAJOR family ([1dc6034](https://github.com/middag-io/middag-php-wordpress/commit/1dc6034b0e2b5c27f2531d7f2fa388d9e13ba65a))
+
 ## [1.17.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.16.2...v1.17.0) (2026-11-23)
 
 
