@@ -38,7 +38,7 @@ composition root that wires it in.
 |---|---|
 | PHP | `^8.3`: 8.3, 8.4 and 8.5, with `ext-json` |
 | Symfony | `^7.4 \|\| ^8.1` for every Symfony component it requires. PHP 8.3 resolves Symfony 7.4; PHP 8.4 and 8.5 can resolve 8.x |
-| `middag-io/framework` | `^1.20.4` on the `1.x` line (it brings `middag-io/ui`) |
+| `middag-io/framework` | `^1.22` on the `1.x` line (it brings `middag-io/ui`) |
 | WordPress | 7.0 and 7.1 (the latest major and the previous one), within the PHP versions each one supports |
 
 CI runs the test suite on PHP 8.3, 8.4 and 8.5 with the platform pinned to PHP 8.3.0, a
