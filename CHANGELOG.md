@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.16.2](https://github.com/middag-io/middag-php-wordpress/compare/v1.16.1...v1.16.2) (2026-11-23)
+
+
+### Documentation
+
+* align SECURITY.md with the uniform policy text ([81de038](https://github.com/middag-io/middag-php-wordpress/commit/81de0383d11cb79ac5478fa42473de5a5f89504f))
+* apply the version-family support policy ([3acc59a](https://github.com/middag-io/middag-php-wordpress/commit/3acc59ab48346d8bc5c9493c470d484c565df9a3))
+* describe the CI platform pin accurately in the README ([714eed0](https://github.com/middag-io/middag-php-wordpress/commit/714eed00b2347d7595ee56f14584292378078cb4))
+* drop internal references from AGENTS.md ([6e44876](https://github.com/middag-io/middag-php-wordpress/commit/6e44876440abc7d666a4c147eb08a97d6d600132))
+* state the 3.0 platform floor intent ([af8e4da](https://github.com/middag-io/middag-php-wordpress/commit/af8e4da48ee858b7e29522ff94805fbb0883be62))
+
 ## [1.16.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.16.0...v1.16.1) (2026-11-23)
 
 
