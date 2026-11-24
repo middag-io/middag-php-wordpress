@@ -60,7 +60,8 @@ Releases come only from release-please. The family rules (lifecycle, supported s
 - `composer check` — style → rector → stan (all analysis/dry-run)
 - `composer check:style` — PHP CS Fixer dry-run
 - `composer check:rector` — Rector dry-run
-- `composer check:stan` — PHPStan
+- `composer check:stan` — PHPStan, read as PHP 8.3 (the floor)
+- `composer check:stan:ceiling` — PHPStan, read as PHP 8.6 (the ceiling; `.phpstan.ceiling.neon`)
 - `composer fix` — auto-fix style + rector
 - `composer fix:all` — style → rector → style (re-runs style after rector)
 - `composer test` — PHPUnit (includes the boundary and loadability guard tests)
