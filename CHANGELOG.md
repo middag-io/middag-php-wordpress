@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.18.2...v1.19.0) (2026-11-24)
+
+
+### Features
+
+* support PHP 8.6 ([33207d1](https://github.com/middag-io/middag-php-wordpress/commit/33207d19a548bf4e8b23011ff821a113cc1c7890))
+
 ## [1.18.2](https://github.com/middag-io/middag-php-wordpress/compare/v1.18.1...v1.18.2) (2026-11-23)
 
 
