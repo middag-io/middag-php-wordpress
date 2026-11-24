@@ -25,6 +25,6 @@ final class AccessControlHook implements HookInterface
 {
     public function register(): void
     {
-        $GLOBALS['__middag_test_registered_hooks'][] = spl_object_hash($this) . ':' . self::class;
+        $GLOBALS['__middag_test_registered_hooks'][] = spl_object_id($this) . ':' . self::class;
     }
 }

@@ -31,6 +31,6 @@ final readonly class NeedyHooks implements HookInterface
         // The dependency is read here on purpose: an unused promoted property
         // gets stripped by Rector, and stripping it removes the very thing this
         // fixture exists to prove — a hook that cannot be built without help.
-        $GLOBALS['__middag_test_registered_hooks'][] = spl_object_hash($this->dependency) . ':' . self::class;
+        $GLOBALS['__middag_test_registered_hooks'][] = spl_object_id($this->dependency) . ':' . self::class;
     }
 }

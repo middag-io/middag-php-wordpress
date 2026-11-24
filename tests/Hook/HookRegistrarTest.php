@@ -177,7 +177,7 @@ final class HookRegistrarTest extends TestCase
         $registrar->register();
 
         self::assertContains(
-            spl_object_hash($containerInstance) . ':' . DemoHooks::class,
+            spl_object_id($containerInstance) . ':' . DemoHooks::class,
             $GLOBALS['__middag_test_registered_hooks'],
             'the container-provided instance is the one registered',
         );

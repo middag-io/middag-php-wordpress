@@ -20,7 +20,8 @@ jobs:
   # major tag. One job per PHP version, with the platform pin (8.3.0) kept:
   # the static checks (composer validate, strict PSR-4, PHPStan, PHP-CS-Fixer
   # and Rector) run on 8.3, the floor; the audit and PHPUnit on every
-  # version. The tool caches live in .cache.
+  # version. The 8.6 cell also runs PHPStan read as PHP 8.6, the ceiling
+  # (.phpstan.ceiling.neon). The tool caches live in .cache.
   php-library-check:
     name: check (PHP ${{ matrix.php-version }})
     runs-on: ubuntu-24.04
@@ -30,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.3', '8.4', '8.5']
+        php-version: ['8.3', '8.4', '8.5', '8.6']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -43,6 +44,10 @@ jobs:
           tool-cache-paths: .cache
           lint-script: lint:php83
           audit-blocking-severities: critical, high
+
+      - name: PHPStan read as PHP 8.6 (ceiling)
+        if: matrix.php-version == '8.6'
+        run: composer check:stan:ceiling
 
   # Second use of the same composite: removes the platform pin and resolves
   # the highest dependency versions on the PHP of each job, then asserts that
@@ -58,7 +63,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php-version: ['8.4', '8.5']
+        php-version: ['8.4', '8.5', '8.6']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

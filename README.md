@@ -36,13 +36,14 @@ composition root that wires it in.
 
 | Item | Supported |
 |---|---|
-| PHP | `^8.3`: 8.3, 8.4 and 8.5, with `ext-json` |
-| Symfony | `^7.4 \|\| ^8.1` for every Symfony component it requires. PHP 8.3 resolves Symfony 7.4; PHP 8.4 and 8.5 can resolve 8.x |
+| PHP | `^8.3`: 8.3 to 8.6, with `ext-json` |
+| Symfony | `^7.4 \|\| ^8.1` for every Symfony component it requires. PHP 8.3 resolves Symfony 7.4; PHP 8.4 to 8.6 can resolve 8.x |
 | `middag-io/framework` | `^1.22` on the `1.x` line (it brings `middag-io/ui`) |
 | WordPress | 7.0 and 7.1 (the latest major and the previous one), within the PHP versions each one supports |
 
-CI runs the test suite on PHP 8.3, 8.4 and 8.5 with the platform pinned to PHP 8.3.0, a
-`highest` job on PHP 8.4 and 8.5 that asserts the Symfony 8 major, PHPStan
+CI runs the test suite on PHP 8.3 to 8.6 with the platform pinned to PHP 8.3.0, a
+`highest` job on PHP 8.4, 8.5 and 8.6 that asserts the Symfony 8 major, PHPStan
+read as PHP 8.3 (the floor) and as PHP 8.6 (the ceiling), PHPStan
 against the WordPress 7.0 and 7.1 stubs, and the integration suite against a
 real WordPress 7.0 and 7.1 (the newest patch release of each) on MySQL 8.4.
 The platform rules are on
