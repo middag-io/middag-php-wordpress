@@ -7,6 +7,10 @@
 
 * support PHP 8.6 ([33207d1](https://github.com/middag-io/middag-php-wordpress/commit/33207d19a548bf4e8b23011ff821a113cc1c7890))
 
+### Consumer impact
+
+- None; PHP 8.6 is now tested. The supported range is PHP 8.3 to 8.6, and the floor stays PHP 8.3.
+
 ## [1.18.2](https://github.com/middag-io/middag-php-wordpress/compare/v1.18.1...v1.18.2) (2026-11-23)
 
 
