@@ -12,6 +12,15 @@
 
 * cut the first 2.0 release candidate ([78bd166](https://github.com/middag-io/middag-php-wordpress/commit/78bd166831b0dcf9462895404edb2d808df72215))
 
+### Consumer impact
+
+- No PHP API change since 1.19.0: `src/` is that of 1.19.0.
+- Requires `middag-io/framework ^2.0.0-rc.1` (it was `^1.22`). Apply the framework consumer impact entries from 1.22 to 1.25.1: the last breaking ones are 1.23.0 (`SchemaBuilderAdapterInterface::indexExistsOnColumns()` added, `IndexIntrospectionInterface` removed) and 1.24.0 (flashed errors are `FormErrors`/`FormErrorBags` value objects, validation errors use the ui `FieldMessage` form, through `middag-io/ui` 1.14).
+- This is a release candidate. Composer installs it only when the root project allows the `rc` stability (for example `minimum-stability: dev` with `prefer-stable: true`) and the constraint names it, such as `^2.0.0-rc.1`. A root that does not allow prereleases stays on 1.x until 2.0.0.
+- 2.0.0 is the first supported release, and the cut from the unsupported 1.x line is clean: there is no deprecation cycle. A 1.x consumer applies the consumer impact entries of this changelog up to 1.19.0; the last breaking one is 1.18.0 (`csrfToken` renamed to `csrf_token`).
+- Depend only on `@api` types, as `API-STABILITY.md` states, and require `middag-io/wordpress` with `^2.0` once 2.0.0 is final.
+- From this candidate the version family is frozen: until 2.0.0 only fixes land, released as `2.0.0-rc.N`.
+
 ## [1.19.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.18.2...v1.19.0) (2026-11-24)
 
 
