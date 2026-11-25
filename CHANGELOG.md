@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.0-rc.1](https://github.com/middag-io/middag-php-wordpress/compare/v1.19.0...v2.0.0-rc.1) (2026-11-25)
+
+
+### Documentation
+
+* name the locked, highest and lowest CI cells in the README ([dab5c28](https://github.com/middag-io/middag-php-wordpress/commit/dab5c2896204fe1d9e3bb7cc30cb1c868ce0af90))
+
+
+### Miscellaneous
+
+* cut the first 2.0 release candidate ([78bd166](https://github.com/middag-io/middag-php-wordpress/commit/78bd166831b0dcf9462895404edb2d808df72215))
+
 ## [1.19.0](https://github.com/middag-io/middag-php-wordpress/compare/v1.18.2...v1.19.0) (2026-11-24)
 
 
