@@ -11,6 +11,8 @@
          colors="true"
          cacheDirectory=".phpunit.cache/integration"
          executionOrder="default"
+         failOnDeprecation="true"
+         failOnPhpunitDeprecation="true"
          failOnRisky="true"
          failOnWarning="true">
     <testsuites>
