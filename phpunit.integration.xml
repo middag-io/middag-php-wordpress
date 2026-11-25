@@ -20,7 +20,7 @@
             <directory>tests/Integration</directory>
         </testsuite>
     </testsuites>
-    <source>
+    <source ignoreSuppressionOfDeprecations="true">
         <include>
             <directory>src</directory>
         </include>
