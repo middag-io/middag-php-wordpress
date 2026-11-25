@@ -38,11 +38,13 @@ composition root that wires it in.
 |---|---|
 | PHP | `^8.3`: 8.3 to 8.6, with `ext-json` |
 | Symfony | `^7.4 \|\| ^8.1` for every Symfony component it requires. PHP 8.3 resolves Symfony 7.4; PHP 8.4 to 8.6 can resolve 8.x |
-| `middag-io/framework` | `^1.22` on the `1.x` line (it brings `middag-io/ui`) |
+| `middag-io/framework` | `^2.0.0-rc.1` during the 2.0 release candidates, `^2.0` from 2.0.0 (it brings `middag-io/ui`) |
 | WordPress | 7.0 and 7.1 (the latest major and the previous one), within the PHP versions each one supports |
 
-CI runs the test suite on PHP 8.3 to 8.6 with the platform pinned to PHP 8.3.0, a
-`highest` job on PHP 8.4, 8.5 and 8.6 that asserts the Symfony 8 major, PHPStan
+CI runs the test suite on PHP 8.3 to 8.6 with the platform pinned to PHP 8.3.0
+(the `locked` cells), a `highest` job on PHP 8.4, 8.5 and 8.6 that asserts the
+Symfony 8 major, a `lowest` job on PHP 8.3 that resolves the lowest version of
+every dependency and asserts the Symfony 7.4 floor, PHPStan
 read as PHP 8.3 (the floor) and as PHP 8.6 (the ceiling), PHPStan
 against the WordPress 7.0 and 7.1 stubs, and the integration suite against a
 real WordPress 7.0 and 7.1 (the newest patch release of each) on MySQL 8.4.
